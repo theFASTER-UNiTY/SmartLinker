@@ -1,6 +1,6 @@
 {
     "Personalization": {
-        "CustomAccentColorHex": "#ff4caf4f",
+        "CustomAccentColorHex": "#ff2196f3",
         "AccentMode": "System",
         "AppTheme": "Auto",
         "EnableMicaEffect": true,
@@ -10,9 +10,9 @@
     },
     "About": {
         "CheckUpdatesOnStart": true,
-        "LastCheckedDate": "09/22/2025 05:55:26",
-        "UpdateAvailable": true,
-        "UpdateVersion": "v1.0.0"
+        "LastCheckedDate": "",
+        "UpdateAvailable": false,
+        "UpdateVersion": ""
     },
     "Selector": {
         "CloseOnBrowserSelect": false
@@ -21,9 +21,5 @@
         "MainBrowser": "",
         "MainBrowserIsManual": false,
         "MainBrowserPath": ""
-    },
-    "QFluentWidgets": {
-        "ThemeColor": "#ff1f2c4b",
-        "ThemeMode": "Auto"
     }
 }

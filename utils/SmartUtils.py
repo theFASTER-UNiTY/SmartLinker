@@ -19,7 +19,6 @@ import psutil
 import datetime
 import darkdetect
 import subprocess
-# from PyQt5.QtWidgets import QDesktopWidget
 from PyQt6.QtCore import Qt, QFileInfo
 from PyQt6.QtGui import QIcon, QFont, QColor
 from PyQt6.QtWidgets import QWidget, QFileIconProvider, QFileDialog

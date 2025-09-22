@@ -1,7 +1,3 @@
-__version__ = "1.0.0"
-__author__ = "#theF∆STER™ CODE&BU!LD"
-
-import enum
 import os
 import subprocess
 import win32api
@@ -15,7 +11,7 @@ from qfluentwidgets import (
     theme, Theme, PrimaryPushSettingCard, FluentIcon as FICO, MessageBoxBase, CardWidget,
     IconWidget, ToolButton, LineEdit, CaptionLabel, PushSettingCard, ComboBox,
     ToolTipFilter, ToolTipPosition, MessageBox, CommandBar, Action, TableWidget,
-    PrimaryPushButton
+    PrimaryPushButton, StrongBodyLabel, themeColor
 )
 from utils.SmartUtils import *
 
@@ -26,7 +22,7 @@ class MyBrowsersInterface(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setObjectName("My Browsers")
+        self.setObjectName("My-Browsers")
         self.lightSheetOnDark: str = "SingleDirectionScrollArea {background: rgba(242, 242, 242, 0.05); border-radius: 10px; border: 1px solid rgba(242, 242, 242, 0.1)}"
         self.darkSheetOnLight: str = "SingleDirectionScrollArea {background: rgba(32, 32, 32, 0.05); border-radius: 10px; border: 1px solid rgba(32, 32, 32, 0.1)}"
         self.browsAddDlg = None
@@ -157,10 +153,10 @@ class MyBrowsersInterface(QWidget):
         else: self.mybrowsLayout.addWidget(self.mybrowsEmptyMsg, alignment=Qt.AlignmentFlag.AlignCenter)
 
         layout.addStretch(1)
-
         
         self.updateSnack = QWidget()
-        self.updateSnack.setStyleSheet(f'background-color: "{smartHexConvert(cfg.get(cfg.qAccentColor))}"')
+        self.updateSnack.setObjectName("BSnackBase")
+        self.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smartConvertToRGB(themeColor().name())}, 0.2)}}")
         if bool(cfg.get(cfg.updateAvailable)): mainBrowLayout.addWidget(self.updateSnack)
         self.updateSnackLayout = QHBoxLayout(self.updateSnack)
         self.updateSnackLayout.setContentsMargins(20, 10, 20, 10)
@@ -168,14 +164,13 @@ class MyBrowsersInterface(QWidget):
         self.updateSnackIcon.setFixedSize(32, 32)
         self.updateSnackLayout.setSpacing(20)
         self.updateSnackLayout.addWidget(self.updateSnackIcon)
-        self.updateSnackLabel = BodyLabel("A new update is available for download!")
-        self.updateSnackLabel.setStyleSheet("font-size: 20px; font-weight: bold")
+        self.updateSnackLabel = StrongBodyLabel("A new update is available for download!")
+        self.updateSnackLabel.setStyleSheet("background-color: transparent")
         self.updateSnackLayout.addWidget(self.updateSnackLabel)
         self.updateSnackLayout.addStretch(1)
         self.updateSnackButton = PrimaryPushButton(FICO.DOWNLOAD, "Download now")
         self.updateSnackLayout.addWidget(self.updateSnackButton)
 
-    
     def loadBrowsers(self, parent):
         """ :MyBrowsersInterface: Saved browsers loader in the SmartList"""
         myBrowsList = smartLoadBrowsers()

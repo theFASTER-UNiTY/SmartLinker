@@ -1,6 +1,3 @@
-__version__ = "0.9.0"
-__author__ = "#theF∆STER™ CODE&BU!LD"
-
 # import os
 # import sys
 from PyQt6.QtCore import Qt
@@ -8,12 +5,11 @@ from PyQt6.QtGui import QIcon, QColor
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
 from qfluentwidgets import (
     FluentIcon as FICO, TitleLabel, SingleDirectionScrollArea, IconWidget, CaptionLabel, PrimaryPushSettingCard, SwitchSettingCard,
-    HyperlinkCard, SimpleExpandGroupSettingCard, BodyLabel, ExpandGroupSettingCard, ToolButton, ToolTipFilter,
-    ToolTipPosition, CardWidget, PrimaryPushButton, StrongBodyLabel
+    HyperlinkCard, SimpleExpandGroupSettingCard, BodyLabel, ExpandGroupSettingCard, ToolButton, ToolTipFilter, themeColor,
+    ToolTipPosition, CardWidget, PrimaryPushButton, SubtitleLabel
 )
 from utils.SmartUtils import *
 
-qconfig.load(cfg, cfgFilePath)
 latestVersion = smartGetLatestVersionTag()
 
 class AboutInterface(QWidget):
@@ -21,7 +17,7 @@ class AboutInterface(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setObjectName("About SmartLinker")
+        self.setObjectName("About-SmartLinker")
         self.updateAvailable = False
         self.lastChecked = f"Last checked: {cfg.get(cfg.lastCheckedDate)}" if cfg.get(cfg.lastCheckedDate) else "Click on the following button to check for the latest updates."
         self.updateCard = None
@@ -32,7 +28,7 @@ class AboutInterface(QWidget):
                 self.updateAvailable = False
                 self.lastChecked = f"Last checked: {autoCheckTime} (Failed to check for updates)"
                 cfg.set(cfg.lastCheckedDate, autoCheckTime)
-            elif latestVersion != __version__:
+            elif Version(latestVersion) > Version(SmartLinkerVersion):
                 self.updateAvailable = True
                 self.lastChecked = f"Last checked: {autoCheckTime} (Latest version: {smartGetLatestVersionTag()})"
                 cfg.set(cfg.lastCheckedDate, autoCheckTime)
@@ -76,7 +72,7 @@ class AboutInterface(QWidget):
         aboutMainLine.addLayout(aboutTextBox)
         aboutTitle = TitleLabel("SmartLinker - Mastering URL Handling")
         # aboutTitle.setFont(smartSegoeTitle())
-        aboutSubtitle = CaptionLabel(f"© 2025 {__author__}")
+        aboutSubtitle = CaptionLabel(f"© 2025 {SmartLinkerAuthor}")
         # aboutSubtitle.setFont(smartSegoeCaption())
         aboutSubtitle.setStyleSheet("color: gray")
         aboutTextBox.addWidget(aboutTitle)
@@ -86,7 +82,7 @@ class AboutInterface(QWidget):
         self.aboutVersion = PrimaryPushSettingCard(
             "Check for updates",
             FICO.INFO,
-            "Current version: " + __version__,
+            "Current version: " + SmartLinkerVersion,
             self.lastChecked
         )
         layout.addWidget(self.aboutVersion)
@@ -236,7 +232,7 @@ class UpdateAvailableCard(CardWidget):
     def __init__(self, title, content, parent=None):
         super().__init__(parent)
         self.iconWidget = IconWidget(FICO.IOT)
-        self.titleLabel = BodyLabel(title, self)
+        self.titleLabel = SubtitleLabel(title, self)
         self.contentLabel = CaptionLabel(content, self)
         self.downloadButton = PrimaryPushButton('Download now', self)
 
@@ -244,10 +240,8 @@ class UpdateAvailableCard(CardWidget):
         self.vBoxLayout = QVBoxLayout()
 
         self.setFixedHeight(80)
-        self.setBackgroundColor(cfg.get(cfg.qAccentColor))
-        self.isHover = False
+        self.setBackgroundColor(QColor(smartGetRed(themeColor()), smartGetGreen(themeColor()), smartGetBlue(themeColor()), 127)) # type: ignore
         self.iconWidget.setFixedSize(40, 40)
-        self.titleLabel.setStyleSheet("font-size: 20px; font-weight: bold")
         self.contentLabel.setTextColor(QColor("#606060"), QColor("#d2d2d2"))
         # self.downloadButton.setFixedWidth(120)
 

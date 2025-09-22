@@ -1,6 +1,3 @@
-__version__ = "1.0.0"
-__author__ = "#theF∆STER™ CODE&BU!LD"
-
 import subprocess
 import winreg
 from PyQt6.QtCore import Qt
@@ -11,7 +8,7 @@ from qfluentwidgets import (
     PrimaryPushSettingCard, ExpandGroupSettingCard, PushButton, ComboBox, BodyLabel,
     OptionsSettingCard, SwitchSettingCard, themeColor, ColorDialog, setThemeColor,
     Theme, theme, MessageBox, CardWidget, IconWidget, CaptionLabel, ToolButton, ToolTipFilter,
-    MessageBoxBase, SwitchButton, IndicatorPosition, SpinBox, PrimaryPushButton
+    MessageBoxBase, SwitchButton, IndicatorPosition, SpinBox, PrimaryPushButton, StrongBodyLabel
 )
 from qframelesswindow.utils import getSystemAccentColor
 from utils.SmartUtils import *
@@ -123,7 +120,8 @@ class SettingsInterface(QWidget):
         layout.addStretch(1)
         
         self.updateSnack = QWidget()
-        self.updateSnack.setStyleSheet(f'background-color: "{smartHexConvert(cfg.get(cfg.qAccentColor))}"')
+        self.updateSnack.setObjectName("SSnackBase")
+        self.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smartConvertToRGB(themeColor().name())}, 0.2)}}")
         if bool(cfg.get(cfg.updateAvailable)): mainSetLayout.addWidget(self.updateSnack)
         self.updateSnackLayout = QHBoxLayout(self.updateSnack)
         self.updateSnackLayout.setContentsMargins(20, 10, 20, 10)
@@ -131,8 +129,7 @@ class SettingsInterface(QWidget):
         self.updateSnackIcon.setFixedSize(32, 32)
         self.updateSnackLayout.setSpacing(20)
         self.updateSnackLayout.addWidget(self.updateSnackIcon)
-        self.updateSnackLabel = BodyLabel("A new update is available for download!")
-        self.updateSnackLabel.setStyleSheet("font-size: 20px; font-weight: bold")
+        self.updateSnackLabel = StrongBodyLabel("A new update is available for download!")
         self.updateSnackLayout.addWidget(self.updateSnackLabel)
         self.updateSnackLayout.addStretch(1)
         self.updateSnackButton = PrimaryPushButton(FICO.DOWNLOAD, "Download now")
@@ -238,9 +235,9 @@ class SettingsInterface(QWidget):
             self.optionCustomAccentColorDlg.editLabel.setText("Edit HEX color")
             # self.optionCustomAccentColorDlg.colorChanged.connect(lambda color: setThemeColor(color))
         if self.optionCustomAccentColorDlg.exec():
+            setThemeColor(self.optionCustomAccentColorDlg.color)           
             cfg.set(cfg.accentColor, self.optionCustomAccentColorDlg.color.name())
             cfg.set(cfg.qAccentColor, self.optionCustomAccentColorDlg.color.name())
-            setThemeColor(self.optionCustomAccentColorDlg.color)           
 
     def setAsDefaultBrowser(self):
         smartExePath = os.path.dirname(sys.executable)

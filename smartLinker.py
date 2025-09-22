@@ -1,6 +1,3 @@
-__version__ = "1.0.0"
-__author__ = "#theF∆STER™ CODE&BU!LD"
-
 import os
 import sys
 
@@ -9,7 +6,7 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QApplication
 from qfluentwidgets import (
     FluentWindow, Theme, setTheme, NavigationItemPosition, MessageBox,
-    FluentIcon as FICO, SplashScreen
+    FluentIcon as FICO, SplashScreen, themeColor, theme
 )
 from utils.SmartUtils import *
 from utils.settingsInterface import SettingsInterface as Settings
@@ -42,7 +39,7 @@ class SmartLinkerGUI(FluentWindow):
         self.listSelectDlg = None
 
         if latestVersion:
-            if latestVersion != __version__:
+            if Version(latestVersion) > Version(SmartLinkerVersion):
                 cfg.set(cfg.updateAvailable, True)
                 cfg.set(cfg.updateVersion, latestVersion)
             else: cfg.set(cfg.updateAvailable, False)
@@ -96,21 +93,16 @@ class SmartLinkerGUI(FluentWindow):
         self.aboutInterface.aboutResources.qFluentBtn.clicked.connect(lambda: smartOpenURL("https://www.qfluentwidgets.com/"))
         self.aboutInterface.aboutResources.qFluentBtn2.clicked.connect(lambda: smartOpenURL("https://github.com/zhiyiYo/PyQt-Fluent-Widgets"))
         self.aboutInterface.aboutResources.pyQtBtn.clicked.connect(lambda: smartOpenURL("https://www.flaticon.com/"))
-        qconfig.themeChangedFinished.connect(lambda: (
-            self.mybrowsInterface.updateSnack.setStyleSheet(f'background-color: "{smartHexConvert(cfg.get(cfg.qAccentColor))}"'),
-            self.mybrowsInterface.updateSnackLabel.setStyleSheet("font-size: 20px; font-weight: bold"),
-            self.settingInterface.updateSnack.setStyleSheet(f'background-color: "{smartHexConvert(cfg.get(cfg.qAccentColor))}"'),
-            self.settingInterface.updateSnackLabel.setStyleSheet("font-size: 20px; font-weight: bold"),
-            self.aboutInterface.updateCard.setBackgroundColor(cfg.get(cfg.qAccentColor)) if self.aboutInterface.updateCard else None,
-            self.aboutInterface.updateCard.titleLabel.setStyleSheet("font-size: 20px; font-weight: bold") if self.aboutInterface.updateCard else None
+        qconfig.themeChangedFinished.connect(lambda theme=theme(): (
+            # setTheme(theme),
+            self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smartGetRed(themeColor())}, {smartGetGreen(themeColor())}, {smartGetBlue(themeColor())}, 0.5)}}"), # type: ignore
+            self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smartGetRed(themeColor())}, {smartGetGreen(themeColor())}, {smartGetBlue(themeColor())}, 0.5)}}"), # type: ignore
+            self.aboutInterface.updateCard.setBackgroundColor(QColor(smartGetRed(themeColor()), smartGetGreen(themeColor()), smartGetBlue(themeColor()), 127)) if self.aboutInterface.updateCard else print("None"), # type: ignore
         ))
-        qconfig.themeColorChanged.connect(lambda: (
-            self.mybrowsInterface.updateSnack.setStyleSheet(f'background-color: "{smartHexConvert(cfg.get(cfg.qAccentColor))}"'),
-            self.mybrowsInterface.updateSnackLabel.setStyleSheet("font-size: 20px; font-weight: bold"),
-            self.settingInterface.updateSnack.setStyleSheet(f'background-color: "{smartHexConvert(cfg.get(cfg.qAccentColor))}"'),
-            self.settingInterface.updateSnackLabel.setStyleSheet("font-size: 20px; font-weight: bold"),
-            self.aboutInterface.updateCard.setBackgroundColor(cfg.get(cfg.qAccentColor)) if self.aboutInterface.updateCard else None,
-            self.aboutInterface.updateCard.titleLabel.setStyleSheet("font-size: 20px; font-weight: bold") if self.aboutInterface.updateCard else None
+        qconfig.themeColorChanged.connect(lambda color=themeColor(): (
+            self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smartGetRed(color)}, {smartGetGreen(color)}, {smartGetBlue(color)}, 0.5)}}"), # type: ignore
+            self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smartGetRed(color)}, {smartGetGreen(color)}, {smartGetBlue(color)}, 0.5)}}"), # type: ignore
+            self.aboutInterface.updateCard.setBackgroundColor(QColor(smartGetRed(color), smartGetGreen(color), smartGetBlue(color), 127)) if self.aboutInterface.updateCard else None, # type: ignore
         ))
 
     def createSubInterfaces(self):

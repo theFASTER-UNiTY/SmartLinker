@@ -6,7 +6,7 @@ basic and technical needs.
 
 :Copyright: © 2025 by #theF∆STER™ CODE&BU!LD.
 """
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "#theF∆STER™ CODE&BU!LD"
 # =========================================================
 import os
@@ -29,10 +29,12 @@ from qfluentwidgets import (
 from qframelesswindow.utils import getSystemAccentColor
 from colorama import init, Fore, Back, Style
 from shiboken6 import isValid
+from packaging.version import Version
 
 SmartLinkerID = "theFASTER.SmartLinker"
 SmartLinkerName = "SmartLinker"
 SmartLinkerVersion = __version__
+SmartLinkerAuthor = __author__
 PURPLE = "\x1b[35m"
 init()
 
@@ -602,17 +604,17 @@ def smartGetLatestVersionTag():
     except Exception as e:
         print(f"{Fore.RED}Something went wrong while checking the latest version: {e}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to check latest version: {e}")
-        return None
+        return ""
 
-def smartHexConvert(color: str):
+def smartConvertToHEX(color: str | QColor):
     """ SmartUtils
     ==========
-    HEX w/ alpha (#AARRGGBB) to HEX w/o alpha (#RRGGBB) color format convertor
+    HEX w/ alpha (#AARRGGBB) to HEX w/o alpha (#RRGGBB) color format converter
 
     Parameters
     ----------
-    color: str
-        The color string whose format must be converted.
+    color: str | QColor
+        The color whose format must be converted.
     
     Returns
     -------
@@ -631,3 +633,213 @@ def smartHexConvert(color: str):
     except Exception as e:
         print(f"{Fore.RED}Something went wrong during color conversion: {e}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to convert color format: {e}")
+
+def smartConvertToRGBA(color: str | QColor):
+    """ SmartUtils
+    ==========
+    RGBA color format converter
+
+    Parameters
+    ----------
+    color: str | QColor
+        The color whose format must be converted.
+    
+    Returns
+    -------
+    newColor: str
+        The re-formatted color string.
+    """
+    try:
+        oldColor = QColor(color)
+        if not isValid(oldColor): raise ValueError("Invalid color format")
+
+        red = oldColor.red()
+        green = oldColor.green()
+        blue = oldColor.blue()
+        alpha = oldColor.alphaF()
+        newColor = f"rgba({red}, {green}, {blue}, {alpha})"
+        return newColor
+    except Exception as e:
+        print(f"{Fore.RED}Something went wrong during color conversion: {e}{Style.RESET_ALL}")
+        smartLog(f"ERROR: Failed to convert color format: {e}")
+
+def smartConvertToRGB(color: str | QColor):
+    """ SmartUtils
+    ==========
+    RGB color format converter
+
+    Parameters
+    ----------
+    color: str | QColor
+        The color whose format must be converted.
+    
+    Returns
+    -------
+    newColor: str
+        The re-formatted color string.
+    """
+    try:
+        oldColor = QColor(color)
+        if not isValid(oldColor): raise ValueError("Invalid color format")
+
+        red = oldColor.red()
+        green = oldColor.green()
+        blue = oldColor.blue()
+        newColor = f"{red}, {green}, {blue}"
+        return newColor
+    except Exception as e:
+        print(f"{Fore.RED}Something went wrong during color conversion: {e}{Style.RESET_ALL}")
+        smartLog(f"ERROR: Failed to convert color format: {e}")
+
+def smartCustomAlphaToRGB(color, alpha):
+    """ SmartUtils
+    ==========
+    Custom alpha value to color applying tool
+
+    Parameters
+    ----------
+    color: Unknown
+        The color you want to modify.
+    alpha: num
+        The alpha value you want to apply.
+
+    Returns
+    -------
+    newColor: Unknown
+        The modified version of the color.
+    """
+    try:
+        oldColor = QColor(color)
+        if not isValid(oldColor): raise ValueError("Invalid color format entered")
+
+        r, g, b, a = oldColor.getRgb()
+        if r and g and b: newColor = oldColor.setRgb(r, g, b, alpha)
+        return newColor
+    except Exception as e:
+        print(f"{Fore.RED}Something went wrong during color conversion: {e}{Style.RESET_ALL}")
+        smartLog(f"ERROR: Failed to convert color format: {e}")
+
+def smartGetRed(color):
+    """ SmartUtils
+    ==========
+    A color's red value picker
+
+    Parameters
+    ----------
+    color: Unknown
+        The color you want to get the red value from.
+
+    Returns
+    -------
+    red: int | None
+        The red value
+    """
+    try:
+        rColor = QColor(color)
+        if rColor.isValid():
+            red, g, b, a = rColor.getRgb()
+            return red
+        else: return 0
+    except Exception as e:
+        print(f"{Fore.RED}Something went wrong during red value pick: {e}{Style.RESET_ALL}")
+        smartLog(f"ERROR: Failed to pick red value from color: {e}")
+
+def smartGetGreen(color):
+    """ SmartUtils
+    ==========
+    A color's green value picker
+
+    Parameters
+    ----------
+    color: Unknown
+        The color you want to get the green value from.
+
+    Returns
+    -------
+    green: int | None
+        The green value
+    """
+    try:
+        gColor = QColor(color)
+        if gColor.isValid():
+            r, green, b, a = gColor.getRgb()
+            return green
+        else: return 0
+    except Exception as e:
+        print(f"{Fore.RED}Something went wrong during green value pick: {e}{Style.RESET_ALL}")
+        smartLog(f"ERROR: Failed to pick green value from color: {e}")
+
+def smartGetBlue(color):
+    """ SmartUtils
+    ==========
+    A color's blue value picker
+
+    Parameters
+    ----------
+    color: Unknown
+        The color you want to get the blue value from.
+
+    Returns
+    -------
+    blue: int | None
+        The blue value
+    """
+    try:
+        bColor = QColor(color)
+        if bColor.isValid():
+            r, g, blue, a = bColor.getRgb()
+            return blue
+        else: return 0
+    except Exception as e:
+        print(f"{Fore.RED}Something went wrong during blue value pick: {e}{Style.RESET_ALL}")
+        smartLog(f"ERROR: Failed to pick blue value from color: {e}")
+
+def smartGetAlpha(color):
+    """ SmartUtils
+    ==========
+    A color's alpha value picker
+
+    Parameters
+    ----------
+    color: Unknown
+        The color you want to get the alpha value from.
+
+    Returns
+    -------
+    alpha: int | None
+        The alpha value
+    """
+    try:
+        aColor = QColor(color)
+        if aColor.isValid():
+            r, g, b, alpha = aColor.getRgb()
+            return alpha
+        else: return 0
+    except Exception as e:
+        print(f"{Fore.RED}Something went wrong during alpha value pick: {e}{Style.RESET_ALL}")
+        smartLog(f"ERROR: Failed to pick alpha value from color: {e}")
+
+def smartGetAlphaFloat(color):
+    """ SmartUtils
+    ==========
+    A color's alpha value picker
+
+    Parameters
+    ----------
+    color: Unknown
+        The color you want to get the alpha value from.
+
+    Returns
+    -------
+    alpha: float | None
+        The alpha float value
+    """
+    try:
+        aColor = QColor(color)
+        if aColor.isValid():
+            r, g, b, alpha = aColor.getRgbF()
+            return alpha
+        else: return 0.0
+    except Exception as e:
+        print(f"{Fore.RED}Something went wrong during alpha value pick: {e}{Style.RESET_ALL}")
+        smartLog(f"ERROR: Failed to pick alpha value from color: {e}")

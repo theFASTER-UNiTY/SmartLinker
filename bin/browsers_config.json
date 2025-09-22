@@ -1,34 +1,3 @@
 {
-    "MyBrowsers": [
-        {
-            "name": "Microsoft Edge",
-            "path": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
-            "exec": "msedge.exe"
-        },
-        {
-            "name": "Google Chrome",
-            "path": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-            "exec": "chrome.exe"
-        },
-        {
-            "name": "Ablaze Floorp",
-            "path": "D:\\Tools\\Floorp\\app\\floorp.exe",
-            "exec": "floorp.exe"
-        },
-        {
-            "name": "Brave",
-            "path": "E:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
-            "exec": "brave.exe"
-        },
-        {
-            "name": "Waterfox",
-            "path": "I:\\Program Files\\Waterfox\\waterfox.exe",
-            "exec": "waterfox.exe"
-        },
-        {
-            "name": "Chromium",
-            "path": "I:\\Program Files\\Chromium\\chrome.exe",
-            "exec": "chrome.exe"
-        }
-    ]
+    "MyBrowsers": []
 }

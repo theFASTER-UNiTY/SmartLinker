@@ -18,6 +18,7 @@ import typing
 import psutil
 import datetime
 import darkdetect
+import subprocess
 # from PyQt5.QtWidgets import QDesktopWidget
 from PyQt6.QtCore import Qt, QFileInfo
 from PyQt6.QtGui import QIcon, QFont
@@ -30,6 +31,7 @@ from colorama import init, Fore, Back, Style
 
 SmartLinkerID = "theFASTER.SmartLinker"
 SmartLinkerName = "SmartLinker"
+SmartLinkerVersion = __version__
 PURPLE = "\x1b[35m"
 init()
 
@@ -557,3 +559,22 @@ def smartSegoeCaption() -> QFont:
     font.setFamily("Segoe UI Variable")
     font.setPixelSize(12)
     return font
+
+def smartGetLatestVersionTag():
+        try:
+            print("Checking for latest version...")
+            smartLog("Checking for latest version...")
+            version = subprocess.run(
+                ['git', 'describe', '--tags', '--abbrev=0'],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            versionTag = version.stdout.strip()
+            print(f"Latest version: {versionTag}")
+            smartLog(f"Latest version: {versionTag}")
+            return versionTag
+        except Exception as e:
+            print(f"{Fore.RED}Something went wrong while checking the latest version: {e}{Style.RESET_ALL}")
+            smartLog(f"ERROR: Failed to check latest version: {e}")
+            return None

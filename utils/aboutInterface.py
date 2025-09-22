@@ -3,6 +3,7 @@ __author__ = "#theF∆STER™ CODE&BU!LD"
 
 # import os
 # import sys
+import subprocess
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
@@ -21,6 +22,11 @@ class AboutInterface(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("About SmartLinker")
+
+        if bool(cfg.get(cfg.checkUpdatesOnStart)):
+            autoCheckTime = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
+            if not smartGetLatestVersionTag(): self.lastChecked = f"Last checked: {autoCheckTime} (Failed to check for updates)"
+            else: pass
 
         mainSetLayout = QVBoxLayout(self)
         ### mainSetLayout.setContentsMargins(0, 60, 0, 0) # for split fluent window
@@ -70,7 +76,7 @@ class AboutInterface(QWidget):
         layout.addWidget(self.aboutVersion)
         self.aboutCheckUpdates = SwitchSettingCard(
             FICO.UPDATE,
-            "Check updates when the software starts",
+            "Check for updates when the software starts",
             "You will get automatically notified when a new, better and more featured version will be released.",
             cfg.checkUpdatesOnStart
         )

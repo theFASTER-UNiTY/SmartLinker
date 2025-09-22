@@ -3,10 +3,10 @@
         "CustomAccentColorHex": "#ff4caf4f",
         "AccentMode": "System",
         "AppTheme": "Auto",
-        "EnableMicaEffect": false,
-        "ShowCommandBar": true,
+        "EnableMicaEffect": true,
+        "ShowCommandBar": false,
         "ShowSplash": true,
-        "SplashDuration": 2000
+        "SplashDuration": 3000
     },
     "About": {
         "CheckUpdatesOnStart": true,

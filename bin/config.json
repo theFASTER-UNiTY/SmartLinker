@@ -1,12 +1,12 @@
 {
     "Personalization": {
-        "CustomAccentColorHex": "#ff4caf4f",
-        "AccentMode": "Custom",
+        "CustomAccentColorHex": "#ff2196f3",
+        "AccentMode": "System",
         "AppTheme": "Auto",
-        "EnableMicaEffect": false,
-        "ShowCommandBar": true,
+        "EnableMicaEffect": true,
+        "ShowCommandBar": false,
         "ShowSplash": true,
-        "SplashDuration": 2000
+        "SplashDuration": 3000
     },
     "About": {
         "CheckUpdatesOnStart": true
@@ -18,9 +18,5 @@
         "MainBrowser": "",
         "MainBrowserIsManual": false,
         "MainBrowserPath": ""
-    },
-    "QFluentWidgets": {
-        "ThemeColor": "#ff4caf4f",
-        "ThemeMode": "Dark"
     }
 }

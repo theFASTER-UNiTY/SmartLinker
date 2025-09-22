@@ -1,0 +1,559 @@
+"""
+SmartUtils
+==========
+A complete utility module made specifically for SmartLinker
+basic and technical needs.
+
+:Copyright: © 2025 by #theF∆STER™ CODE&BU!LD.
+"""
+__version__ = "1.0.0"
+__author__ = "#theF∆STER™ CODE&BU!LD"
+# =========================================================
+import os
+import sys
+import winreg
+import webbrowser
+import json
+import typing
+import psutil
+import datetime
+import darkdetect
+# from PyQt5.QtWidgets import QDesktopWidget
+from PyQt6.QtCore import Qt, QFileInfo
+from PyQt6.QtGui import QIcon, QFont
+from PyQt6.QtWidgets import QWidget, QFileIconProvider, QFileDialog
+from qfluentwidgets import (
+    InfoBar, InfoBarPosition, QConfig, ConfigItem, OptionsConfigItem, OptionsValidator, ColorConfigItem, BoolValidator, qconfig,
+    RangeConfigItem, RangeValidator
+)
+from colorama import init, Fore, Back, Style
+
+SmartLinkerID = "theFASTER.SmartLinker"
+SmartLinkerName = "SmartLinker"
+PURPLE = "\x1b[35m"
+init()
+
+class Config(QConfig):
+    """ SmartUtils
+    ==========
+    Global SmartLinker configuration handling class
+    """
+    mainBrowser = ConfigItem(
+        "General",
+        "MainBrowser",
+        ""
+    )
+    mainBrowserPath = ConfigItem(
+        "General",
+        "MainBrowserPath",
+        ""
+    )
+    mainBrowserIsManual = ConfigItem(
+        "General",
+        "MainBrowserIsManual",
+        False,
+        BoolValidator()
+    )
+    appTheme = OptionsConfigItem(
+        "Personalization",
+        "AppTheme",
+        "Auto",
+        OptionsValidator(["Light", "Dark", "Auto"]),
+        restart=False
+    )
+    accentMode = OptionsConfigItem(
+        "Personalization",
+        "AccentMode",
+        "System",
+        OptionsValidator(["System", "Custom"]),
+        restart=False
+    )
+    accentColor = ColorConfigItem(
+        "Personalization",
+        "CustomAccentColorHex",
+        "#ff793bcc"
+    )
+    qAccentColor = ColorConfigItem(
+        "QFluentWidgets",
+        "ThemeColor",
+        "#ff25d9e6",
+        False
+    )
+    micaEffect = ConfigItem(
+        "Personalization",
+        "EnableMicaEffect",
+        True,
+        BoolValidator()
+    )
+    checkUpdatesOnStart = ConfigItem(
+        "About",
+        "CheckUpdatesOnStart",
+        True,
+        BoolValidator()
+    )
+    closeOnBrowserSelect = ConfigItem(
+        "Selector",
+        "CloseOnBrowserSelect",
+        False,
+        BoolValidator()
+    )
+    showCommandBar = ConfigItem(
+        "Personalization",
+        "ShowCommandBar",
+        False,
+        BoolValidator()
+    )
+    showSplash = ConfigItem(
+        "Personalization",
+        "ShowSplash",
+        True,
+        BoolValidator()
+    )
+    splashDuration = RangeConfigItem(
+        "Personalization",
+        "SplashDuration",
+        3000,
+        RangeValidator(0, 10000)
+    )
+
+def smartResourcePath(relativePath: str):
+    """ SmartUtils
+    ==========
+    Dynamic provider of internal resources and files
+    
+    Parameters
+    ----------
+    relativePath: string
+        The path to the internal resource you want to access
+    """
+    if hasattr(sys, "_MEIPASS"):
+        basePath = getattr(sys, "_MEIPASS", os.path.abspath("."))
+    else:
+        basePath = os.path.abspath(".")
+    return os.path.join(basePath, relativePath)
+
+cfg = Config()
+cfgFilePath = smartResourcePath("bin/config.json")
+browsersCfgFilePath = smartResourcePath("bin/browsers_config.json")
+qconfig.load(cfgFilePath, cfg)
+
+def smartLoadSettings():
+    """ SmartUtils
+    ==========
+    Loader of all the saved settings """
+    try:
+        with open(cfgFilePath, "r") as settingReader:
+            return json.load(settingReader)
+    except Exception as e: print(e)
+
+def smartLoadBrowsers():
+    """ SmartUtils
+    ==========
+    Loader of all the saved browsers """
+    try:
+        with open(browsersCfgFilePath, "r") as browserReader:
+            return json.load(browserReader)
+    except:
+        return {
+            "MyBrowsers": []
+        }
+
+def smartWriteBrowsers(browsers: dict[str, list[str]]):
+    """ SmartUtils
+    ==========
+    Saver of all the changes made to browsers list
+    
+    Parameters
+    ----------
+    browsers: dictionary[string | list of strings]
+        The browsers list you want to save to the browsers config file
+    """
+    with open(browsersCfgFilePath, "w") as browserWriter:
+        json.dump(browsers, browserWriter, indent=4)
+
+def restartApp():
+    """ SmartUtils
+    ==========
+    Global function to restart the app """
+    os.execl(sys.executable, sys.executable, *sys.argv)
+
+def stopApp():
+    """ SmartUtils
+    ==========
+    Global function to stop the app process """
+    sys.exit()
+
+def isDarkModeEnabled() -> bool:
+    """ SmartUtils
+    ==========
+    Windows registry-based checker for system dark mode
+
+    Returns
+    -------
+    isDarkMode: boolean
+        whether the system is in dark mode
+    """
+    try:
+        with winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
+        ) as key:
+            value, _ = winreg.QueryValueEx(key, "AppsUseLightTheme")
+            isDarkMode = value == 0  # 0 = dark, 1 = light
+            return isDarkMode
+    except Exception:
+        return False  # défaut = clair
+
+def smartIsDarkMode() -> bool:
+    """ SmartUtils
+    ==========
+    DarkDetect library-based checker for system dark mode
+
+    Returns
+    -------
+    isDarkMode: boolean
+        whether the system is in dark mode
+    """
+    isDarkMode = bool(darkdetect.isDark())
+    return isDarkMode
+
+def smartOpenURL(requestURL: str):
+    """ SmartUtils
+    ==========
+    Specified URL loader
+    
+    Parameters
+    ----------
+    requestURL: string
+        The URL you want a browser to load
+    """
+    webbrowser.open(requestURL)
+
+def smartSuccessNotify(self, title: str, content: typing.Optional[str]):
+    """ SmartUtils
+    ==========
+    Success notification bar
+    
+    Parameters
+    ----------
+    title: string
+        The title of the success notification bar
+    content: string
+        The message you want the success notification bar to display (optional)
+    """
+    InfoBar.success(
+        title=title,
+        content=content,
+        orient=Qt.Orientation.Horizontal,
+        isClosable=True,
+        position=InfoBarPosition.TOP,
+        duration=5000,
+        parent=self
+    ).show()
+
+def smartWarningNotify(self, title: str, content: typing.Optional[str]):
+    """ SmartUtils
+    ==========
+    Warning notification bar
+    
+    Parameters
+    ----------
+    title: string
+        The title of the warning notification bar
+    content: string
+        The message you want the warning notification bar to display (optional)
+    """
+    InfoBar.warning(
+        title=title,
+        content=content,
+        orient=Qt.Orientation.Horizontal,
+        isClosable=True,
+        position=InfoBarPosition.BOTTOM,
+        duration=5000,
+        parent=self
+    ).show()
+
+def smartErrorNotify(self, title: str, content: typing.Optional[str]):
+    """ SmartUtils
+    ==========
+    Error notification bar
+    
+    Parameters
+    ----------
+    title: string
+        The title of the error notification bar
+    content: string
+        The message you want the error notification bar to display (optional)
+    """
+    InfoBar.error(
+        title=title,
+        content=content,
+        orient=Qt.Orientation.Horizontal,
+        isClosable=True,
+        position=InfoBarPosition.BOTTOM_RIGHT,
+        duration=-1,
+        parent=self
+    ).show()
+
+def smartInfoNotify(self, title: str, content: typing.Optional[str]):
+    """ SmartUtils
+    ==========
+    Informative notification bar
+    
+    Parameters
+    ----------
+    title: string
+        The title of the informative notification bar
+    content: string
+        The message you want the informative notification bar to display (optional)
+    """
+    InfoBar.info(
+        title=title,
+        content=content,
+        orient=Qt.Orientation.Horizontal,
+        isClosable=True,
+        position=InfoBarPosition.BOTTOM_RIGHT,
+        duration=5000,
+        parent=self
+    ).show()
+
+def smartGetFileIcon(filePath: str) -> QIcon:
+    """ SmartUtils
+    ==========
+    Specified executable icon provider
+
+    Parameters
+    ----------
+    filePath: string
+        The path to the executable you want the icon to be provided
+
+    Returns
+    -------
+    fileIcon: QIcon
+        The icon of the provided executable (whose path must be valid)
+    """
+    if filePath: return QFileIconProvider().icon(QFileInfo(filePath))
+    return QIcon(smartResourcePath("resources/images/icons/icon.ico"))
+
+def smartBrowseFileDialog(parent: typing.Optional[QWidget], dialogTitle: typing.Optional[str], mainDir: typing.Optional[str], typeFilter: typing.Optional[str]) -> str:
+    """ SmartUtils
+    ==========
+    Specified type file provider through file picker dialog
+
+    Parameters
+    ----------
+    parent: QWidget
+        The parent of the file picker dialog (optional)
+    dialogTitle: string
+        The file picker dialog title (optional but preferred)
+    mainDir: string
+        The main directory you want the dialog to open into (optional)
+    typeFilter: string | list[string]
+        All the different file types you want to filter in the dialog (optional)
+    
+    Returns
+    -------
+    isFileExists: boolean
+        Whether the selected file path returned by the dialog is valid
+    """
+    filePath, _ = QFileDialog.getOpenFileName(
+        parent,
+        dialogTitle,
+        mainDir,
+        typeFilter
+    )
+    if filePath: return filePath
+    return ""
+    
+def smartIsSystemDefault(self, appID: str) -> bool:
+    """ SmartUtils
+    ==========
+    SmartLinker-as-default-browser checker
+    
+    Parameters
+    ----------
+    appID: string
+        System-level SmartLinker's application identifier
+    
+    Returns
+    -------
+    isSystemDefault: boolean
+        Whether SmartLinker is system's default browser
+    """
+    httpKeyPath = r"Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice"
+    httpsKeyPath = r"Software\Microsoft\Windows\Shell\Associations\UrlAssociations\https\UserChoice"
+    try:
+        # Opens the registry key in read mode
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, httpKeyPath, 0, winreg.KEY_READ) as httpKey:
+            # Gets the 'Progid' value
+            httpProgID, _ = winreg.QueryValueEx(httpKey, 'Progid')
+            # Compare the value with SmartLinker's ID
+            isHttpDefault = bool(httpProgID == appID)
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, httpsKeyPath, 0, winreg.KEY_READ) as httpsKey:
+                httpsProgID, _ = winreg.QueryValueEx(httpsKey, 'Progid')
+                isHttpsDefault = bool(httpsProgID == appID)
+                isSystemDefault = isHttpDefault and isHttpsDefault
+                return isSystemDefault
+    except FileNotFoundError as fe:
+        # The key doesn't exist, so no default browser has been set
+        print(f"Registry information: {fe}")
+        # smartInfoNotify(self, "Did you know?", "Until now, no browser has been set by default in your system.")
+        return False
+    except Exception as e:
+        print(f"An error occured while checking registry : {e}")
+        smartErrorNotify(self, "Something went wrong...", f"An error occured while checking registry : {e}")
+        return False
+
+def smartIsBrowserOpen(exePath: str) -> bool:
+    """ SmartUtils
+    ==========
+    Specified SmartList browser process checker
+    
+    Parameters
+    ----------
+    exePath: string
+        The complete path to the browser
+    
+    Returns
+    -------
+    isProcessOpen: boolean
+        Whether the specified browser is running
+    """
+    browsName = os.path.basename(exePath).lower()
+    for process in psutil.process_iter(['exe']):
+        if process.info['exe']:
+            isProcessOpen = os.path.basename(process.info['exe']).lower() == browsName
+            if isProcessOpen:
+                print(f"{Back.GREEN}{browsName} == {os.path.basename(process.info['exe']).lower()}{Style.RESET_ALL}")
+                break
+            else: print(f"{Back.RED}{browsName} != {os.path.basename(process.info['exe']).lower()}{Style.RESET_ALL}")
+    print(f"\n'{browsName}' is running: {Fore.GREEN if isProcessOpen else Fore.RED}{isProcessOpen}{Style.RESET_ALL}\n")
+    return isProcessOpen
+
+"""
+SmartLinker
+"""
+
+def smartConsoleScript() -> str:
+    """ SmartUtils
+    ==========
+    SmartLinker name in-console renderer
+
+    Returns
+    -------
+    consName: string
+        The rendered SmartLinker name
+    """
+    return f"{PURPLE}███████╗███╗   ███╗ █████╗ ██████╗ ████████╗{Fore.BLUE}██╗     ██╗███╗   ██╗██╗  ██╗███████╗██████╗ {Style.RESET_ALL}\n" \
+           f"{PURPLE}██╔════╝████╗ ████║██╔══██╗██╔══██╗╚══██╔══╝{Fore.BLUE}██║     ██║████╗  ██║██║ ██╔╝██╔════╝██╔══██╗{Style.RESET_ALL}\n" \
+           f"{PURPLE}███████╗██╔████╔██║███████║██████╔╝   ██║   {Fore.BLUE}██║     ██║██╔██╗ ██║█████╔╝ █████╗  ██████╔╝{Style.RESET_ALL}\n" \
+           f"{PURPLE}╚════██║██║╚██╔╝██║██╔══██║██╔══██╗   ██║   {Fore.BLUE}██║     ██║██║╚██╗██║██╔═██╗ ██╔══╝  ██╔══██╗{Style.RESET_ALL}\n" \
+           f"{PURPLE}███████║██║ ╚═╝ ██║██║  ██║██║  ██║   ██║   {Fore.BLUE}███████╗██║██║ ╚████║██║  ██╗███████╗██║  ██║{Style.RESET_ALL}\n" \
+           f"{PURPLE}╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   {Fore.BLUE}╚══════╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝{Style.RESET_ALL}\n" \
+           f"{PURPLE}================================={Style.RESET_ALL} Mastering URL Handling {Fore.BLUE}================================{Style.RESET_ALL}\n"
+
+def smartLog(message):
+    """ SmartUtils
+    ==========
+    SmartLinker activity log writer
+
+    Parameters
+    ----------
+    message: Any
+        The message you want to write in the log
+    """
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open("SmartLinkerReport.log", 'a', encoding="utf-8") as logger:
+        logger.write(f"[{timestamp}] {message}\n")
+
+def smartSelectorLog(message):
+    """ SmartUtils
+    ==========
+    Smart Selector activity log writer
+
+    Parameters
+    ----------
+    message: Any
+        The message you want to write in the log
+    """
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open("SmartSelectorReport.log", 'a', encoding="utf-8") as logger:
+        logger.write(f"[{timestamp}] {message}\n")
+
+def smartEmptyLog():
+    """ SmartUtils
+    ==========
+    SmartLinker activity log initializing tool
+    """
+    with open("SmartLinkerReport.log", 'w') as clear:
+        clear.write("SmartLinker - Smart Manager Activity Report\n" \
+                    "-------------------------------------------\n\n")
+
+def smartEmptySelectorLog():
+    """ SmartUtils
+    ==========
+    Smart Selector activity log initializing tool
+    """
+    with open("SmartSelectorReport.log", 'w') as clear:
+        clear.write("SmartLinker - Smart Selector Activity Report\n" \
+                    "--------------------------------------------\n\n")
+
+def smartHideLayoutWidgets(layout):
+    """ SmartUtils
+    ==========
+    Layout child widgets hiding tool
+
+    Parameters
+    ----------
+    layout: unknown
+        The layout whose child widgets you want to hide
+    """
+    for i in range(layout.count()):
+        item = layout.itemAt(i)
+        if item.widget():
+            item.widget().hide()
+        elif item.layout():
+            smartHideLayoutWidgets(item.layout())
+
+def smartShowLayoutWidgets(layout):
+    """ SmartUtils
+    ==========
+    Layout child widgets showing tool
+
+    Parameters
+    ----------
+    layout: unknown
+        The layout whose child widgets you want to show
+    """
+    for i in range(layout.count()):
+        item = layout.itemAt(i)
+        if item.widget():
+            item.widget().show()
+        elif item.layout():
+            smartShowLayoutWidgets(item.layout())
+
+def smartSegoeTitle() -> QFont:
+    font = QFont()
+    font.setFamily("Segoe UI Variable")
+    font.setPixelSize(28)
+    font.setWeight(QFont.Weight.DemiBold)
+    return font
+
+def smartSegoeSubtitle() -> QFont:
+    font = QFont()
+    font.setFamily("Segoe UI Variable")
+    font.setPixelSize(20)
+    font.setWeight(QFont.Weight.DemiBold)
+    return font
+
+def smartSegoeBody() -> QFont:
+    font = QFont()
+    font.setFamily("Segoe UI Variable")
+    font.setPixelSize(14)
+    return font
+
+def smartSegoeCaption() -> QFont:
+    font = QFont()
+    font.setFamily("Segoe UI Variable")
+    font.setPixelSize(12)
+    return font

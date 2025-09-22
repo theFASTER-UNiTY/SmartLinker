@@ -1,0 +1,26 @@
+{
+    "Personalization": {
+        "CustomAccentColorHex": "#ff4caf4f",
+        "AccentMode": "Custom",
+        "AppTheme": "Auto",
+        "EnableMicaEffect": false,
+        "ShowCommandBar": true,
+        "ShowSplash": true,
+        "SplashDuration": 2000
+    },
+    "About": {
+        "CheckUpdatesOnStart": true
+    },
+    "Selector": {
+        "CloseOnBrowserSelect": false
+    },
+    "General": {
+        "MainBrowser": "",
+        "MainBrowserIsManual": false,
+        "MainBrowserPath": ""
+    },
+    "QFluentWidgets": {
+        "ThemeColor": "#ff4caf4f",
+        "ThemeMode": "Dark"
+    }
+}

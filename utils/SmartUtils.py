@@ -21,13 +21,15 @@ import darkdetect
 import subprocess
 # from PyQt5.QtWidgets import QDesktopWidget
 from PyQt6.QtCore import Qt, QFileInfo
-from PyQt6.QtGui import QIcon, QFont
+from PyQt6.QtGui import QIcon, QFont, QColor
 from PyQt6.QtWidgets import QWidget, QFileIconProvider, QFileDialog
 from qfluentwidgets import (
     InfoBar, InfoBarPosition, QConfig, ConfigItem, OptionsConfigItem, OptionsValidator, ColorConfigItem, BoolValidator, qconfig,
     RangeConfigItem, RangeValidator
 )
+from qframelesswindow.utils import getSystemAccentColor
 from colorama import init, Fore, Back, Style
+from shiboken6 import isValid
 
 SmartLinkerID = "theFASTER.SmartLinker"
 SmartLinkerName = "SmartLinker"
@@ -116,6 +118,21 @@ class Config(QConfig):
         "SplashDuration",
         3000,
         RangeValidator(0, 10000)
+    )
+    lastCheckedDate = ConfigItem(
+        "About",
+        "LastCheckedDate",
+        ""
+    )
+    updateAvailable = ConfigItem(
+        "About",
+        "UpdateAvailable",
+        False
+    )
+    updateVersion = ConfigItem(
+        "About",
+        "UpdateVersion",
+        ""
     )
 
 def smartResourcePath(relativePath: str):
@@ -561,20 +578,57 @@ def smartSegoeCaption() -> QFont:
     return font
 
 def smartGetLatestVersionTag():
-        try:
-            print("Checking for latest version...")
-            smartLog("Checking for latest version...")
-            version = subprocess.run(
-                ['git', 'describe', '--tags', '--abbrev=0'],
-                check=True,
-                capture_output=True,
-                text=True
-            )
-            versionTag = version.stdout.strip()
-            print(f"Latest version: {versionTag}")
-            smartLog(f"Latest version: {versionTag}")
-            return versionTag
-        except Exception as e:
-            print(f"{Fore.RED}Something went wrong while checking the latest version: {e}{Style.RESET_ALL}")
-            smartLog(f"ERROR: Failed to check latest version: {e}")
-            return None
+    """ SmartUtils
+    ==========
+    SmartLinker's latest version tag checker
+
+    Returns
+    -------
+    versionTag: str
+        The latest version tag detected
+    """
+    try:
+        print("Checking for latest version...")
+        smartLog("Checking for latest version...")
+        version = subprocess.run(
+            ['git', 'describe', '--tags', '--abbrev=0'],
+            check=True,
+            capture_output=True,
+            text=True
+        )
+        versionTag = version.stdout.strip()
+        print(f"{Fore.GREEN}Latest version: {versionTag}{Style.RESET_ALL}")
+        smartLog(f"Latest version: {versionTag}")
+        return versionTag
+    except Exception as e:
+        print(f"{Fore.RED}Something went wrong while checking the latest version: {e}{Style.RESET_ALL}")
+        smartLog(f"ERROR: Failed to check latest version: {e}")
+        return None
+
+def smartHexConvert(color: str):
+    """ SmartUtils
+    ==========
+    HEX w/ alpha (#AARRGGBB) to HEX w/o alpha (#RRGGBB) color format convertor
+
+    Parameters
+    ----------
+    color: str
+        The color string whose format must be converted.
+    
+    Returns
+    -------
+    newColor: str
+        The re-formatted color string.
+    """
+    try:
+        oldColor = QColor(color)
+        if not isValid(oldColor): raise ValueError("Incorrect HEX color format")
+        
+        red = oldColor.red()
+        green = oldColor.green()
+        blue = oldColor.blue()
+        newColor = f"#{red:02x}{green:02x}{blue:02x}"
+        return newColor
+    except Exception as e:
+        print(f"{Fore.RED}Something went wrong during color conversion: {e}{Style.RESET_ALL}")
+        smartLog(f"ERROR: Failed to convert color format: {e}")

@@ -11,7 +11,6 @@ from qfluentwidgets import (
     FluentWindow, Theme, setTheme, NavigationItemPosition, MessageBox,
     FluentIcon as FICO, SplashScreen
 )
-from qframelesswindow.utils import getSystemAccentColor
 from utils.SmartUtils import *
 from utils.settingsInterface import SettingsInterface as Settings
 from utils.mybrowsersInterface import MyBrowsersInterface as MyBrowsers

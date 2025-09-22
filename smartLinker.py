@@ -96,18 +96,22 @@ class SmartLinkerGUI(FluentWindow):
         self.aboutInterface.aboutResources.qFluentBtn.clicked.connect(lambda: smartOpenURL("https://www.qfluentwidgets.com/"))
         self.aboutInterface.aboutResources.qFluentBtn2.clicked.connect(lambda: smartOpenURL("https://github.com/zhiyiYo/PyQt-Fluent-Widgets"))
         self.aboutInterface.aboutResources.pyQtBtn.clicked.connect(lambda: smartOpenURL("https://www.flaticon.com/"))
-        """ qconfig.themeChangedFinished.connect(lambda: (
-            self.settingInterface.aboutResources.pyQtLabel.setStyleSheet(f"color: {themeColor().name()}"),
-            self.settingInterface.aboutResources.qFluentLabel.setStyleSheet(f"color: {themeColor().name()}"),
-            self.settingInterface.aboutResources.flaticonLabel.setStyleSheet(f"color: {themeColor().name()}"),
-            self.mybrowsInterface.mybrowsScroll.setStyleSheet(self.mybrowsInterface.lightSheetOnDark if theme() == Theme.DARK else self.mybrowsInterface.darkSheetOnLight)
+        qconfig.themeChangedFinished.connect(lambda: (
+            self.mybrowsInterface.updateSnack.setStyleSheet(f'background-color: "{smartHexConvert(cfg.get(cfg.qAccentColor))}"'),
+            self.mybrowsInterface.updateSnackLabel.setStyleSheet("font-size: 20px; font-weight: bold"),
+            self.settingInterface.updateSnack.setStyleSheet(f'background-color: "{smartHexConvert(cfg.get(cfg.qAccentColor))}"'),
+            self.settingInterface.updateSnackLabel.setStyleSheet("font-size: 20px; font-weight: bold"),
+            self.aboutInterface.updateCard.setBackgroundColor(cfg.get(cfg.qAccentColor)) if self.aboutInterface.updateCard else None,
+            self.aboutInterface.updateCard.titleLabel.setStyleSheet("font-size: 20px; font-weight: bold") if self.aboutInterface.updateCard else None
         ))
         qconfig.themeColorChanged.connect(lambda: (
-            self.settingInterface.aboutResources.pyQtLabel.setStyleSheet(f"color: {themeColor().name()}"),
-            self.settingInterface.aboutResources.qFluentLabel.setStyleSheet(f"color: {themeColor().name()}"),
-            self.settingInterface.aboutResources.flaticonLabel.setStyleSheet(f"color: {themeColor().name()}"),
-            self.mybrowsInterface.mybrowsScroll.setStyleSheet(self.mybrowsInterface.lightSheetOnDark if theme() == Theme.DARK else self.mybrowsInterface.darkSheetOnLight)
-        )) """
+            self.mybrowsInterface.updateSnack.setStyleSheet(f'background-color: "{smartHexConvert(cfg.get(cfg.qAccentColor))}"'),
+            self.mybrowsInterface.updateSnackLabel.setStyleSheet("font-size: 20px; font-weight: bold"),
+            self.settingInterface.updateSnack.setStyleSheet(f'background-color: "{smartHexConvert(cfg.get(cfg.qAccentColor))}"'),
+            self.settingInterface.updateSnackLabel.setStyleSheet("font-size: 20px; font-weight: bold"),
+            self.aboutInterface.updateCard.setBackgroundColor(cfg.get(cfg.qAccentColor)) if self.aboutInterface.updateCard else None,
+            self.aboutInterface.updateCard.titleLabel.setStyleSheet("font-size: 20px; font-weight: bold") if self.aboutInterface.updateCard else None
+        ))
 
     def createSubInterfaces(self):
         loop = QEventLoop(self)

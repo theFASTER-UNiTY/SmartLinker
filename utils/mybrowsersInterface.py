@@ -14,7 +14,8 @@ from qfluentwidgets import (
     TitleLabel, SubtitleLabel, SingleDirectionScrollArea, PushButton, BodyLabel,
     theme, Theme, PrimaryPushSettingCard, FluentIcon as FICO, MessageBoxBase, CardWidget,
     IconWidget, ToolButton, LineEdit, CaptionLabel, PushSettingCard, ComboBox,
-    ToolTipFilter, ToolTipPosition, MessageBox, CommandBar, Action, TableWidget
+    ToolTipFilter, ToolTipPosition, MessageBox, CommandBar, Action, TableWidget,
+    PrimaryPushButton
 )
 from utils.SmartUtils import *
 
@@ -171,7 +172,7 @@ class MyBrowsersInterface(QWidget):
         self.updateSnackLabel.setStyleSheet("font-size: 20px; font-weight: bold")
         self.updateSnackLayout.addWidget(self.updateSnackLabel)
         self.updateSnackLayout.addStretch(1)
-        self.updateSnackButton = PushButton(FICO.DOWNLOAD, "Download now")
+        self.updateSnackButton = PrimaryPushButton(FICO.DOWNLOAD, "Download now")
         self.updateSnackLayout.addWidget(self.updateSnackButton)
 
     

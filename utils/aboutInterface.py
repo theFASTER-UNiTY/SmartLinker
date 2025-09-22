@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
 from qfluentwidgets import (
     FluentIcon as FICO, TitleLabel, SingleDirectionScrollArea, IconWidget, CaptionLabel, PrimaryPushSettingCard, SwitchSettingCard,
     HyperlinkCard, SimpleExpandGroupSettingCard, BodyLabel, ExpandGroupSettingCard, ToolButton, ToolTipFilter,
-    ToolTipPosition, CardWidget, PushButton, StrongBodyLabel
+    ToolTipPosition, CardWidget, PrimaryPushButton, StrongBodyLabel
 )
 from utils.SmartUtils import *
 
@@ -238,7 +238,7 @@ class UpdateAvailableCard(CardWidget):
         self.iconWidget = IconWidget(FICO.IOT)
         self.titleLabel = BodyLabel(title, self)
         self.contentLabel = CaptionLabel(content, self)
-        self.downloadButton = PushButton('Download now', self)
+        self.downloadButton = PrimaryPushButton('Download now', self)
 
         self.hBoxLayout = QHBoxLayout(self)
         self.vBoxLayout = QVBoxLayout()

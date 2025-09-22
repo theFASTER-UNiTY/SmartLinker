@@ -11,7 +11,7 @@ from qfluentwidgets import (
     PrimaryPushSettingCard, ExpandGroupSettingCard, PushButton, ComboBox, BodyLabel,
     OptionsSettingCard, SwitchSettingCard, themeColor, ColorDialog, setThemeColor,
     Theme, theme, MessageBox, CardWidget, IconWidget, CaptionLabel, ToolButton, ToolTipFilter,
-    MessageBoxBase, SwitchButton, IndicatorPosition, SpinBox
+    MessageBoxBase, SwitchButton, IndicatorPosition, SpinBox, PrimaryPushButton
 )
 from qframelesswindow.utils import getSystemAccentColor
 from utils.SmartUtils import *
@@ -135,7 +135,7 @@ class SettingsInterface(QWidget):
         self.updateSnackLabel.setStyleSheet("font-size: 20px; font-weight: bold")
         self.updateSnackLayout.addWidget(self.updateSnackLabel)
         self.updateSnackLayout.addStretch(1)
-        self.updateSnackButton = PushButton(FICO.DOWNLOAD, "Download now")
+        self.updateSnackButton = PrimaryPushButton(FICO.DOWNLOAD, "Download now")
         self.updateSnackLayout.addWidget(self.updateSnackButton)
 
     def manualSelect(self, parent):

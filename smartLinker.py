@@ -19,6 +19,8 @@ from utils.smartSelector import SmartSelectorGUI
 
 # =============================================================================
 
+latestVersion = smartGetLatestVersionTag()
+
 class SmartLinkerGUI(FluentWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -39,6 +41,11 @@ class SmartLinkerGUI(FluentWindow):
         self.removeKeysDlg = None
         self.listSelectDlg = None
 
+        if latestVersion:
+            if latestVersion != __version__:
+                cfg.set(cfg.updateAvailable, True)
+                cfg.set(cfg.updateVersion, latestVersion)
+            else: cfg.set(cfg.updateAvailable, False)
         if bool(cfg.get(cfg.showSplash)):
             self.splash = SplashScreen(self.windowIcon(), self)
             self.splash.setIconSize(QSize(105, 105))

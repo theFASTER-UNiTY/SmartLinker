@@ -1,20 +1,20 @@
-__version__ = "1.0.0"
+__version__ = "0.9.0"
 __author__ = "#theF∆STER™ CODE&BU!LD"
 
 # import os
 # import sys
-import subprocess
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QIcon, QColor
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
 from qfluentwidgets import (
     FluentIcon as FICO, TitleLabel, SingleDirectionScrollArea, IconWidget, CaptionLabel, PrimaryPushSettingCard, SwitchSettingCard,
     HyperlinkCard, SimpleExpandGroupSettingCard, BodyLabel, ExpandGroupSettingCard, ToolButton, ToolTipFilter,
-    ToolTipPosition
+    ToolTipPosition, CardWidget, PushButton, StrongBodyLabel
 )
 from utils.SmartUtils import *
 
 qconfig.load(cfg, cfgFilePath)
+latestVersion = smartGetLatestVersionTag()
 
 class AboutInterface(QWidget):
     """ Main class for the 'About' interface """
@@ -22,34 +22,48 @@ class AboutInterface(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("About SmartLinker")
+        self.updateAvailable = False
+        self.lastChecked = f"Last checked: {cfg.get(cfg.lastCheckedDate)}" if cfg.get(cfg.lastCheckedDate) else "Click on the following button to check for the latest updates."
+        self.updateCard = None
 
         if bool(cfg.get(cfg.checkUpdatesOnStart)):
             autoCheckTime = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
-            if not smartGetLatestVersionTag(): self.lastChecked = f"Last checked: {autoCheckTime} (Failed to check for updates)"
-            else: pass
+            if not latestVersion:
+                self.updateAvailable = False
+                self.lastChecked = f"Last checked: {autoCheckTime} (Failed to check for updates)"
+                cfg.set(cfg.lastCheckedDate, autoCheckTime)
+            elif latestVersion != __version__:
+                self.updateAvailable = True
+                self.lastChecked = f"Last checked: {autoCheckTime} (Latest version: {smartGetLatestVersionTag()})"
+                cfg.set(cfg.lastCheckedDate, autoCheckTime)
+                self.updateCard = UpdateAvailableCard("A new update is available for download!", f"You can now download the latest version of {SmartLinkerName} from the official GitHub repository.")
+            else:
+                self.updateAvailable = False
+                self.lastChecked = f"Last checked: {autoCheckTime}"
+                cfg.set(cfg.lastCheckedDate, autoCheckTime)
 
-        mainSetLayout = QVBoxLayout(self)
-        ### mainSetLayout.setContentsMargins(0, 60, 0, 0) # for split fluent window
-        mainSetLayout.setContentsMargins(0, 20, 0, 0) # for fluent window
+        mainAboutLayout = QVBoxLayout(self)
+        ### mainAboutLayout.setContentsMargins(0, 60, 0, 0) # for split fluent window
+        mainAboutLayout.setContentsMargins(0, 20, 0, 0) # for fluent window
         mainTitleLine = QHBoxLayout()
         ### mainTitleLine.setContentsMargins(80, 0, 0, 0) # for split fluent window
         mainTitleLine.setContentsMargins(40, 0, 0, 0) # for split fluent window
-        mainSetLayout.addLayout(mainTitleLine)
+        mainAboutLayout.addLayout(mainTitleLine)
         self.title = TitleLabel("About", self)
         # self.title.setFont(smartSegoeTitle())
         self.title.setAlignment(Qt.AlignmentFlag.AlignTop)
         mainTitleLine.addWidget(self.title)
-        mainSetScroll = SingleDirectionScrollArea(self, Qt.Orientation.Vertical)
-        mainSetLayout.addWidget(mainSetScroll)
-        mainSetScroll.setWidgetResizable(True)
-        mainSetScroll.enableTransparentBackground()
-        mainSetScrollContent = QWidget()
-        mainSetScroll.setWidget(mainSetScrollContent)
-        mainSetScroll.setAlignment(Qt.AlignmentFlag.AlignTop)
-        mainSetScroll.setStyleSheet("background-color: rgba(0, 0, 0, 0); border: 0px solid #FFFFFF")
-        ### mainSetScrollContent.setContentsMargins(80, 0, 80, 0) # for split fluent window
-        mainSetScrollContent.setContentsMargins(40, 0, 40, 0) # for split fluent window
-        layout = QVBoxLayout(mainSetScrollContent)
+        mainAboutScroll = SingleDirectionScrollArea(self, Qt.Orientation.Vertical)
+        mainAboutLayout.addWidget(mainAboutScroll)
+        mainAboutScroll.setWidgetResizable(True)
+        mainAboutScroll.enableTransparentBackground()
+        mainAboutScrollContent = QWidget()
+        mainAboutScroll.setWidget(mainAboutScrollContent)
+        mainAboutScroll.setAlignment(Qt.AlignmentFlag.AlignTop)
+        mainAboutScroll.setStyleSheet("background-color: rgba(0, 0, 0, 0); border: 0px solid #FFFFFF")
+        ### mainAboutScrollContent.setContentsMargins(80, 0, 80, 0) # for split fluent window
+        mainAboutScrollContent.setContentsMargins(40, 0, 40, 0) # for split fluent window
+        layout = QVBoxLayout(mainAboutScrollContent)
         layout.setSpacing(5)
 
         aboutMainLine = QHBoxLayout()
@@ -67,11 +81,13 @@ class AboutInterface(QWidget):
         aboutSubtitle.setStyleSheet("color: gray")
         aboutTextBox.addWidget(aboutTitle)
         aboutTextBox.addWidget(aboutSubtitle)
+        if self.updateAvailable and self.updateCard:
+            layout.addWidget(self.updateCard)
         self.aboutVersion = PrimaryPushSettingCard(
             "Check for updates",
             FICO.INFO,
             "Current version: " + __version__,
-            "Last checked: MM/DD/YYYY HH:mm:ss"
+            self.lastChecked
         )
         layout.addWidget(self.aboutVersion)
         self.aboutCheckUpdates = SwitchSettingCard(
@@ -214,3 +230,37 @@ class ResourcesGroup(ExpandGroupSettingCard):
 
 # HTML icon attribution - <a href="https://www.flaticon.com/free-icons/development" title="development icons">Development icons created by Bharat Icons - Flaticon</a>
 # SmartLinker icon attribution - <a href="https://www.flaticon.com/free-icons/link" title="link icons">Link icons created by Freepik - Flaticon</a>
+
+class UpdateAvailableCard(CardWidget):
+
+    def __init__(self, title, content, parent=None):
+        super().__init__(parent)
+        self.iconWidget = IconWidget(FICO.IOT)
+        self.titleLabel = BodyLabel(title, self)
+        self.contentLabel = CaptionLabel(content, self)
+        self.downloadButton = PushButton('Download now', self)
+
+        self.hBoxLayout = QHBoxLayout(self)
+        self.vBoxLayout = QVBoxLayout()
+
+        self.setFixedHeight(80)
+        self.setBackgroundColor(cfg.get(cfg.qAccentColor))
+        self.isHover = False
+        self.iconWidget.setFixedSize(40, 40)
+        self.titleLabel.setStyleSheet("font-size: 20px; font-weight: bold")
+        self.contentLabel.setTextColor(QColor("#606060"), QColor("#d2d2d2"))
+        # self.downloadButton.setFixedWidth(120)
+
+        self.hBoxLayout.setContentsMargins(20, 11, 20, 11)
+        self.hBoxLayout.setSpacing(15)
+        self.hBoxLayout.addWidget(self.iconWidget)
+
+        self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
+        self.vBoxLayout.setSpacing(0)
+        self.vBoxLayout.addWidget(self.titleLabel, 0, Qt.AlignmentFlag.AlignVCenter)
+        self.vBoxLayout.addWidget(self.contentLabel, 0, Qt.AlignmentFlag.AlignVCenter)
+        self.vBoxLayout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        self.hBoxLayout.addLayout(self.vBoxLayout)
+
+        self.hBoxLayout.addStretch(1)
+        self.hBoxLayout.addWidget(self.downloadButton, 0, Qt.AlignmentFlag.AlignRight)

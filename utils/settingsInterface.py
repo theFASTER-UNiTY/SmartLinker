@@ -121,6 +121,22 @@ class SettingsInterface(QWidget):
         layout.addWidget(self.debugStop)
 
         layout.addStretch(1)
+        
+        self.updateSnack = QWidget()
+        self.updateSnack.setStyleSheet(f'background-color: "{smartHexConvert(cfg.get(cfg.qAccentColor))}"')
+        if bool(cfg.get(cfg.updateAvailable)): mainSetLayout.addWidget(self.updateSnack)
+        self.updateSnackLayout = QHBoxLayout(self.updateSnack)
+        self.updateSnackLayout.setContentsMargins(20, 10, 20, 10)
+        self.updateSnackIcon = IconWidget(FICO.IOT)
+        self.updateSnackIcon.setFixedSize(32, 32)
+        self.updateSnackLayout.setSpacing(20)
+        self.updateSnackLayout.addWidget(self.updateSnackIcon)
+        self.updateSnackLabel = BodyLabel("A new update is available for download!")
+        self.updateSnackLabel.setStyleSheet("font-size: 20px; font-weight: bold")
+        self.updateSnackLayout.addWidget(self.updateSnackLabel)
+        self.updateSnackLayout.addStretch(1)
+        self.updateSnackButton = PushButton(FICO.DOWNLOAD, "Download now")
+        self.updateSnackLayout.addWidget(self.updateSnackButton)
 
     def manualSelect(self, parent):
         self.manualPath = smartBrowseFileDialog(parent, "Select your main browser from storage", "", "Executables (*.exe)")

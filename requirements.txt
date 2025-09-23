@@ -1,7 +1,8 @@
-psutil
+colorama
 darkdetect
+psutil
+pygame
 PyQt6
 qfluentwidgets
-colorama
 qframelesswindow
 win32api

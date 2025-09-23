@@ -1,0 +1,7 @@
+psutil
+darkdetect
+PyQt6
+qfluentwidgets
+colorama
+qframelesswindow
+win32api

@@ -20,6 +20,7 @@ from utils.smartSelector import SmartSelectorGUI
 class SmartLinkerGUI(FluentWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
+        print(smartConsoleScript())
         self.centerWindow()
         self.setWindowTitle("SmartLinker - Mastering URL Handling")
         self.setWindowIcon(QIcon(smartResourcePath("resources/images/icons/icon.ico")))
@@ -34,8 +35,8 @@ class SmartLinkerGUI(FluentWindow):
         cfg.set(cfg.qAccentColor, getSystemAccentColor())
         smartEmptyLog()
 
+        latestVersion = ""
         if bool(cfg.get(cfg.checkUpdatesOnStart)): latestVersion = smartGetLatestVersionTag()
-        else: latestVersion = None
         self.myBrowsers = smartLoadBrowsers()
         self.removeKeysDlg = None
         self.listSelectDlg = None
@@ -256,7 +257,6 @@ class SmartLinkerGUI(FluentWindow):
 # =============================================================================
 
 if __name__ == "__main__":
-    print(smartConsoleScript())
     app = QApplication(sys.argv)
     if len(sys.argv) > 1: appWindow = SmartSelectorGUI()
     else:

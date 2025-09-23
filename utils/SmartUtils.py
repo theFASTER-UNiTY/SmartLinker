@@ -6,7 +6,7 @@ basic and technical needs.
 
 :Copyright: © 2025 by #theF∆STER™ CODE&BU!LD.
 """
-__version__ = "0.9.0"
+__version__ = "1.0.0"
 __author__ = "#theF∆STER™ CODE&BU!LD"
 # =========================================================
 import os

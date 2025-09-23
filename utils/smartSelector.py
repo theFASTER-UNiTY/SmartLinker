@@ -17,6 +17,8 @@ from qframelesswindow.utils import getSystemAccentColor
 from colorama import Fore, Style
 from utils.SmartUtils import *
 
+# ===========================================================================================================
+
 myBrowsList = smartLoadBrowsers()
 if len(sys.argv) > 1: requestURL = sys.argv[1]
 cfg.set(cfg.qAccentColor, getSystemAccentColor())
@@ -58,8 +60,7 @@ class CustomTitleBar(TitleBar):
 class SmartSelectorGUI(FramelessWindow):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        # self.move((smartScreenWidth // 2) - (self.width() // 2), (smartScreenHeight // 2) - (self.height() // 2))
-        # self.removeMaximizeFlags()
+        print(smartConsoleScript())
         self.lightSheetOnDark: str = "SingleDirectionScrollArea {background-color: rgba(242, 242, 242, 0.05); border: 1px solid rgba(242, 242, 242, 0.25)}"
         self.darkSheetOnLight: str = "SingleDirectionScrollArea {background-color: rgba(32, 32, 32, 0.05); border: 1px solid rgba(32, 32, 32, 0.25)}"
         self.runningBrowsers = 0

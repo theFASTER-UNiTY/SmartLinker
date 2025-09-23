@@ -52,7 +52,6 @@ class Config(QConfig):
     appTheme = OptionsConfigItem("Personalization", "AppTheme", "Auto", OptionsValidator(["Light", "Dark", "Auto"]))
     accentMode = OptionsConfigItem("Personalization", "AccentMode", "System", OptionsValidator(["System", "Custom"]))
     accentColor = ColorConfigItem("Personalization", "CustomAccentColorHex", "#ff793bcc")
-    qAccentColor = ColorConfigItem("QFluentWidgets", "ThemeColor", "#ff25d9e6")
     micaEffect = ConfigItem("Personalization", "EnableMicaEffect", True, BoolValidator())
     showCommandBar = ConfigItem("Personalization", "ShowCommandBar", False, BoolValidator())
     showSplash = ConfigItem("Personalization", "ShowSplash", True, BoolValidator())
@@ -60,11 +59,13 @@ class Config(QConfig):
     enableAcrylicOnSidebar = ConfigItem("Personalization", "EnableAcrylicOnSidebar", True, BoolValidator())
     showUpdateBanners = ConfigItem("Personalization", "ShowUpdateBanners", True, BoolValidator())
     enableSoundEffects = ConfigItem("Sound", "EnableSoundEffects", False, BoolValidator())
+    startupSFXPath = ConfigItem("Sound", "StartupSFX", "")
     closeOnBrowserSelect = ConfigItem("Selector", "CloseOnBrowserSelect", False, BoolValidator())
     checkUpdatesOnStart = ConfigItem("About", "CheckUpdatesOnStart", True, BoolValidator())
     lastCheckedDate = ConfigItem("About", "LastCheckedDate", "")
     updateAvailable = ConfigItem("About", "UpdateAvailable", False)
     updateVersion = ConfigItem("About", "UpdateVersion", "")
+    qAccentColor = ColorConfigItem("QFluentWidgets", "ThemeColor", "#ff25d9e6")
 
 def smartResourcePath(relativePath: str):
     """ SmartUtils

@@ -120,6 +120,12 @@ class Config(QConfig):
         3000,
         RangeValidator(0, 10000)
     )
+    showUpdateBanners = ConfigItem(
+        "Personalization",
+        "ShowUpdateBanners",
+        True,
+        BoolValidator()
+    )
     lastCheckedDate = ConfigItem(
         "About",
         "LastCheckedDate",

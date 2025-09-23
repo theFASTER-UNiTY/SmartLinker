@@ -78,7 +78,7 @@ class SettingsInterface(QWidget):
         layout.addWidget(self.optionAccentColor)
         layout.addWidget(self.widgetDef.optionMicaEffect)
         layout.addWidget(self.widgetDef.optionShowCommandBar)
-        self.optionShowSplash = FlagsSettingGroup()
+        self.optionShowSplash = FlagsSettingGroup(self)
         layout.addWidget(self.optionShowSplash)
 
         # Smart Selector
@@ -676,7 +676,7 @@ class FlagsSettingGroup(ExpandGroupSettingCard):
         super().__init__(
             FICO.FLAG,
             "Customize appearance flags",
-            f"Customize the {SmartLinkerName} experience by modifying visual features as you wish."
+            f"Customize the {SmartLinkerName} experience by modifying visual features as you wish. (* Restart required)"
         )
 
         # First group - Splash toggle
@@ -697,21 +697,21 @@ class FlagsSettingGroup(ExpandGroupSettingCard):
         self.splashDurationSpin.setEnabled(cfg.get(cfg.showSplash))
 
         # Third group - Acrylic sidebar
-        self.sidebarAcrylicLabel = BodyLabel("Enable acrylic effect on sidebar (when small window)")
+        self.sidebarAcrylicLabel = BodyLabel("Enable acrylic effect on sidebar (when small window)*")
         self.sidebarAcrylicSwitch = SwitchButton(parent=self, indicatorPos=IndicatorPosition.RIGHT)
         self.sidebarAcrylicSwitch.setChecked(cfg.get(cfg.enableAcrylicOnSidebar))
         self.sidebarAcrylicSwitch.checkedChanged.connect(lambda checked: (
             cfg.set(cfg.enableAcrylicOnSidebar, checked),
-            smartInfoNotify(self, "Restart required", f"You need to relaunch {SmartLinkerName} for the changes to take effect.")
+            smartInfoNotify(parent, "Restart required", f"You need to relaunch {SmartLinkerName} for the changes to take effect.")
         ))
         
         # Fourth group - Update banners
-        self.updateBannerSwitchLabel = BodyLabel("Enable update banners display")
+        self.updateBannerSwitchLabel = BodyLabel("Enable update banners display*")
         self.updateBannerSwitchButton = SwitchButton(parent=self, indicatorPos=IndicatorPosition.RIGHT)
         self.updateBannerSwitchButton.setChecked(cfg.get(cfg.showUpdateBanners))
         self.updateBannerSwitchButton.checkedChanged.connect(lambda checked: (
             cfg.set(cfg.showUpdateBanners, checked),
-            smartInfoNotify(self, "Restart required", f"You need to relaunch {SmartLinkerName} for the changes to take effect.")
+            smartInfoNotify(parent, "Restart required", f"You need to relaunch {SmartLinkerName} for the changes to take effect.")
         ))
 
         # Adjust the internal layout

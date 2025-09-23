@@ -126,6 +126,12 @@ class Config(QConfig):
         True,
         BoolValidator()
     )
+    enableAcrylicOnSidebar = ConfigItem(
+        "Personalization",
+        "EnableAcrylicOnSidebar",
+        True,
+        BoolValidator()
+    )
     lastCheckedDate = ConfigItem(
         "About",
         "LastCheckedDate",

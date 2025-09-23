@@ -28,7 +28,7 @@ class SmartLinkerGUI(FluentWindow):
         self.setMinimumWidth(950)
         self.move(40, 25)
         self.setStyleSheet('font-family: "Segoe UI Variable", "Segoe UI", sans-serif;')
-        self.navigationInterface.setAcrylicEnabled(True)
+        self.navigationInterface.setAcrylicEnabled(cfg.get(cfg.enableAcrylicOnSidebar))
         if cfg.get(cfg.appTheme) == "Dark": setTheme(Theme.DARK)
         elif cfg.get(cfg.appTheme) == "Light": setTheme(Theme.LIGHT)
         else: setTheme(Theme.AUTO)
@@ -126,7 +126,6 @@ class SmartLinkerGUI(FluentWindow):
             self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smartGetRed(color)}, {smartGetGreen(color)}, {smartGetBlue(color)}, 0.25)}}"),
             self.aboutInterface.updateCard.setBackgroundColor(QColor(smartGetRed(color), smartGetGreen(color), smartGetBlue(color), 127)) if self.aboutInterface.updateCard else None, # type: ignore
         ))
-        else: print("Nope")
 
     def createSubInterfaces(self):
         loop = QEventLoop(self)

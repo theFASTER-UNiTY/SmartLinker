@@ -676,7 +676,7 @@ class FlagsSettingGroup(ExpandGroupSettingCard):
         super().__init__(
             FICO.FLAG,
             "Customize appearance flags",
-            f"Customize the {SmartLinkerName} experience by modifying visual elements of the features as you wish."
+            f"Customize the {SmartLinkerName} experience by modifying visual features as you wish."
         )
 
         # First group - Splash toggle
@@ -687,7 +687,6 @@ class FlagsSettingGroup(ExpandGroupSettingCard):
             self.splashDurationSpin.setEnabled(checked),
             cfg.set(cfg.showSplash, checked)
         ))
-        # self.switchButton.setOnText("On")
 
         # Second group - Splash duration
         self.splashDurationLabel = BodyLabel("Set display duration (in milliseconds)")
@@ -697,7 +696,16 @@ class FlagsSettingGroup(ExpandGroupSettingCard):
         self.splashDurationSpin.valueChanged.connect(lambda value: cfg.set(cfg.splashDuration, value))
         self.splashDurationSpin.setEnabled(cfg.get(cfg.showSplash))
 
-        # Third group - Update banners
+        # Third group - Acrylic sidebar
+        self.sidebarAcrylicLabel = BodyLabel("Enable acrylic effect on sidebar (when small window)")
+        self.sidebarAcrylicSwitch = SwitchButton(parent=self, indicatorPos=IndicatorPosition.RIGHT)
+        self.sidebarAcrylicSwitch.setChecked(cfg.get(cfg.enableAcrylicOnSidebar))
+        self.sidebarAcrylicSwitch.checkedChanged.connect(lambda checked: (
+            cfg.set(cfg.enableAcrylicOnSidebar, checked),
+            smartInfoNotify(self, "Restart required", f"You need to relaunch {SmartLinkerName} for the changes to take effect.")
+        ))
+        
+        # Fourth group - Update banners
         self.updateBannerSwitchLabel = BodyLabel("Enable update banners display")
         self.updateBannerSwitchButton = SwitchButton(parent=self, indicatorPos=IndicatorPosition.RIGHT)
         self.updateBannerSwitchButton.setChecked(cfg.get(cfg.showUpdateBanners))
@@ -713,6 +721,7 @@ class FlagsSettingGroup(ExpandGroupSettingCard):
         # Add each group to the setting card
         self.add(self.splashSwitchLabel, self.splashSwitchButton)
         self.add(self.splashDurationLabel, self.splashDurationSpin)
+        self.add(self.sidebarAcrylicLabel, self.sidebarAcrylicSwitch)
         self.add(self.updateBannerSwitchLabel, self.updateBannerSwitchButton)
 
     def add(self, label, widget):

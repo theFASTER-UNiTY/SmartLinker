@@ -78,7 +78,7 @@ class SettingsInterface(QWidget):
         layout.addWidget(self.optionAccentColor)
         layout.addWidget(self.widgetDef.optionMicaEffect)
         layout.addWidget(self.widgetDef.optionShowCommandBar)
-        self.optionShowSplash = SplashSettingGroup()
+        self.optionShowSplash = FlagsSettingGroup()
         layout.addWidget(self.optionShowSplash)
 
         # Smart Selector
@@ -122,7 +122,7 @@ class SettingsInterface(QWidget):
         self.updateSnack = QWidget()
         self.updateSnack.setObjectName("SSnackBase")
         self.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smartConvertToRGB(themeColor().name())}, 0.25)}}")
-        if bool(cfg.get(cfg.updateAvailable)): mainSetLayout.addWidget(self.updateSnack)
+        if bool(cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners)): mainSetLayout.addWidget(self.updateSnack)
         self.updateSnackLayout = QHBoxLayout(self.updateSnack)
         self.updateSnackLayout.setContentsMargins(20, 10, 20, 10)
         self.updateSnackIcon = IconWidget(FICO.IOT)
@@ -669,41 +669,51 @@ class ThemeColorSelectGroup(ExpandGroupSettingCard):
             cfg.set(cfg.accentMode, "System")
             setThemeColor(getSystemAccentColor(), save=True)
 
-class SplashSettingGroup(ExpandGroupSettingCard):
-    """ Class for SmartLinker's splash screen configuration in the Look & Feel section """
+class FlagsSettingGroup(ExpandGroupSettingCard):
+    """ Class for SmartLinker's appearance flags configuration in the Look & Feel section """
 
     def __init__(self, parent=None):
         super().__init__(
             FICO.FLAG,
-            "Toggle the splash flag",
-            f"If enabled, a splash screen is displayed when opening the {SmartLinkerName} window."
+            "Customize appearance flags",
+            f"Customize the {SmartLinkerName} experience by modifying visual elements of the features as you wish."
         )
 
-        # First group
-        self.switchLabel = BodyLabel("Enable splash screen display")
-        self.switchButton = SwitchButton(parent=self, indicatorPos=IndicatorPosition.RIGHT)
-        self.switchButton.setChecked(cfg.get(cfg.showSplash))
-        self.switchButton.checkedChanged.connect(lambda checked: (
-            self.durationSpin.setEnabled(checked),
+        # First group - Splash toggle
+        self.splashSwitchLabel = BodyLabel("Enable splash screen display")
+        self.splashSwitchButton = SwitchButton(parent=self, indicatorPos=IndicatorPosition.RIGHT)
+        self.splashSwitchButton.setChecked(cfg.get(cfg.showSplash))
+        self.splashSwitchButton.checkedChanged.connect(lambda checked: (
+            self.splashDurationSpin.setEnabled(checked),
             cfg.set(cfg.showSplash, checked)
         ))
         # self.switchButton.setOnText("On")
 
-        # Second group
-        self.durationLabel = BodyLabel("Set display duration (in milliseconds)")
-        self.durationSpin = SpinBox()
-        self.durationSpin.setRange(0, 10000)
-        self.durationSpin.setValue(cfg.get(cfg.splashDuration))
-        self.durationSpin.valueChanged.connect(lambda value: cfg.set(cfg.splashDuration, value))
-        self.durationSpin.setEnabled(cfg.get(cfg.showSplash))
+        # Second group - Splash duration
+        self.splashDurationLabel = BodyLabel("Set display duration (in milliseconds)")
+        self.splashDurationSpin = SpinBox()
+        self.splashDurationSpin.setRange(0, 10000)
+        self.splashDurationSpin.setValue(cfg.get(cfg.splashDuration))
+        self.splashDurationSpin.valueChanged.connect(lambda value: cfg.set(cfg.splashDuration, value))
+        self.splashDurationSpin.setEnabled(cfg.get(cfg.showSplash))
+
+        # Third group - Update banners
+        self.updateBannerSwitchLabel = BodyLabel("Enable update banners display")
+        self.updateBannerSwitchButton = SwitchButton(parent=self, indicatorPos=IndicatorPosition.RIGHT)
+        self.updateBannerSwitchButton.setChecked(cfg.get(cfg.showUpdateBanners))
+        self.updateBannerSwitchButton.checkedChanged.connect(lambda checked: (
+            cfg.set(cfg.showUpdateBanners, checked),
+            smartInfoNotify(self, "Restart required", f"You need to relaunch {SmartLinkerName} for the changes to take effect.")
+        ))
 
         # Adjust the internal layout
         self.viewLayout.setContentsMargins(0, 0, 0, 0)
         self.viewLayout.setSpacing(0)
 
         # Add each group to the setting card
-        self.add(self.switchLabel, self.switchButton)
-        self.add(self.durationLabel, self.durationSpin)
+        self.add(self.splashSwitchLabel, self.splashSwitchButton)
+        self.add(self.splashDurationLabel, self.splashDurationSpin)
+        self.add(self.updateBannerSwitchLabel, self.updateBannerSwitchButton)
 
     def add(self, label, widget):
         w = QWidget()

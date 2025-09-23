@@ -157,7 +157,7 @@ class MyBrowsersInterface(QWidget):
         self.updateSnack = QWidget()
         self.updateSnack.setObjectName("BSnackBase")
         self.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smartConvertToRGB(themeColor().name())}, 0.25)}}")
-        if bool(cfg.get(cfg.updateAvailable)): mainBrowLayout.addWidget(self.updateSnack)
+        if bool(cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners)): mainBrowLayout.addWidget(self.updateSnack)
         self.updateSnackLayout = QHBoxLayout(self.updateSnack)
         self.updateSnackLayout.setContentsMargins(20, 10, 20, 10)
         self.updateSnackIcon = IconWidget(FICO.IOT)

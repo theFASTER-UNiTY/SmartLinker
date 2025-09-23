@@ -6,7 +6,8 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QApplication
 from qfluentwidgets import (
     FluentWindow, Theme, setTheme, NavigationItemPosition, MessageBox,
-    FluentIcon as FICO, SplashScreen, themeColor, theme
+    FluentIcon as FICO, SplashScreen, themeColor, theme, IconInfoBadge,
+    InfoBadgePosition
 )
 from utils.SmartUtils import *
 from utils.settingsInterface import SettingsInterface as Settings
@@ -26,22 +27,19 @@ class SmartLinkerGUI(FluentWindow):
         self.setMinimumWidth(950)
         self.move(40, 25)
         self.setStyleSheet('font-family: "Segoe UI Variable", "Segoe UI", sans-serif;')
+        self.navigationInterface.setAcrylicEnabled(True)
         if cfg.get(cfg.appTheme) == "Dark": setTheme(Theme.DARK)
         elif cfg.get(cfg.appTheme) == "Light": setTheme(Theme.LIGHT)
         else: setTheme(Theme.AUTO)
-        self.myBrowsers = smartLoadBrowsers()
         cfg.set(cfg.qAccentColor, getSystemAccentColor())
-        latestVersion = smartGetLatestVersionTag()
         smartEmptyLog()
 
+        if bool(cfg.get(cfg.checkUpdatesOnStart)): latestVersion = smartGetLatestVersionTag()
+        else: latestVersion = None
+        self.myBrowsers = smartLoadBrowsers()
         self.removeKeysDlg = None
         self.listSelectDlg = None
 
-        if latestVersion:
-            if Version(latestVersion) > Version(SmartLinkerVersion):
-                cfg.set(cfg.updateAvailable, True)
-                cfg.set(cfg.updateVersion, latestVersion)
-            else: cfg.set(cfg.updateAvailable, False)
         if bool(cfg.get(cfg.showSplash)):
             self.splash = SplashScreen(self.windowIcon(), self)
             self.splash.setIconSize(QSize(105, 105))
@@ -57,6 +55,27 @@ class SmartLinkerGUI(FluentWindow):
             self.addSubInterface(self.aboutInterface, FICO.INFO, "About", NavigationItemPosition.BOTTOM)
             self.show()
         self.setMicaEffectEnabled(self.settingInterface.widgetDef.optionMicaEffect.switchButton.isChecked())
+        
+        if latestVersion:
+            if Version(latestVersion) > Version(SmartLinkerVersion):
+                cfg.set(cfg.updateAvailable, True)
+                cfg.set(cfg.updateVersion, latestVersion)
+                aboutItem = self.navigationInterface.widget(self.aboutInterface.objectName())
+                IconInfoBadge.attension(
+                    FICO.SYNC,
+                    aboutItem.parent(),
+                    aboutItem,
+                    InfoBadgePosition.NAVIGATION_ITEM
+                )
+            else: cfg.set(cfg.updateAvailable, False)
+        elif bool(cfg.get(cfg.updateAvailable)):
+            aboutItem = self.navigationInterface.widget(self.aboutInterface.objectName())
+            IconInfoBadge.attension(
+                FICO.SYNC,
+                aboutItem.parent(),
+                aboutItem,
+                InfoBadgePosition.NAVIGATION_ITEM
+            )
         
         """ self.settingInterface.widgetDef.optionSetAsDefault.button.clicked.connect(lambda: (
             self.settingInterface.widgetDef.optionSetAsDefault.button.setEnabled(False),

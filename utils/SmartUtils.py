@@ -6,7 +6,7 @@ basic and technical needs.
 
 :Copyright: © 2025 by #theF∆STER™ CODE&BU!LD.
 """
-__version__ = "1.1.0"
+__version__ = "0.9.0"
 __author__ = "#theF∆STER™ CODE&BU!LD"
 # =========================================================
 import os
@@ -598,7 +598,7 @@ def smartGetLatestVersionTag():
             text=True
         )
         versionTag = version.stdout.strip()
-        print(f"{Fore.GREEN}Latest version: {versionTag}{Style.RESET_ALL}")
+        print(f"{Fore.BLUE}Latest version: {versionTag}{Style.RESET_ALL}")
         smartLog(f"Latest version: {versionTag}")
         return versionTag
     except Exception as e:

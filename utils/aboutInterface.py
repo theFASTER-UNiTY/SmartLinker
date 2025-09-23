@@ -37,6 +37,7 @@ class AboutInterface(QWidget):
                 self.updateAvailable = False
                 self.lastChecked = f"Last checked: {autoCheckTime}"
                 cfg.set(cfg.lastCheckedDate, autoCheckTime)
+        elif bool(cfg.get(cfg.updateAvailable)): self.updateCard = UpdateAvailableCard("A new update is available for download!", f"You can now download the latest version of {SmartLinkerName} from the official GitHub repository.")
 
         mainAboutLayout = QVBoxLayout(self)
         ### mainAboutLayout.setContentsMargins(0, 60, 0, 0) # for split fluent window
@@ -77,7 +78,7 @@ class AboutInterface(QWidget):
         aboutSubtitle.setStyleSheet("color: gray")
         aboutTextBox.addWidget(aboutTitle)
         aboutTextBox.addWidget(aboutSubtitle)
-        if self.updateAvailable and self.updateCard:
+        if (self.updateAvailable and self.updateCard) or bool(cfg.get(cfg.updateAvailable)):
             layout.addWidget(self.updateCard)
         self.aboutVersion = PrimaryPushSettingCard(
             "Check for updates",

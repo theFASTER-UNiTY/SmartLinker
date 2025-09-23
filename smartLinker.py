@@ -16,8 +16,6 @@ from utils.smartSelector import SmartSelectorGUI
 
 # =============================================================================
 
-latestVersion = smartGetLatestVersionTag()
-
 class SmartLinkerGUI(FluentWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -33,6 +31,7 @@ class SmartLinkerGUI(FluentWindow):
         else: setTheme(Theme.AUTO)
         self.myBrowsers = smartLoadBrowsers()
         cfg.set(cfg.qAccentColor, getSystemAccentColor())
+        latestVersion = smartGetLatestVersionTag()
         smartEmptyLog()
 
         self.removeKeysDlg = None
@@ -94,13 +93,15 @@ class SmartLinkerGUI(FluentWindow):
         self.aboutInterface.aboutResources.qFluentBtn2.clicked.connect(lambda: smartOpenURL("https://github.com/zhiyiYo/PyQt-Fluent-Widgets"))
         self.aboutInterface.aboutResources.pyQtBtn.clicked.connect(lambda: smartOpenURL("https://www.flaticon.com/"))
         qconfig.themeChangedFinished.connect(lambda theme=theme(): (
-            self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smartGetRed(themeColor())}, {smartGetGreen(themeColor())}, {smartGetBlue(themeColor())}, 0.5)}}"), # type: ignore
-            self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smartGetRed(themeColor())}, {smartGetGreen(themeColor())}, {smartGetBlue(themeColor())}, 0.5)}}"), # type: ignore
-            self.aboutInterface.updateCard.setBackgroundColor(QColor(smartGetRed(themeColor()), smartGetGreen(themeColor()), smartGetBlue(themeColor()), 127)) if self.aboutInterface.updateCard else print("None"), # type: ignore
+            self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smartGetRed(themeColor())}, {smartGetGreen(themeColor())}, {smartGetBlue(themeColor())}, 0.25)}}"), # type: ignore
+            self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smartGetRed(themeColor())}, {smartGetGreen(themeColor())}, {smartGetBlue(themeColor())}, 0.25)}}"), # type: ignore
+            self.aboutInterface.updateCard.setBackgroundColor(QColor(smartGetRed(themeColor()), smartGetGreen(themeColor()), smartGetBlue(themeColor()), 127)) if self.aboutInterface.updateCard else None, # type: ignore
         ))
         qconfig.themeColorChanged.connect(lambda color=themeColor(): (
-            self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smartGetRed(color)}, {smartGetGreen(color)}, {smartGetBlue(color)}, 0.5)}}"), # type: ignore
-            self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smartGetRed(color)}, {smartGetGreen(color)}, {smartGetBlue(color)}, 0.5)}}"), # type: ignore
+            self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smartGetRed(color)}, {smartGetGreen(color)}, {smartGetBlue(color)}, 0.25)}}"),
+            print("Nothing here..."), # type: ignore
+            self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smartGetRed(color)}, {smartGetGreen(color)}, {smartGetBlue(color)}, 0.25)}}"),
+            print("Nothing here..."), # type: ignore
             self.aboutInterface.updateCard.setBackgroundColor(QColor(smartGetRed(color), smartGetGreen(color), smartGetBlue(color), 127)) if self.aboutInterface.updateCard else None, # type: ignore
         ))
 
@@ -236,8 +237,8 @@ class SmartLinkerGUI(FluentWindow):
 # =============================================================================
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
     print(smartConsoleScript())
+    app = QApplication(sys.argv)
     if len(sys.argv) > 1: appWindow = SmartSelectorGUI()
     else:
         appWindow = SmartLinkerGUI()

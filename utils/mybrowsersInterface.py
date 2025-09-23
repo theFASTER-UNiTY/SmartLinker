@@ -156,7 +156,7 @@ class MyBrowsersInterface(QWidget):
         
         self.updateSnack = QWidget()
         self.updateSnack.setObjectName("BSnackBase")
-        self.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smartConvertToRGB(themeColor().name())}, 0.2)}}")
+        self.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smartConvertToRGB(themeColor().name())}, 0.25)}}")
         if bool(cfg.get(cfg.updateAvailable)): mainBrowLayout.addWidget(self.updateSnack)
         self.updateSnackLayout = QHBoxLayout(self.updateSnack)
         self.updateSnackLayout.setContentsMargins(20, 10, 20, 10)

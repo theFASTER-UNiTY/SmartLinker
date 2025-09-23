@@ -5,7 +5,7 @@
   SmartLinker
 </h1>
 <p align="center">
-  A Fluent design URL redirection handler.
+  A Fluent design-based URL redirection handler.
 </p>
 
 <div align="center">

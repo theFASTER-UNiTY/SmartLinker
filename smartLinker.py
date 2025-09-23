@@ -35,8 +35,8 @@ class SmartLinkerGUI(FluentWindow):
         cfg.set(cfg.qAccentColor, getSystemAccentColor())
         smartEmptyLog()
 
-        latestVersion = ""
-        if bool(cfg.get(cfg.checkUpdatesOnStart)): latestVersion = smartGetLatestVersionTag()
+        self.latestVersion = ""
+        if bool(cfg.get(cfg.checkUpdatesOnStart)): self.latestVersion = smartGetLatestVersionTag()
         self.myBrowsers = smartLoadBrowsers()
         self.removeKeysDlg = None
         self.listSelectDlg = None
@@ -56,11 +56,10 @@ class SmartLinkerGUI(FluentWindow):
             self.addSubInterface(self.aboutInterface, FICO.INFO, "About", NavigationItemPosition.BOTTOM)
             self.show()
         self.setMicaEffectEnabled(self.settingInterface.widgetDef.optionMicaEffect.switchButton.isChecked())
-        
-        if latestVersion:
-            if Version(latestVersion) > Version(SmartLinkerVersion):
+        if self.latestVersion:
+            if Version(self.latestVersion) > Version(SmartLinkerVersion):
                 cfg.set(cfg.updateAvailable, True)
-                cfg.set(cfg.updateVersion, latestVersion)
+                cfg.set(cfg.updateVersion, self.latestVersion)
                 aboutItem = self.navigationInterface.widget(self.aboutInterface.objectName())
                 IconInfoBadge.attension(
                     FICO.SYNC,
@@ -117,13 +116,17 @@ class SmartLinkerGUI(FluentWindow):
             self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smartGetRed(themeColor())}, {smartGetGreen(themeColor())}, {smartGetBlue(themeColor())}, 0.25)}}"), # type: ignore
             self.aboutInterface.updateCard.setBackgroundColor(QColor(smartGetRed(themeColor()), smartGetGreen(themeColor()), smartGetBlue(themeColor()), 127)) if self.aboutInterface.updateCard else None, # type: ignore
         ))
-        qconfig.themeColorChanged.connect(lambda color=themeColor(): (
+        self.settingInterface.optionAccentColor.accentCombo.currentTextChanged.connect(lambda text: (
+            self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smartGetRed(cfg.get(cfg.accentColor) if text == "Custom accent color" else getSystemAccentColor())}, {smartGetGreen(cfg.get(cfg.accentColor) if text == "Custom accent color" else getSystemAccentColor())}, {smartGetBlue(cfg.get(cfg.accentColor) if text == "Custom accent color" else getSystemAccentColor())}, 0.25)}}"),
+            self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smartGetRed(cfg.get(cfg.accentColor) if text == "Custom accent color" else getSystemAccentColor())}, {smartGetGreen(cfg.get(cfg.accentColor) if text == "Custom accent color" else getSystemAccentColor())}, {smartGetBlue(cfg.get(cfg.accentColor) if text == "Custom accent color" else getSystemAccentColor())}, 0.25)}}"),
+            self.aboutInterface.updateCard.setBackgroundColor(QColor(smartGetRed(cfg.get(cfg.accentColor) if text == "Custom accent color" else getSystemAccentColor()), smartGetGreen(cfg.get(cfg.accentColor) if text == "Custom accent color" else getSystemAccentColor()), smartGetBlue(cfg.get(cfg.accentColor) if text == "Custom accent color" else getSystemAccentColor()), 127)) if self.aboutInterface.updateCard else None, # type: ignore
+        ))
+        if self.settingInterface.optionCustomAccentColorDlg: self.settingInterface.optionCustomAccentColorDlg.colorChanged.connect(lambda color: (
             self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smartGetRed(color)}, {smartGetGreen(color)}, {smartGetBlue(color)}, 0.25)}}"),
-            print("Nothing here..."), # type: ignore
             self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smartGetRed(color)}, {smartGetGreen(color)}, {smartGetBlue(color)}, 0.25)}}"),
-            print("Nothing here..."), # type: ignore
             self.aboutInterface.updateCard.setBackgroundColor(QColor(smartGetRed(color), smartGetGreen(color), smartGetBlue(color), 127)) if self.aboutInterface.updateCard else None, # type: ignore
         ))
+        else: print("Nope")
 
     def createSubInterfaces(self):
         loop = QEventLoop(self)

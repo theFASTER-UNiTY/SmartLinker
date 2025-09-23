@@ -19,6 +19,7 @@ import psutil
 import datetime
 import darkdetect
 import subprocess
+import pygame
 from PyQt6.QtCore import Qt, QFileInfo
 from PyQt6.QtGui import QIcon, QFont, QColor
 from PyQt6.QtWidgets import QWidget, QFileIconProvider, QFileDialog
@@ -37,116 +38,33 @@ SmartLinkerVersion = __version__
 SmartLinkerAuthor = __author__
 PURPLE = "\x1b[35m"
 init()
+pygame.init()
+pygame.mixer.init()
 
 class Config(QConfig):
     """ SmartUtils
     ==========
     Global SmartLinker configuration handling class
     """
-    mainBrowser = ConfigItem(
-        "General",
-        "MainBrowser",
-        ""
-    )
-    mainBrowserPath = ConfigItem(
-        "General",
-        "MainBrowserPath",
-        ""
-    )
-    mainBrowserIsManual = ConfigItem(
-        "General",
-        "MainBrowserIsManual",
-        False,
-        BoolValidator()
-    )
-    appTheme = OptionsConfigItem(
-        "Personalization",
-        "AppTheme",
-        "Auto",
-        OptionsValidator(["Light", "Dark", "Auto"]),
-        restart=False
-    )
-    accentMode = OptionsConfigItem(
-        "Personalization",
-        "AccentMode",
-        "System",
-        OptionsValidator(["System", "Custom"]),
-        restart=False
-    )
-    accentColor = ColorConfigItem(
-        "Personalization",
-        "CustomAccentColorHex",
-        "#ff793bcc"
-    )
-    qAccentColor = ColorConfigItem(
-        "QFluentWidgets",
-        "ThemeColor",
-        "#ff25d9e6",
-        False
-    )
-    micaEffect = ConfigItem(
-        "Personalization",
-        "EnableMicaEffect",
-        True,
-        BoolValidator()
-    )
-    checkUpdatesOnStart = ConfigItem(
-        "About",
-        "CheckUpdatesOnStart",
-        True,
-        BoolValidator()
-    )
-    closeOnBrowserSelect = ConfigItem(
-        "Selector",
-        "CloseOnBrowserSelect",
-        False,
-        BoolValidator()
-    )
-    showCommandBar = ConfigItem(
-        "Personalization",
-        "ShowCommandBar",
-        False,
-        BoolValidator()
-    )
-    showSplash = ConfigItem(
-        "Personalization",
-        "ShowSplash",
-        True,
-        BoolValidator()
-    )
-    splashDuration = RangeConfigItem(
-        "Personalization",
-        "SplashDuration",
-        3000,
-        RangeValidator(0, 10000)
-    )
-    showUpdateBanners = ConfigItem(
-        "Personalization",
-        "ShowUpdateBanners",
-        True,
-        BoolValidator()
-    )
-    enableAcrylicOnSidebar = ConfigItem(
-        "Personalization",
-        "EnableAcrylicOnSidebar",
-        True,
-        BoolValidator()
-    )
-    lastCheckedDate = ConfigItem(
-        "About",
-        "LastCheckedDate",
-        ""
-    )
-    updateAvailable = ConfigItem(
-        "About",
-        "UpdateAvailable",
-        False
-    )
-    updateVersion = ConfigItem(
-        "About",
-        "UpdateVersion",
-        ""
-    )
+    mainBrowser = ConfigItem("General", "MainBrowser", "")
+    mainBrowserPath = ConfigItem("General", "MainBrowserPath", "")
+    mainBrowserIsManual = ConfigItem("General", "MainBrowserIsManual", False, BoolValidator())
+    appTheme = OptionsConfigItem("Personalization", "AppTheme", "Auto", OptionsValidator(["Light", "Dark", "Auto"]))
+    accentMode = OptionsConfigItem("Personalization", "AccentMode", "System", OptionsValidator(["System", "Custom"]))
+    accentColor = ColorConfigItem("Personalization", "CustomAccentColorHex", "#ff793bcc")
+    qAccentColor = ColorConfigItem("QFluentWidgets", "ThemeColor", "#ff25d9e6")
+    micaEffect = ConfigItem("Personalization", "EnableMicaEffect", True, BoolValidator())
+    showCommandBar = ConfigItem("Personalization", "ShowCommandBar", False, BoolValidator())
+    showSplash = ConfigItem("Personalization", "ShowSplash", True, BoolValidator())
+    splashDuration = RangeConfigItem("Personalization", "SplashDuration", 3000, RangeValidator(0, 10000))
+    enableAcrylicOnSidebar = ConfigItem("Personalization", "EnableAcrylicOnSidebar", True, BoolValidator())
+    showUpdateBanners = ConfigItem("Personalization", "ShowUpdateBanners", True, BoolValidator())
+    enableSoundEffects = ConfigItem("Sound", "EnableSoundEffects", False, BoolValidator())
+    closeOnBrowserSelect = ConfigItem("Selector", "CloseOnBrowserSelect", False, BoolValidator())
+    checkUpdatesOnStart = ConfigItem("About", "CheckUpdatesOnStart", True, BoolValidator())
+    lastCheckedDate = ConfigItem("About", "LastCheckedDate", "")
+    updateAvailable = ConfigItem("About", "UpdateAvailable", False)
+    updateVersion = ConfigItem("About", "UpdateVersion", "")
 
 def smartResourcePath(relativePath: str):
     """ SmartUtils

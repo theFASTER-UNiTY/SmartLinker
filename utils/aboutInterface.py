@@ -10,25 +10,24 @@ from qfluentwidgets import (
 )
 from utils.SmartUtils import *
 
-latestVersion = smartGetLatestVersionTag()
-
 class AboutInterface(QWidget):
     """ Main class for the 'About' interface """
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("About-SmartLinker")
+        self.latestVersion = smartGetLatestVersionTag()
         self.updateAvailable = False
         self.lastChecked = f"Last checked: {cfg.get(cfg.lastCheckedDate)}" if cfg.get(cfg.lastCheckedDate) else "Click on the following button to check for the latest updates."
         self.updateCard = None
 
         if bool(cfg.get(cfg.checkUpdatesOnStart)):
             autoCheckTime = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
-            if not latestVersion:
+            if not self.latestVersion:
                 self.updateAvailable = False
                 self.lastChecked = f"Last checked: {autoCheckTime} (Failed to check for updates)"
                 cfg.set(cfg.lastCheckedDate, autoCheckTime)
-            elif Version(latestVersion) > Version(SmartLinkerVersion):
+            elif Version(self.latestVersion) > Version(SmartLinkerVersion):
                 self.updateAvailable = True
                 self.lastChecked = f"Last checked: {autoCheckTime} (Latest version: {smartGetLatestVersionTag()})"
                 cfg.set(cfg.lastCheckedDate, autoCheckTime)

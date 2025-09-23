@@ -11,7 +11,7 @@
 <div align="center">
 
 [![Version](https://img.shields.io/badge/Version-1.0.0-orange)]()
-[![GPLv3](https://img.shields.io/badge/License-GPLv3-green)](LICENSE)
+[![GPLv3](https://img.shields.io/badge/License-GPLv3-green?color=#4ec820)](LICENSE)
 [![Platform Win32](https://img.shields.io/badge/Platform-Windows-blue)]()
 
 </div>

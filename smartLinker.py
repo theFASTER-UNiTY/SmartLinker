@@ -114,15 +114,15 @@ class SmartLinkerGUI(FluentWindow):
             self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smartGetRed(themeColor())}, {smartGetGreen(themeColor())}, {smartGetBlue(themeColor())}, 0.25)}}"), # type: ignore
             self.aboutInterface.updateCard.setBackgroundColor(QColor(smartGetRed(themeColor()), smartGetGreen(themeColor()), smartGetBlue(themeColor()), 127)) if self.aboutInterface.updateCard else None, # type: ignore
         ))
-        self.settingInterface.optionAccentColor.accentCombo.currentTextChanged.connect(lambda text: (
-            self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smartGetRed(cfg.get(cfg.accentColor) if text == "Custom accent color" else getSystemAccentColor())}, {smartGetGreen(cfg.get(cfg.accentColor) if text == "Custom accent color" else getSystemAccentColor())}, {smartGetBlue(cfg.get(cfg.accentColor) if text == "Custom accent color" else getSystemAccentColor())}, 0.25)}}"),
-            self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smartGetRed(cfg.get(cfg.accentColor) if text == "Custom accent color" else getSystemAccentColor())}, {smartGetGreen(cfg.get(cfg.accentColor) if text == "Custom accent color" else getSystemAccentColor())}, {smartGetBlue(cfg.get(cfg.accentColor) if text == "Custom accent color" else getSystemAccentColor())}, 0.25)}}"),
-            self.aboutInterface.updateCard.setBackgroundColor(QColor(smartGetRed(cfg.get(cfg.accentColor) if text == "Custom accent color" else getSystemAccentColor()), smartGetGreen(cfg.get(cfg.accentColor) if text == "Custom accent color" else getSystemAccentColor()), smartGetBlue(cfg.get(cfg.accentColor) if text == "Custom accent color" else getSystemAccentColor()), 127)) if self.aboutInterface.updateCard else None, # type: ignore
+        cfg.accentMode.valueChanged.connect(lambda value: (
+            self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smartGetRed(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, {smartGetGreen(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, {smartGetBlue(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, 0.25)}}"),
+            self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smartGetRed(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, {smartGetGreen(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, {smartGetBlue(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, 0.25)}}"),
+            self.aboutInterface.updateCard.setBackgroundColor(QColor(smartGetRed(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor()), smartGetGreen(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor()), smartGetBlue(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor()), 127)) if self.aboutInterface.updateCard else None # type: ignore
         ))
-        if self.settingInterface.optionCustomAccentColorDlg: self.settingInterface.optionCustomAccentColorDlg.colorChanged.connect(lambda color: (
-            self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smartGetRed(color)}, {smartGetGreen(color)}, {smartGetBlue(color)}, 0.25)}}"),
-            self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smartGetRed(color)}, {smartGetGreen(color)}, {smartGetBlue(color)}, 0.25)}}"),
-            self.aboutInterface.updateCard.setBackgroundColor(QColor(smartGetRed(color), smartGetGreen(color), smartGetBlue(color), 127)) if self.aboutInterface.updateCard else None, # type: ignore
+        cfg.accentColor.valueChanged.connect(lambda value: (
+            self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smartGetRed(value)}, {smartGetGreen(value)}, {smartGetBlue(value)}, 0.25)}}"),
+            self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smartGetRed(value)}, {smartGetGreen(value)}, {smartGetBlue(value)}, 0.25)}}"),
+            self.aboutInterface.updateCard.setBackgroundColor(QColor(smartGetRed(value), smartGetGreen(value), smartGetBlue(value), 127)) if self.aboutInterface.updateCard else None # type: ignore
         ))
 
     def createSubInterfaces(self):

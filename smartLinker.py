@@ -1,6 +1,4 @@
-import os
 import sys
-
 from PyQt6.QtCore import QEventLoop, QTimer, QSize
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QApplication

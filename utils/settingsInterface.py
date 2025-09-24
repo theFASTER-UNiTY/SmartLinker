@@ -212,6 +212,7 @@ class SettingsInterface(QWidget):
                 parent
             )
             self.mainRemoveDlg.yesButton.setText("Remove")
+        if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smartPlaySound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
         if self.mainRemoveDlg.exec():
             cfg.set(cfg.mainBrowser, "")
             cfg.set(cfg.mainBrowserPath, "")
@@ -318,7 +319,7 @@ class SettingsInterface(QWidget):
                 self
             )
             setAsMainDlg.yesButton.setText("Set as default")
-            setAsMainDlg.cancelButton.setText("Cancel")
+            if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smartPlaySound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
             if setAsMainDlg.exec():
                 print("Pending operation: Backing up the actual default browser ID...")
                 smartLog("Backing up the actual default browser ID...")
@@ -1067,6 +1068,7 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
                 parent
             )
             self.soundRemoveDlg.yesButton.setText("Remove")
+        if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smartPlaySound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
         if self.soundRemoveDlg.exec():
             cfg.set(config, "")
             print(f"{Fore.GREEN}The {soundType} sound effect has been successfully removed!{Style.RESET_ALL}")

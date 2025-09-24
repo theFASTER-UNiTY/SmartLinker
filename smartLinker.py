@@ -185,6 +185,7 @@ class SmartLinkerGUI(FluentWindow):
             parent
         )
         self.deleteDlg.yesButton.setText("Delete")
+        if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smartPlaySound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
         if self.deleteDlg.exec():
             print(f"Prnding operation: Removing {name} from the SmartList...")
             smartLog(f"Removing {name} from the SmartList...")
@@ -228,6 +229,7 @@ class SmartLinkerGUI(FluentWindow):
             )
             self.removeKeysDlg.yesButton.setText("Remove all")
             self.removeKeysDlg.cancelButton.setText("Cancel")
+        if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smartPlaySound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
         if self.removeKeysDlg.exec(): self.settingInterface.removeDefaultBrowserKeys()
 
     def confirmRestart(self):
@@ -238,6 +240,7 @@ class SmartLinkerGUI(FluentWindow):
         )
         restartDlg.yesButton.setText("Restart")
         restartDlg.cancelButton.setText("Cancel")
+        if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smartPlaySound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
         if restartDlg.exec():
             try: restartApp()
             except Exception as e: smartErrorNotify(self, "Oops! Something went wrong...", f"An error occured while attempting to restart SmartLinker: {e}")
@@ -250,6 +253,7 @@ class SmartLinkerGUI(FluentWindow):
         )
         stopDlg.yesButton.setText("Yes, I do")
         stopDlg.cancelButton.setText("Nah, forget about it")
+        if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smartPlaySound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
         if stopDlg.exec():
             try: stopApp()
             except Exception as e: smartErrorNotify(self, "Oops! Something went wrong...", f"An error occured while attempting to close SmartLinker: {e}")

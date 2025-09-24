@@ -259,6 +259,7 @@ class MyBrowsersInterface(QWidget):
             parent
         )
         self.deleteDlg.yesButton.setText("Delete")
+        if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smartPlaySound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
         if self.deleteDlg.exec():
             print(f"Prnding operation: Removing {name} from the SmartList...")
             smartLog(f"Removing {name} from the SmartList...")
@@ -289,6 +290,7 @@ class MyBrowsersInterface(QWidget):
             parent
         )
         self.clearDlg.yesButton.setText("Clear my SmartList")
+        if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smartPlaySound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
         if self.clearDlg.exec():
             print(f"{Fore.YELLOW}Waiting for the final confirmation to empty the SmartList...{Style.RESET_ALL}")
             smartLog("WARNING: An attempt of clearing the SmartList has been initiated. Waiting for confirmation...")
@@ -301,6 +303,7 @@ class MyBrowsersInterface(QWidget):
             )
             confirmClearDlg.yesButton.setText("I'm 100% sure!")
             confirmClearDlg.cancelButton.setText("Nevermind...")
+            if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smartPlaySound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
             if confirmClearDlg.exec():
                 print(f"{Fore.GREEN}Confirmation granted!{Style.RESET_ALL}\nPending operation: Proceeding with complete removal...")
                 smartLog("WARNING: The confirmation has been granted. Proceeding with complete removal...")

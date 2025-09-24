@@ -59,7 +59,9 @@ class Config(QConfig):
     enableAcrylicOnSidebar = ConfigItem("Personalization", "EnableAcrylicOnSidebar", True, BoolValidator())
     showUpdateBanners = ConfigItem("Personalization", "ShowUpdateBanners", True, BoolValidator())
     enableSoundEffects = ConfigItem("Sound", "EnableSoundEffects", False, BoolValidator())
-    startupSFXPath = ConfigItem("Sound", "StartupSFX", "")
+    startupSFXPath = ConfigItem("Sound", "StartupSFXPath", "")
+    successSFXPath = ConfigItem("Sound", "SuccessSFXPath", "")
+    infoSFXPath = ConfigItem("Sound", "InfoSFXPath", "")
     closeOnBrowserSelect = ConfigItem("Selector", "CloseOnBrowserSelect", False, BoolValidator())
     checkUpdatesOnStart = ConfigItem("About", "CheckUpdatesOnStart", True, BoolValidator())
     lastCheckedDate = ConfigItem("About", "LastCheckedDate", "")
@@ -87,6 +89,7 @@ cfg = Config()
 cfgFilePath = smartResourcePath("bin/config.json")
 browsersCfgFilePath = smartResourcePath("bin/browsers_config.json")
 qconfig.load(cfgFilePath, cfg)
+soundStreamer = None
 
 def smartLoadSettings():
     """ SmartUtils
@@ -155,6 +158,19 @@ def isDarkModeEnabled() -> bool:
     except Exception:
         return False  # défaut = clair
 
+def smartPlaySound(sound, path: str, label: str):
+    sound = None
+    try:
+        sound = pygame.mixer.Sound(path)
+        if sound: sound.play()
+        else:
+            print(f"{Fore.YELLOW}Unable to play the {label} sound, because it has not been loaded...{Style.RESET_ALL}")
+            smartLog(f"WARNING: Unable to play the {label} sound, because it has not been loaded...")
+    except Exception as e:
+        sound = None
+        print(f"{Fore.RED}Something went wrong while attempting to play the {label} sound: {e}{Style.RESET_ALL}")
+        smartLog(f"ERROR: Failed to play the {label} sound: {e}")
+
 def smartIsDarkMode() -> bool:
     """ SmartUtils
     ==========
@@ -201,6 +217,8 @@ def smartSuccessNotify(self, title: str, content: typing.Optional[str]):
         duration=5000,
         parent=self
     ).show()
+    if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.successSFXPath)):
+        smartPlaySound(soundStreamer, cfg.get(cfg.successSFXPath), "success notification")
 
 def smartWarningNotify(self, title: str, content: typing.Optional[str]):
     """ SmartUtils
@@ -267,6 +285,8 @@ def smartInfoNotify(self, title: str, content: typing.Optional[str]):
         duration=5000,
         parent=self
     ).show()
+    if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.infoSFXPath)):
+        smartPlaySound(soundStreamer, cfg.get(cfg.infoSFXPath), "information notification")
 
 def smartGetFileIcon(filePath: str) -> QIcon:
     """ SmartUtils

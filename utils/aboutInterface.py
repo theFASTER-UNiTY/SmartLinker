@@ -96,7 +96,7 @@ class AboutInterface(QWidget):
         self.aboutCheckUpdates.switchButton.setOffText("Disabled")
         self.aboutCheckUpdates.switchButton.checkedChanged.connect(lambda checked: (
             self.aboutCheckUpdates.switchButton.setOnText("Enabled"),
-            self.aboutCheckUpdates.switchButton.setOffText("Disabled")
+            self.aboutCheckUpdates.switchButton.setOffText("Disabled"),
         ))
         layout.addWidget(self.aboutCheckUpdates)
         self.aboutFeedback = HyperlinkCard(

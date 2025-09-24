@@ -30,15 +30,15 @@ class SmartLinkerGUI(FluentWindow):
         if cfg.get(cfg.appTheme) == "Dark": setTheme(Theme.DARK)
         elif cfg.get(cfg.appTheme) == "Light": setTheme(Theme.LIGHT)
         else: setTheme(Theme.AUTO)
-        cfg.set(cfg.qAccentColor, getSystemAccentColor())
+        # cfg.set(cfg.qAccentColor, getSystemAccentColor())
         smartEmptyLog()
 
-        self.latestVersion = ""
-        if bool(cfg.get(cfg.checkUpdatesOnStart)): self.latestVersion = smartGetLatestVersionTag()
+        self.latestVersion = smartGetLatestVersionTag() if bool(cfg.get(cfg.checkUpdatesOnStart)) else ""
         self.myBrowsers = smartLoadBrowsers()
         self.removeKeysDlg = None
         self.listSelectDlg = None
 
+        if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.startupSFXPath)): smartPlaySound(soundStreamer, cfg.get(cfg.startupSFXPath), "startup")
         if bool(cfg.get(cfg.showSplash)):
             self.splash = SplashScreen(self.windowIcon(), self)
             self.splash.setIconSize(QSize(105, 105))

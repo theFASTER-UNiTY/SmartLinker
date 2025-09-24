@@ -10,6 +10,7 @@ from qfluentwidgets import (
     Theme, theme, MessageBox, CardWidget, IconWidget, CaptionLabel, ToolButton, ToolTipFilter,
     MessageBoxBase, SwitchButton, IndicatorPosition, SpinBox, PrimaryPushButton, StrongBodyLabel
 )
+from qfluentwidgets.common.icon import FluentIcon as FIF
 from qframelesswindow.utils import getSystemAccentColor
 from utils.SmartUtils import *
 
@@ -23,28 +24,27 @@ class SettingsInterface(QWidget):
         self.setObjectName("Settings")
 
         mainSetLayout = QVBoxLayout(self)
-        # mainSetLayout.setContentsMargins(0, 60, 0, 0) # for split fluent window
+        ### mainSetLayout.setContentsMargins(0, 60, 0, 0) # for split fluent window
         mainSetLayout.setContentsMargins(0, 20, 0, 0) # for fluent window
         mainTitleLine = QHBoxLayout()
-        # mainTitleLine.setContentsMargins(80, 0, 0, 0) # for split fluent window
+        ### mainTitleLine.setContentsMargins(80, 0, 0, 0) # for split fluent window
         mainTitleLine.setContentsMargins(40, 0, 0, 0) # for fluent window
         mainSetLayout.addLayout(mainTitleLine)
         self.title = TitleLabel("Settings", self)
-        self.title.setFont(smartSegoeTitle())
         self.title.setAlignment(Qt.AlignmentFlag.AlignTop)
         # self.title.setContentsMargins(0, 0, 0, 50)
         mainTitleLine.addWidget(self.title)
         mainSetScroll = SingleDirectionScrollArea(self, Qt.Orientation.Vertical)
         mainSetLayout.addWidget(mainSetScroll)
         mainSetScroll.setWidgetResizable(True)
-        # mainSetScroll.setContentsMargins(0, 0, 80, 0) # for split fluent window
+        ### mainSetScroll.setContentsMargins(0, 0, 80, 0) # for split fluent window
         mainSetScroll.setContentsMargins(0, 0, 40, 0) # for fluent window
         mainSetScroll.enableTransparentBackground()
         mainSetScrollContent = QWidget()
         mainSetScroll.setWidget(mainSetScrollContent)
         mainSetScroll.setAlignment(Qt.AlignmentFlag.AlignTop)
         mainSetScroll.setStyleSheet("background-color: rgba(0, 0, 0, 0); border: 0px solid #FFFFFF")
-        # mainSetScrollContent.setContentsMargins(80, 0, 80, 0) # for split fluent window
+        ### mainSetScrollContent.setContentsMargins(80, 0, 80, 0) # for split fluent window
         mainSetScrollContent.setContentsMargins(40, 0, 40, 0) # for fluent window
         layout = QVBoxLayout(mainSetScrollContent)
         layout.setSpacing(5)
@@ -54,7 +54,6 @@ class SettingsInterface(QWidget):
 
         # General
         generalLabel = SubtitleLabel("General")
-        generalLabel.setFont(smartSegoeSubtitle())
         generalLabel.setContentsMargins(0, 0, 0, 0)
         generalLabel.setAlignment(Qt.AlignmentFlag.AlignTop)
         layout.addWidget(generalLabel)
@@ -66,12 +65,10 @@ class SettingsInterface(QWidget):
 
         # Personalization - Logo blue: #28ABFA, Logo purple: #793BCC
         personalizeLabel = SubtitleLabel("Look & Feel")
-        personalizeLabel.setFont(smartSegoeSubtitle())
         personalizeLabel.setContentsMargins(0, 40, 0, 0)
         personalizeLabel.setAlignment(Qt.AlignmentFlag.AlignTop)
         layout.addWidget(personalizeLabel)
         layout.addWidget(self.widgetDef.optionTheme)
-        # cfg.appTheme.valueChanged.connect(print)
         self.optionAccentColor = ThemeColorSelectGroup()
         self.optionCustomAccentColorDlg = None
         self.optionAccentColor.selectButton.clicked.connect(lambda: self.openColorDialog(parent))
@@ -81,9 +78,20 @@ class SettingsInterface(QWidget):
         self.optionShowSplash = FlagsSettingGroup(self)
         layout.addWidget(self.optionShowSplash)
 
+        # Sound
+        soundLabel = SubtitleLabel("Sound")
+        soundLabel.setContentsMargins(0, 40, 0, 0)
+        soundLabel.setAlignment(Qt.AlignmentFlag.AlignTop)
+        layout.addWidget(soundLabel)
+        layout.addWidget(self.widgetDef.optionSoundEffects)
+        self.widgetDef.optionSoundEffects.switchButton.checkedChanged.connect(lambda checked: (
+            self.toggleSoundsAvailability(checked),
+        ))
+        self.optionSoundConfig = SoundFxConfigGroup(self)
+        layout.addWidget(self.optionSoundConfig)
+
         # Smart Selector
         selectorLabel = SubtitleLabel("Smart Selector")
-        selectorLabel.setFont(smartSegoeSubtitle())
         selectorLabel.setContentsMargins(0, 40, 0, 0)
         selectorLabel.setAlignment(Qt.AlignmentFlag.AlignTop)
         layout.addWidget(selectorLabel)
@@ -91,7 +99,6 @@ class SettingsInterface(QWidget):
 
         # Debugging
         debuggingLabel = SubtitleLabel("Debugging")
-        debuggingLabel.setFont(smartSegoeSubtitle())
         debuggingLabel.setContentsMargins(0, 40, 0, 0)
         debuggingLabel.setAlignment(Qt.AlignmentFlag.AlignTop)
         layout.addWidget(debuggingLabel)
@@ -450,6 +457,17 @@ class SettingsInterface(QWidget):
             print(f"{Fore.RED}Something went wrong while attempting to delete {SmartLinkerName}'s registry keys: {e}{Style.RESET_ALL}")
             smartLog(f"ERROR: Failed to delete {SmartLinkerName}'s registry keys: {e}")
 
+    def toggleSoundsAvailability(self, checked):
+        self.optionSoundConfig.startupPlayBtn.setEnabled(checked and bool(cfg.get(cfg.startupSFXPath)))
+        self.optionSoundConfig.startupPickBtn.setEnabled(checked)
+        self.optionSoundConfig.startupRemoveBtn.setEnabled(checked and bool(cfg.get(cfg.startupSFXPath)))
+        # self.optionSoundConfig.switchTogglePlayBtn.setEnabled(checked) # and bool(cfg.get(cfg.switchSFXPath)))
+        # self.optionSoundConfig.switchTogglePickBtn.setEnabled(checked)
+        # self.optionSoundConfig.switchToggleRemoveBtn.setEnabled(checked) # and bool(cfg.get(cfg.switchSFXPath)))
+        self.optionSoundConfig.successPlayBtn.setEnabled(checked and bool(cfg.get(cfg.successSFXPath)))
+        self.optionSoundConfig.successPickBtn.setEnabled(checked)
+        self.optionSoundConfig.successRemoveBtn.setEnabled(checked and bool(cfg.get(cfg.successSFXPath)))
+
 class SettingWidgetDefinition():
     """ Declaration class of SettingsInterface main widgets """
 
@@ -511,6 +529,14 @@ class SettingWidgetDefinition():
             "Display the action bar",
             "If enabled, the action bar is displayed below the SmartList instead of the standard tiles.",
             cfg.showCommandBar
+        )
+
+        # Sound
+        self.optionSoundEffects = SwitchSettingCard(
+            FICO.MUSIC,
+            "Enable sound effects",
+            f"You have the possibility to enhance your auditive experience with {SmartLinkerName}, just by enabling this feature.",
+            cfg.enableSoundEffects
         )
 
         # Smart Selector
@@ -685,7 +711,7 @@ class FlagsSettingGroup(ExpandGroupSettingCard):
         self.splashSwitchButton.setChecked(cfg.get(cfg.showSplash))
         self.splashSwitchButton.checkedChanged.connect(lambda checked: (
             self.splashDurationSpin.setEnabled(checked),
-            cfg.set(cfg.showSplash, checked)
+            cfg.set(cfg.showSplash, checked),
         ))
 
         # Second group - Splash duration
@@ -735,7 +761,6 @@ class FlagsSettingGroup(ExpandGroupSettingCard):
         layout.addStretch(1)
         layout.addWidget(widget)
 
-        # Add the widget group to the setting card
         self.addGroupWidget(w)
 
 class MainBrowsersCard(CardWidget):
@@ -826,3 +851,140 @@ class SelectFromListDialog(MessageBoxBase):
     def validate(self):
         if not self.browsCombo.currentText() or self.browsCombo.count == 0: return False
         return True
+
+class SoundFxConfigGroup(ExpandGroupSettingCard):
+    """ Class for SmartLinker's sound effects configuration in the Sound section """
+
+    def __init__(self, parent=None):
+        super().__init__(
+            FICO.MIX_VOLUMES,
+            "Configure sound effects",
+            "You can customize the available sounds all the way you want, right here.",
+            parent
+        )
+        self.soundSample = None
+        self.soundRemoveDlg = None
+        
+        # First group - Startup SFX
+        self.startupLabel = BodyLabel(f"At {SmartLinkerName} startup")
+        self.startupPlayBtn = PushButton(FICO.PLAY, "Play sound")
+        self.startupPlayBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.startupSFXPath)))
+        self.startupPlayBtn.clicked.connect(lambda: self.soundPlay(self.soundSample, cfg.get(cfg.startupSFXPath)))
+        self.startupPickBtn = ToolButton(FICO.FOLDER)
+        self.startupPickBtn.setToolTip("Select a custom sound")
+        self.startupPickBtn.installEventFilter(ToolTipFilter(self.startupPickBtn))
+        self.startupPickBtn.setEnabled(cfg.get(cfg.enableSoundEffects))
+        self.startupPickBtn.clicked.connect(lambda: (
+            self.soundConfigure(cfg.startupSFXPath, f"Select {SmartLinkerName} startup SFX", "The startup sound has been successfully modified!", parent),
+            self.startupPlayBtn.setEnabled(bool(cfg.get(cfg.startupSFXPath))),
+            self.startupRemoveBtn.setEnabled(bool(cfg.get(cfg.startupSFXPath)))
+        ))
+        self.startupRemoveBtn = ToolButton(FICO.REMOVE_FROM)
+        self.startupRemoveBtn.setToolTip("Remove sound")
+        self.startupRemoveBtn.installEventFilter(ToolTipFilter(self.startupRemoveBtn))
+        self.startupRemoveBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.startupSFXPath)))
+        self.startupRemoveBtn.clicked.connect(lambda: (
+            self.soundRemove("startup", cfg.startupSFXPath, parent),
+            self.startupPlayBtn.setEnabled(False),
+            self.startupRemoveBtn.setEnabled(False)
+        ))
+
+        # Third group - Success notification
+        self.successLabel = BodyLabel("Notification - success")
+        self.successPlayBtn = PushButton(FICO.PLAY, "Play sound")
+        self.successPlayBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.successSFXPath)))
+        self.successPlayBtn.clicked.connect(lambda: self.soundPlay(self.soundSample, cfg.get(cfg.successSFXPath)))
+        self.successPickBtn = ToolButton(FICO.FOLDER)
+        self.successPickBtn.setToolTip("Select a custom sound")
+        self.successPickBtn.installEventFilter(ToolTipFilter(self.successPickBtn))
+        self.successPickBtn.setEnabled(cfg.get(cfg.enableSoundEffects))
+        self.successPickBtn.clicked.connect(lambda: (
+            self.soundConfigure(cfg.successSFXPath, f"Select {SmartLinkerName} success notification SFX", "The success notification sound has been successfully modified!", parent),
+            self.successPlayBtn.setEnabled(bool(cfg.get(cfg.successSFXPath))),
+            self.successRemoveBtn.setEnabled(bool(cfg.get(cfg.successSFXPath)))
+        ))
+        self.successRemoveBtn = ToolButton(FICO.REMOVE_FROM)
+        self.successRemoveBtn.setToolTip("Remove sound")
+        self.successRemoveBtn.installEventFilter(ToolTipFilter(self.successRemoveBtn))
+        self.successRemoveBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.successSFXPath)))
+        self.successRemoveBtn.clicked.connect(lambda: (
+            self.soundRemove("success notification", cfg.successSFXPath, parent),
+            self.successPlayBtn.setEnabled(False),
+            self.successRemoveBtn.setEnabled(False)
+        ))
+
+        # Second group - Information toggle
+        self.infoLabel = BodyLabel(f"Notification - information")
+        self.infoPlayBtn = PushButton(FICO.PLAY, "Play sound")
+        self.infoPlayBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.infoSFXPath)))
+        self.infoPlayBtn.clicked.connect(lambda: self.soundPlay(self.soundSample, cfg.get(cfg.infoSFXPath)))
+        self.infoPickBtn = ToolButton(FICO.FOLDER)
+        self.infoPickBtn.setToolTip("Select a custom sound")
+        self.infoPickBtn.installEventFilter(ToolTipFilter(self.infoPickBtn))
+        self.infoPickBtn.setEnabled(cfg.get(cfg.enableSoundEffects))
+        self.infoPickBtn.clicked.connect(lambda: (
+            self.soundConfigure(cfg.infoSFXPath, f"Select {SmartLinkerName} information notification SFX", "The information notification sound has been successfully modified!", parent),
+            self.infoPlayBtn.setEnabled(bool(cfg.get(cfg.infoSFXPath))),
+            self.infoRemoveBtn.setEnabled(bool(cfg.get(cfg.infoSFXPath)))
+        ))
+        self.infoRemoveBtn = ToolButton(FICO.REMOVE_FROM)
+        self.infoRemoveBtn.setToolTip("Remove sound")
+        self.infoRemoveBtn.installEventFilter(ToolTipFilter(self.infoRemoveBtn))
+        self.infoRemoveBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.infoSFXPath)))
+        self.infoRemoveBtn.clicked.connect(lambda: (
+            self.soundRemove("information notification", cfg.infoSFXPath, parent),
+            self.infoPlayBtn.setEnabled(False),
+            self.infoRemoveBtn.setEnabled(False)
+        ))
+
+        self.viewLayout.setContentsMargins(0, 0, 0, 0)
+        self.viewLayout.setSpacing(0)
+
+        self.add(self.startupLabel, self.startupPlayBtn, self.startupPickBtn, self.startupRemoveBtn)
+        # self.add(self.infoLabel, self.infoPlayBtn, self.infoPickBtn, self.infoRemoveBtn)
+        self.add(self.successLabel, self.successPlayBtn, self.successPickBtn, self.successRemoveBtn)
+
+    def add(self, label, play, pick, remove):
+        w = QWidget()
+        w.setFixedHeight(60)
+
+        layout = QHBoxLayout(w)
+        layout.setContentsMargins(48, 12, 48, 12)
+        layout.addWidget(label)
+        layout.addStretch(1)
+        layout.addWidget(play)
+        layout.addWidget(pick)
+        layout.addWidget(remove)
+
+        self.addGroupWidget(w)
+
+    def soundConfigure(self, config, dialogTitle, successMsg, parent):
+        cfg.set(config, smartBrowseFileDialog(parent, dialogTitle, smartResourcePath("resources/sounds"), "Audio files (*.mp3; *.ogg; *.wav)"))
+        if cfg.get(config): smartSuccessNotify(parent, "Sound set!", successMsg)
+
+    def soundPlay(self, sound, config):
+        sound = None
+        try:
+            sound = pygame.mixer.Sound(config)
+            if sound: sound.play()
+            else:
+                print(f"{Fore.YELLOW}Unable to play the startup sound, because it has not been loaded...{Style.RESET_ALL}")
+                smartLog("WARNING: Unable to play the startup sound, because it has not been loaded...")
+        except Exception as e:
+            sound = None
+            print(f"{Fore.RED}Something went wrong while attempting to play the startup sound: {e}{Style.RESET_ALL}")
+            smartLog(f"ERROR: Failed to play the startup sound: {e}")
+
+    def soundRemove(self, soundType: str, config, parent):
+        if not self.soundRemoveDlg:
+            self.soundRemoveDlg = MessageBox(
+                "Remove sound effect",
+                f"If you proceed, the {soundType} sound effect will be removed and you will have to set another sound later.",
+                parent
+            )
+            self.soundRemoveDlg.yesButton.setText("Remove")
+        if self.soundRemoveDlg.exec():
+            cfg.set(config, "")
+            print(f"{Fore.GREEN}The {soundType} sound effect has been successfully removed!{Style.RESET_ALL}")
+            smartLog(f"SUCCESS: The {soundType} sound effect has been successfully removed!")
+            smartSuccessNotify(parent, "Removal complete!", f"The {soundType} sound has been successfully removed!")

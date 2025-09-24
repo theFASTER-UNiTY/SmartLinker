@@ -336,12 +336,12 @@ class BrowserCard(ElevatedCardWidget):
                             smartSelectorLog(f"SUCCESS: '{link}' has been successfully loaded into {name}.")
                             if bool(cfg.get(cfg.closeOnBrowserSelect)): sys.exit()
                         except Exception as e:
-                            smartErrorNotify(parent, "Oops! Something went wrong...", f"An error occured while attempting to load your link into {name}: {e}")
+                            smartErrorNotify(parent, "Oops! Something went wrong...", f"An error occured while attempting to load your link into {name}:\n{e}")
                             print(f"{Fore.RED}Something went wrong when attempting to load your link into {name}:\n{e}{Style.RESET_ALL}")
                             smartSelectorLog(f"ERROR: Failed loading {link} into {name}: {e}")
                         break
                     else:
-                        # smartWarningNotify(parent, "Warning, be careful!", f"The path to {name} as registered in your SmartList is empty...")
+                        smartWarningNotify(parent, "Warning, be careful!", f"The path to {name} as registered in your SmartList is empty...")
                         print(f"{Fore.YELLOW}WARNING!!! The path to {name} as registered in your SmartList is empty...{Style.RESET_ALL}")
                         smartSelectorLog(f"WARNING: The path to {name} as registered in the SmartList is empty...")
                         break

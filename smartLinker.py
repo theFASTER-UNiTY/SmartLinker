@@ -40,8 +40,8 @@ class SmartLinkerGUI(FluentWindow):
 
         if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.startupSFXPath)): smartPlaySound(soundStreamer, cfg.get(cfg.startupSFXPath), "startup")
         if bool(cfg.get(cfg.showSplash)):
-            self.splash = SplashScreen(self.windowIcon(), self)
-            self.splash.setIconSize(QSize(105, 105))
+            self.splash = SplashScreen(smartResourcePath("resources/images/icons/icon_splash.ico"), self)
+            self.splash.setIconSize(QSize(125, 125))
             self.show()
             self.createSubInterfaces()
             self.splash.finish()

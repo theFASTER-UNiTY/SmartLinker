@@ -64,7 +64,7 @@ class AboutInterface(QWidget):
 
         aboutMainLine = QHBoxLayout()
         layout.addLayout(aboutMainLine)
-        aboutLogo = IconWidget(QIcon(smartResourcePath("resources/images/icons/icon.ico")))
+        aboutLogo = IconWidget(QIcon(smartResourcePath("resources/images/icons/icon_splash.ico")))
         aboutLogo.setFixedSize(64, 64)
         aboutMainLine.addWidget(aboutLogo)
         aboutTextBox = QVBoxLayout()

@@ -461,9 +461,9 @@ class SettingsInterface(QWidget):
         self.optionSoundConfig.startupPlayBtn.setEnabled(checked and bool(cfg.get(cfg.startupSFXPath)))
         self.optionSoundConfig.startupPickBtn.setEnabled(checked)
         self.optionSoundConfig.startupRemoveBtn.setEnabled(checked and bool(cfg.get(cfg.startupSFXPath)))
-        # self.optionSoundConfig.switchTogglePlayBtn.setEnabled(checked) # and bool(cfg.get(cfg.switchSFXPath)))
-        # self.optionSoundConfig.switchTogglePickBtn.setEnabled(checked)
-        # self.optionSoundConfig.switchToggleRemoveBtn.setEnabled(checked) # and bool(cfg.get(cfg.switchSFXPath)))
+        self.optionSoundConfig.infoPlayBtn.setEnabled(checked and bool(cfg.get(cfg.infoSFXPath)))
+        self.optionSoundConfig.infoPickBtn.setEnabled(checked)
+        self.optionSoundConfig.infoRemoveBtn.setEnabled(checked and bool(cfg.get(cfg.infoSFXPath)))
         self.optionSoundConfig.successPlayBtn.setEnabled(checked and bool(cfg.get(cfg.successSFXPath)))
         self.optionSoundConfig.successPickBtn.setEnabled(checked)
         self.optionSoundConfig.successRemoveBtn.setEnabled(checked and bool(cfg.get(cfg.successSFXPath)))
@@ -941,7 +941,7 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
         self.viewLayout.setSpacing(0)
 
         self.add(self.startupLabel, self.startupPlayBtn, self.startupPickBtn, self.startupRemoveBtn)
-        # self.add(self.infoLabel, self.infoPlayBtn, self.infoPickBtn, self.infoRemoveBtn)
+        self.add(self.infoLabel, self.infoPlayBtn, self.infoPickBtn, self.infoRemoveBtn)
         self.add(self.successLabel, self.successPlayBtn, self.successPickBtn, self.successRemoveBtn)
 
     def add(self, label, play, pick, remove):

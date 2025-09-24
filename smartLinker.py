@@ -239,7 +239,6 @@ class SmartLinkerGUI(FluentWindow):
             self
         )
         restartDlg.yesButton.setText("Restart")
-        restartDlg.cancelButton.setText("Cancel")
         if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smartPlaySound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
         if restartDlg.exec():
             try: restartApp()

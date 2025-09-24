@@ -473,6 +473,9 @@ class SettingsInterface(QWidget):
         self.optionSoundConfig.errorPlayBtn.setEnabled(checked and bool(cfg.get(cfg.errorSFXPath)))
         self.optionSoundConfig.errorPickBtn.setEnabled(checked)
         self.optionSoundConfig.errorRemoveBtn.setEnabled(checked and bool(cfg.get(cfg.errorSFXPath)))
+        self.optionSoundConfig.questionPlayBtn.setEnabled(checked and bool(cfg.get(cfg.questionSFXPath)))
+        self.optionSoundConfig.questionPickBtn.setEnabled(checked)
+        self.optionSoundConfig.questionRemoveBtn.setEnabled(checked and bool(cfg.get(cfg.questionSFXPath)))
 
 class SettingWidgetDefinition():
     """ Declaration class of SettingsInterface main widgets """
@@ -991,6 +994,30 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
             self.errorRemoveBtn.setEnabled(False)
         ))
 
+        # Second group - Success notification
+        self.questionLabel = BodyLabel("At confirmation dialog popup")
+        self.questionPlayBtn = PushButton(FICO.PLAY, "Play sound")
+        self.questionPlayBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)))
+        self.questionPlayBtn.clicked.connect(lambda: self.soundPlay(self.soundSample, cfg.get(cfg.questionSFXPath)))
+        self.questionPickBtn = ToolButton(FICO.FOLDER)
+        self.questionPickBtn.setToolTip("Select a custom sound")
+        self.questionPickBtn.installEventFilter(ToolTipFilter(self.questionPickBtn))
+        self.questionPickBtn.setEnabled(cfg.get(cfg.enableSoundEffects))
+        self.questionPickBtn.clicked.connect(lambda: (
+            self.soundConfigure(cfg.questionSFXPath, f"Select {SmartLinkerName} confirmation dialog notification SFX", "The confirmation dialog popup sound has been successfully modified!", parent),
+            self.questionPlayBtn.setEnabled(bool(cfg.get(cfg.questionSFXPath))),
+            self.questionRemoveBtn.setEnabled(bool(cfg.get(cfg.questionSFXPath)))
+        ))
+        self.questionRemoveBtn = ToolButton(FICO.REMOVE_FROM)
+        self.questionRemoveBtn.setToolTip("Remove sound")
+        self.questionRemoveBtn.installEventFilter(ToolTipFilter(self.questionRemoveBtn))
+        self.questionRemoveBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)))
+        self.questionRemoveBtn.clicked.connect(lambda: (
+            self.soundRemove("confirmation dialog", cfg.questionSFXPath, parent),
+            self.questionPlayBtn.setEnabled(False),
+            self.questionRemoveBtn.setEnabled(False)
+        ))
+
         self.viewLayout.setContentsMargins(0, 0, 0, 0)
         self.viewLayout.setSpacing(0)
 
@@ -999,6 +1026,7 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
         self.add(self.successLabel, self.successPlayBtn, self.successPickBtn, self.successRemoveBtn)
         self.add(self.warningLabel, self.warningPlayBtn, self.warningPickBtn, self.warningRemoveBtn)
         self.add(self.errorLabel, self.errorPlayBtn, self.errorPickBtn, self.errorRemoveBtn)
+        self.add(self.questionLabel, self.questionPlayBtn, self.questionPickBtn, self.questionRemoveBtn)
 
     def add(self, label, play, pick, remove):
         w = QWidget()

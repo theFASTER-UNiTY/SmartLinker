@@ -8,7 +8,9 @@ basic and technical needs.
 """
 __version__ = "0.9.0"
 __author__ = "#theF∆STER™ CODE&BU!LD"
+
 # =========================================================
+
 import os
 import sys
 import winreg
@@ -31,6 +33,8 @@ from qframelesswindow.utils import getSystemAccentColor
 from colorama import init, Fore, Back, Style
 from shiboken6 import isValid
 from packaging.version import Version
+
+# =========================================================
 
 SmartLinkerID = "theFASTER.SmartLinker"
 SmartLinkerName = "SmartLinker"
@@ -64,6 +68,7 @@ class Config(QConfig):
     infoSFXPath = ConfigItem("Sound", "InfoSFXPath", "")
     warningSFXPath = ConfigItem("Sound", "WarningSFXPath", "")
     errorSFXPath = ConfigItem("Sound", "ErrorSFXPath", "")
+    questionSFXPath = ConfigItem("Sound", "QuestionSFXPath", "")
     closeOnBrowserSelect = ConfigItem("Selector", "CloseOnBrowserSelect", False, BoolValidator())
     checkUpdatesOnStart = ConfigItem("About", "CheckUpdatesOnStart", True, BoolValidator())
     lastCheckedDate = ConfigItem("About", "LastCheckedDate", "")

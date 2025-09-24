@@ -62,6 +62,8 @@ class Config(QConfig):
     startupSFXPath = ConfigItem("Sound", "StartupSFXPath", "")
     successSFXPath = ConfigItem("Sound", "SuccessSFXPath", "")
     infoSFXPath = ConfigItem("Sound", "InfoSFXPath", "")
+    warningSFXPath = ConfigItem("Sound", "WarningSFXPath", "")
+    errorSFXPath = ConfigItem("Sound", "ErrorSFXPath", "")
     closeOnBrowserSelect = ConfigItem("Selector", "CloseOnBrowserSelect", False, BoolValidator())
     checkUpdatesOnStart = ConfigItem("About", "CheckUpdatesOnStart", True, BoolValidator())
     lastCheckedDate = ConfigItem("About", "LastCheckedDate", "")
@@ -241,6 +243,8 @@ def smartWarningNotify(self, title: str, content: typing.Optional[str]):
         duration=5000,
         parent=self
     ).show()
+    if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.warningSFXPath)):
+        smartPlaySound(soundStreamer, cfg.get(cfg.warningSFXPath), "warning notification")
 
 def smartErrorNotify(self, title: str, content: typing.Optional[str]):
     """ SmartUtils
@@ -263,6 +267,8 @@ def smartErrorNotify(self, title: str, content: typing.Optional[str]):
         duration=-1,
         parent=self
     ).show()
+    if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.errorSFXPath)):
+        smartPlaySound(soundStreamer, cfg.get(cfg.errorSFXPath), "error notification")
 
 def smartInfoNotify(self, title: str, content: typing.Optional[str]):
     """ SmartUtils

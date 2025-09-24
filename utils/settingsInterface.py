@@ -467,6 +467,12 @@ class SettingsInterface(QWidget):
         self.optionSoundConfig.successPlayBtn.setEnabled(checked and bool(cfg.get(cfg.successSFXPath)))
         self.optionSoundConfig.successPickBtn.setEnabled(checked)
         self.optionSoundConfig.successRemoveBtn.setEnabled(checked and bool(cfg.get(cfg.successSFXPath)))
+        self.optionSoundConfig.warningPlayBtn.setEnabled(checked and bool(cfg.get(cfg.warningSFXPath)))
+        self.optionSoundConfig.warningPickBtn.setEnabled(checked)
+        self.optionSoundConfig.warningRemoveBtn.setEnabled(checked and bool(cfg.get(cfg.warningSFXPath)))
+        self.optionSoundConfig.errorPlayBtn.setEnabled(checked and bool(cfg.get(cfg.errorSFXPath)))
+        self.optionSoundConfig.errorPickBtn.setEnabled(checked)
+        self.optionSoundConfig.errorRemoveBtn.setEnabled(checked and bool(cfg.get(cfg.errorSFXPath)))
 
 class SettingWidgetDefinition():
     """ Declaration class of SettingsInterface main widgets """
@@ -889,7 +895,7 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
             self.startupRemoveBtn.setEnabled(False)
         ))
 
-        # Third group - Success notification
+        # Second group - Success notification
         self.successLabel = BodyLabel("Notification - success")
         self.successPlayBtn = PushButton(FICO.PLAY, "Play sound")
         self.successPlayBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.successSFXPath)))
@@ -913,7 +919,7 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
             self.successRemoveBtn.setEnabled(False)
         ))
 
-        # Second group - Information toggle
+        # Third group - Information notification
         self.infoLabel = BodyLabel(f"Notification - information")
         self.infoPlayBtn = PushButton(FICO.PLAY, "Play sound")
         self.infoPlayBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.infoSFXPath)))
@@ -937,12 +943,62 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
             self.infoRemoveBtn.setEnabled(False)
         ))
 
+        # Fourth group - Warning notification
+        self.warningLabel = BodyLabel("Notification - warning")
+        self.warningPlayBtn = PushButton(FICO.PLAY, "Play sound")
+        self.warningPlayBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.warningSFXPath)))
+        self.warningPlayBtn.clicked.connect(lambda: self.soundPlay(self.soundSample, cfg.get(cfg.warningSFXPath)))
+        self.warningPickBtn = ToolButton(FICO.FOLDER)
+        self.warningPickBtn.setToolTip("Select a custom sound")
+        self.warningPickBtn.installEventFilter(ToolTipFilter(self.warningPickBtn))
+        self.warningPickBtn.setEnabled(cfg.get(cfg.enableSoundEffects))
+        self.warningPickBtn.clicked.connect(lambda: (
+            self.soundConfigure(cfg.warningSFXPath, f"Select {SmartLinkerName} warning notification SFX", "The warning notification sound has been successfully modified!", parent),
+            self.warningPlayBtn.setEnabled(bool(cfg.get(cfg.warningSFXPath))),
+            self.warningRemoveBtn.setEnabled(bool(cfg.get(cfg.warningSFXPath)))
+        ))
+        self.warningRemoveBtn = ToolButton(FICO.REMOVE_FROM)
+        self.warningRemoveBtn.setToolTip("Remove sound")
+        self.warningRemoveBtn.installEventFilter(ToolTipFilter(self.warningRemoveBtn))
+        self.warningRemoveBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.warningSFXPath)))
+        self.warningRemoveBtn.clicked.connect(lambda: (
+            self.soundRemove("warning notification", cfg.warningSFXPath, parent),
+            self.warningPlayBtn.setEnabled(False),
+            self.warningRemoveBtn.setEnabled(False)
+        ))
+
+        # Fifth group - Error notification
+        self.errorLabel = BodyLabel(f"Notification - error")
+        self.errorPlayBtn = PushButton(FICO.PLAY, "Play sound")
+        self.errorPlayBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.errorSFXPath)))
+        self.errorPlayBtn.clicked.connect(lambda: self.soundPlay(self.soundSample, cfg.get(cfg.errorSFXPath)))
+        self.errorPickBtn = ToolButton(FICO.FOLDER)
+        self.errorPickBtn.setToolTip("Select a custom sound")
+        self.errorPickBtn.installEventFilter(ToolTipFilter(self.errorPickBtn))
+        self.errorPickBtn.setEnabled(cfg.get(cfg.enableSoundEffects))
+        self.errorPickBtn.clicked.connect(lambda: (
+            self.soundConfigure(cfg.errorSFXPath, f"Select {SmartLinkerName} error notification SFX", "The error notification sound has been successfully modified!", parent),
+            self.errorPlayBtn.setEnabled(bool(cfg.get(cfg.errorSFXPath))),
+            self.errorRemoveBtn.setEnabled(bool(cfg.get(cfg.errorSFXPath)))
+        ))
+        self.errorRemoveBtn = ToolButton(FICO.REMOVE_FROM)
+        self.errorRemoveBtn.setToolTip("Remove sound")
+        self.errorRemoveBtn.installEventFilter(ToolTipFilter(self.errorRemoveBtn))
+        self.errorRemoveBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.errorSFXPath)))
+        self.errorRemoveBtn.clicked.connect(lambda: (
+            self.soundRemove("error notification", cfg.errorSFXPath, parent),
+            self.errorPlayBtn.setEnabled(False),
+            self.errorRemoveBtn.setEnabled(False)
+        ))
+
         self.viewLayout.setContentsMargins(0, 0, 0, 0)
         self.viewLayout.setSpacing(0)
 
         self.add(self.startupLabel, self.startupPlayBtn, self.startupPickBtn, self.startupRemoveBtn)
         self.add(self.infoLabel, self.infoPlayBtn, self.infoPickBtn, self.infoRemoveBtn)
         self.add(self.successLabel, self.successPlayBtn, self.successPickBtn, self.successRemoveBtn)
+        self.add(self.warningLabel, self.warningPlayBtn, self.warningPickBtn, self.warningRemoveBtn)
+        self.add(self.errorLabel, self.errorPlayBtn, self.errorPickBtn, self.errorRemoveBtn)
 
     def add(self, label, play, pick, remove):
         w = QWidget()

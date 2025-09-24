@@ -3,6 +3,6 @@ darkdetect
 psutil
 pygame
 PyQt6
-qfluentwidgets
-qframelesswindow
-win32api
+PyQt6-Fluent-Widgets
+PyQt6-Frameless-Window
+pywin32

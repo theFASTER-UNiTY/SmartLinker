@@ -157,7 +157,9 @@ class MyBrowsersInterface(QWidget):
         self.updateSnack = QWidget()
         self.updateSnack.setObjectName("BSnackBase")
         self.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smartConvertToRGB(themeColor().name())}, 0.25)}}")
-        if bool(cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners)): mainBrowLayout.addWidget(self.updateSnack)
+        mainBrowLayout.addWidget(self.updateSnack)
+        self.updateSnack.setVisible(bool(cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners))) 
+        self.updateSnack.setEnabled(bool(cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners))) 
         self.updateSnackLayout = QHBoxLayout(self.updateSnack)
         self.updateSnackLayout.setContentsMargins(20, 10, 20, 10)
         self.updateSnackIcon = IconWidget(FICO.IOT)
@@ -299,7 +301,7 @@ class MyBrowsersInterface(QWidget):
                 "Before proceeding, please note that removing all your browsers from your SmartList " \
                     "is at YOUR OWN RISK, and you will have to start all over again if it is a mistake of yours.\n\n" \
                     "So continue only if you're 100% SURE and you know what you're doing!!",
-                self
+                parent
             )
             confirmClearDlg.yesButton.setText("I'm 100% sure!")
             confirmClearDlg.cancelButton.setText("Nevermind...")

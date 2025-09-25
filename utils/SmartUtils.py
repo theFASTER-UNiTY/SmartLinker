@@ -1,14 +1,15 @@
 """
 SmartUtils
 ==========
-A complete utility module made specifically for SmartLinker
-basic and technical needs.
+A complete utility module made specifically for SmartLinker basic and technical needs.
 
-:Copyright: © 2025 by #theF∆STER™ CODE&BU!LD.
+:Copyright: © 2025 by #theF∆STER™ UN!TY.
 """
-__version__ = "0.9.0"
+__version__ = "v0.9.0"
 __author__ = "#theF∆STER™ CODE&BU!LD"
 
+# NOTE: CODE&BU!LD is actually the software development section of the UN!TY group.
+# (In case you would wonder...)
 # =========================================================
 
 import darkdetect, datetime, json, os, psutil, pygame, requests, socket, subprocess, sys, typing, webbrowser, win32api, winreg
@@ -34,11 +35,11 @@ from packaging.version import Version
 
 # =========================================================
 
-SmartLinkerID = "theFASTER.SmartLinker"
-SmartLinkerName = "SmartLinker"
-SmartLinkerVersion = __version__
-SmartLinkerAuthor = __author__
-SmartLinkerGitRepoAPI = "https://api.github.com/repos/theFASTER-UNiTY/SmartLinker"
+SmartLinkerID: str = "theFASTER.SmartLinker"
+SmartLinkerName: str = "SmartLinker"
+SmartLinkerVersion: str = __version__
+SmartLinkerAuthor: str = __author__
+SmartLinkerGitRepoAPI: str = "https://api.github.com/repos/theFASTER-UNiTY/SmartLinker"
 PURPLE = "\x1b[35m"
 init()
 pygame.init()
@@ -73,7 +74,6 @@ class Config(QConfig):
     lastCheckedDate = ConfigItem("About", "LastCheckedDate", "")
     updateAvailable = ConfigItem("About", "UpdateAvailable", False)
     updateVersion = ConfigItem("About", "UpdateVersion", "")
-    isCheckingUpdates = ConfigItem("About", "IsCheckingUpdates", False)
     qAccentColor = ColorConfigItem("QFluentWidgets", "ThemeColor", "#ff25d9e6")
 
 def smartResourcePath(relativePath: str):

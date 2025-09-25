@@ -730,7 +730,7 @@ class FlagsSettingGroup(ExpandGroupSettingCard):
         ))
         
         # Fourth group - Update banners
-        self.updateBannerSwitchLabel = BodyLabel("Enable update banners display*")
+        self.updateBannerSwitchLabel = BodyLabel("Enable update banners display (About screen excluded)*")
         self.updateBannerSwitchButton = SwitchButton(parent=self, indicatorPos=IndicatorPosition.RIGHT)
         self.updateBannerSwitchButton.setChecked(cfg.get(cfg.showUpdateBanners))
         self.updateBannerSwitchButton.checkedChanged.connect(lambda checked: (

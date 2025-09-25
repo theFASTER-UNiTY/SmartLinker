@@ -23,6 +23,7 @@ import darkdetect
 import subprocess
 import pygame
 import socket
+import requests
 from PyQt6.QtCore import Qt, QFileInfo
 from PyQt6.QtGui import QIcon, QFont, QColor
 from PyQt6.QtWidgets import QWidget, QFileIconProvider, QFileDialog
@@ -41,6 +42,7 @@ SmartLinkerID = "theFASTER.SmartLinker"
 SmartLinkerName = "SmartLinker"
 SmartLinkerVersion = __version__
 SmartLinkerAuthor = __author__
+SmartLinkerGitRepoAPI = "https://api.github.com/repos/theFASTER-UNiTY/SmartLinker"
 PURPLE = "\x1b[35m"
 init()
 pygame.init()
@@ -203,19 +205,19 @@ def smartCheckConnectivity(hostname = "8.8.8.8", port = 53, timeout = 5.0):
         isConnected = True
     except socket.gaierror:
         print(f"{Fore.RED}Failed to establish connection: the DNS address cannot be resolved...{Style.RESET_ALL}")
-        smartLog("ERROR: Failed to establish conection: could not resolve DNS address...")
+        smartLog("ERROR: Failed to establish connection: could not resolve DNS address...")
         isConnected = False
     except TimeoutError:
         print(f"{Fore.RED}Failed to establish connection: the timeout has been exceeded...{Style.RESET_ALL}")
-        smartLog("ERROR: Failed to establish conection: timeout exceeded...")
+        smartLog("ERROR: Failed to establish connection: timeout exceeded...")
         isConnected = False
     except OSError as ose:
         print(f"{Fore.RED}Failed to establish connection: an OS-related error occured: {ose}{Style.RESET_ALL}")
-        smartLog(f"ERROR: Failed to establish conection because of an OS-related error: {ose}")
+        smartLog(f"ERROR: Failed to establish connection because of an OS-related error: {ose}")
         isConnected = False
     except Exception as e:
         print(f"{Fore.RED}Something went wrong while attempting to establish connection: {e}{Style.RESET_ALL}")
-        smartLog(f"ERROR: Failed to establish conection: {e}")
+        smartLog(f"ERROR: Failed to establish connection: {e}")
         isConnected = False
     finally: return isConnected
 
@@ -581,7 +583,7 @@ def smartSegoeCaption() -> QFont:
     font.setPixelSize(12)
     return font
 
-def smartGetLatestVersionTag():
+def smartGetLatestVersionTagLocal():
     """ SmartUtils
     ==========
     SmartLinker's latest version tag checker
@@ -608,6 +610,49 @@ def smartGetLatestVersionTag():
         print(f"{Fore.RED}Something went wrong while checking the latest version: {e}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to check latest version: {e}")
         return ""
+
+def smartGetLatestVersionTag():
+    tagUrl = f"{SmartLinkerGitRepoAPI}/tags"
+    params = {'per_page': 1}
+    latestTag: str = ""
+
+    try:
+        response = requests.get(tagUrl, params, timeout=5)
+        response.raise_for_status()
+
+        tagsList = response.json()
+        if tagsList: latestTag = tagsList[0].get("name")
+        else:
+            print(f"{Fore.RED}Failed to get latest version tag from GitHub repository: there are no tags to be found...{Style.RESET_ALL}")
+            smartLog("ERROR: Failed to get latest version tag from GitHub repository: could not find any tags...")
+            latestTag = ""
+    except requests.exceptions.RequestException as re:
+        print(f"{Fore.RED}Failed to communicate with GitHub repository: {re}{Style.RESET_ALL}")
+        smartLog(f"ERROR: Failed to communicate with GitHub repository: {re}")
+        latestTag = ""
+    except Exception as e:
+        print(f"{Fore.RED}Something went wrong while attempting to get the latest version tag from GitHub: {e}{Style.RESET_ALL}")
+        smartLog(f"ERROR: Failed to get latest version tag from GitHub repository: {e}")
+        latestTag = ""
+    finally: return latestTag
+
+def smartGetLatestReleaseTag():
+    releaseUrl = f"{SmartLinkerGitRepoAPI}/releases/latest"
+    latestTag: str = ""
+    try:
+        response = requests.get(releaseUrl, timeout=5)
+        response.raise_for_status()
+        data = response.json()
+        latestTag = data.get("tag_name")
+    except requests.exceptions.RequestException as re:
+        print(f"{Fore.RED}Failed to communicate with GitHub repository: {re}{Style.RESET_ALL}")
+        smartLog(f"ERROR: Failed to communicate with GitHub repository: {re}")
+        latestTag = ""
+    except Exception as e:
+        print(f"{Fore.RED}Something went wrong while attempting to get the latest release tag from GitHub: {e}{Style.RESET_ALL}")
+        smartLog(f"ERROR: Failed to get latest release tag from GitHub repository: {e}")
+        latestTag = ""
+    finally: return latestTag
 
 def smartConvertToHEX(color: str | QColor):
     """ SmartUtils

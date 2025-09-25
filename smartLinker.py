@@ -33,7 +33,7 @@ class SmartLinkerGUI(FluentWindow):
         # cfg.set(cfg.qAccentColor, getSystemAccentColor())
         smartEmptyLog()
 
-        self.latestVersion = smartGetLatestVersionTag() if bool(cfg.get(cfg.checkUpdatesOnStart)) else ""
+        self.latestVersion = smartGetLatestVersionTag() if bool(cfg.get(cfg.checkUpdatesOnStart) and smartCheckConnectivity()) else ""
         self.myBrowsers = smartLoadBrowsers()
         self.removeKeysDlg = None
         self.listSelectDlg = None
@@ -65,7 +65,9 @@ class SmartLinkerGUI(FluentWindow):
                     aboutItem,
                     InfoBadgePosition.NAVIGATION_ITEM
                 )
-            else: cfg.set(cfg.updateAvailable, False)
+            else:
+                cfg.set(cfg.updateAvailable, False)
+                cfg.set(cfg.updateVersion, "")
         elif bool(cfg.get(cfg.updateAvailable)):
             aboutItem = self.navigationInterface.widget(self.aboutInterface.objectName())
             IconInfoBadge.attension(
@@ -109,7 +111,7 @@ class SmartLinkerGUI(FluentWindow):
         self.aboutInterface.aboutResources.qFluentBtn.clicked.connect(lambda: smartOpenURL("https://www.qfluentwidgets.com/"))
         self.aboutInterface.aboutResources.qFluentBtn2.clicked.connect(lambda: smartOpenURL("https://github.com/zhiyiYo/PyQt-Fluent-Widgets"))
         self.aboutInterface.aboutResources.pyQtBtn.clicked.connect(lambda: smartOpenURL("https://www.flaticon.com/"))
-        qconfig.themeChangedFinished.connect(lambda theme=theme(): (
+        qconfig.themeChangedFinished.connect(lambda theme = theme(): (
             self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smartGetRed(themeColor())}, {smartGetGreen(themeColor())}, {smartGetBlue(themeColor())}, 0.25)}}"), # type: ignore
             self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smartGetRed(themeColor())}, {smartGetGreen(themeColor())}, {smartGetBlue(themeColor())}, 0.25)}}"), # type: ignore
             self.aboutInterface.updateCard.setBackgroundColor(QColor(smartGetRed(themeColor()), smartGetGreen(themeColor()), smartGetBlue(themeColor()), 127)) if self.aboutInterface.updateCard else None, # type: ignore

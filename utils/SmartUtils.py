@@ -624,21 +624,21 @@ def smartGetLatestVersionTag():
 
         tagsList = response.json()
         if tagsList:
+            latestTag = tagsList[0].get("name")
             print(f"{Fore.BLUE}Latest version: {latestTag}{Style.RESET_ALL}")
             smartLog(f"Latest version: {latestTag}")
-            latestTag = tagsList[0].get("name")
         else:
+            latestTag = ""
             print(f"{Fore.RED}Failed to get latest version tag from GitHub repository: there are no tags to be found...{Style.RESET_ALL}")
             smartLog("ERROR: Failed to get latest version tag from GitHub repository: could not find any tags...")
-            latestTag = ""
     except requests.exceptions.RequestException as re:
+        latestTag = ""
         print(f"{Fore.RED}Failed to communicate with GitHub repository: {re}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to communicate with GitHub repository: {re}")
-        latestTag = ""
     except Exception as e:
+        latestTag = ""
         print(f"{Fore.RED}Something went wrong while attempting to get the latest version tag from GitHub: {e}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to get latest version tag from GitHub repository: {e}")
-        latestTag = ""
     finally: return latestTag
 
 def smartGetLatestReleaseTag():

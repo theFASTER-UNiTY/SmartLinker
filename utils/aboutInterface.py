@@ -16,7 +16,7 @@ class AboutInterface(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("About-SmartLinker")
-        self.latestVersion = smartGetLatestVersionTag()
+        self.latestVersion = smartGetLatestVersionTag() if smartCheckConnectivity() else ""
         self.updateAvailable = False
         self.lastChecked = f"Last checked: {cfg.get(cfg.lastCheckedDate)}" if cfg.get(cfg.lastCheckedDate) else "Click on the following button to check for the latest updates."
         self.updateCard = None
@@ -46,7 +46,6 @@ class AboutInterface(QWidget):
         mainTitleLine.setContentsMargins(40, 0, 0, 0) # for split fluent window
         mainAboutLayout.addLayout(mainTitleLine)
         self.title = TitleLabel("About", self)
-        # self.title.setFont(smartSegoeTitle())
         self.title.setAlignment(Qt.AlignmentFlag.AlignTop)
         mainTitleLine.addWidget(self.title)
         mainAboutScroll = SingleDirectionScrollArea(self, Qt.Orientation.Vertical)

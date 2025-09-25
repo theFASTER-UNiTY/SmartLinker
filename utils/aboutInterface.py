@@ -64,7 +64,7 @@ class AboutInterface(QWidget):
 
         aboutMainLine = QHBoxLayout()
         layout.addLayout(aboutMainLine)
-        aboutLogo = IconWidget(QIcon(smartResourcePath("resources/images/icons/icon_splash.ico")))
+        aboutLogo = IconWidget(QIcon(smartResourcePath("resources/images/icons/icon.ico")))
         aboutLogo.setFixedSize(64, 64)
         aboutMainLine.addWidget(aboutLogo)
         aboutTextBox = QVBoxLayout()
@@ -111,6 +111,31 @@ class AboutInterface(QWidget):
         layout.addWidget(self.aboutResources)
 
         layout.addStretch(1)
+
+    def checkForUpdates(self, layout: QVBoxLayout, parent):
+        """ :AboutInterface: Manual update checker """
+        self.latestVersion = smartGetLatestVersionTag()
+        checkTime = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
+        if not self.latestVersion:
+            self.updateAvailable = False
+            self.lastChecked = f"Last checked: {checkTime} (Failed to check for updates)"
+            cfg.set(cfg.lastCheckedDate, checkTime)
+            if self.updateCard: self.updateCard.setHidden(not cfg.get(cfg.updateAvailable))
+        elif Version(self.latestVersion) > Version(SmartLinkerVersion):
+            self.updateAvailable = True
+            self.lastChecked = f"Last checked: {checkTime} (Latest version: {smartGetLatestVersionTag()})"
+            cfg.set(cfg.lastCheckedDate, checkTime)
+            if not self.updateCard:
+                self.updateCard = UpdateAvailableCard("A new update is available for download!", f"You can now download the latest version of {SmartLinkerName} from the official GitHub repository.")
+                layout.insertWidget(2, self.updateCard)
+                self.updateCard.show()
+            smartInfoNotify(parent, "Update available", f"An updated version of {SmartLinkerName} is available for download.")
+        else:
+            self.updateAvailable = False
+            self.lastChecked = f"Last checked: {checkTime}"
+            cfg.set(cfg.lastCheckedDate, checkTime)
+            if self.updateCard: self.updateCard.setHidden(not cfg.get(cfg.updateAvailable))
+        self.aboutVersion.setContent(self.lastChecked)
 
 class AboutAppGroup(SimpleExpandGroupSettingCard):
     """ Class for the informative text about SmartLinker in the About section """

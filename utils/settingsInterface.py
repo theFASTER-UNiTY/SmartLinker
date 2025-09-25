@@ -782,7 +782,7 @@ class MainBrowsersCard(CardWidget):
         self.titleLabel = BodyLabel(title, self)
         self.contentLabel = CaptionLabel(content, self)
         self.fromStorageButton = ToolButton(FICO.FOLDER, self)
-        self.fromListButton = ToolButton(smartResourcePath("resources/images/icons/icon.ico"), self)
+        self.fromListButton = ToolButton(smartResourcePath("resources/images/icons/icon_flat.ico"), self)
         self.removeMainButton = ToolButton(FICO.REMOVE_FROM, self)
         self.fromStorageToolTip = ToolTipFilter(self.fromStorageButton)
         self.fromListToolTip = ToolTipFilter(self.fromListButton)

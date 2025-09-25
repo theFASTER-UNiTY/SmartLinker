@@ -24,8 +24,8 @@ from qfluentwidgets import (
     IndicatorPosition, InfoBadgePosition, InfoBar, InfoBarPosition, LineEdit, MessageBox, MessageBoxBase, NavigationItemPosition,
     OptionsConfigItem, OptionsSettingCard, OptionsValidator, PrimaryPushButton, PrimaryPushSettingCard, PushButton, PushSettingCard,
     QConfig, qconfig, RangeConfigItem, RangeValidator, setTheme, setThemeColor, SimpleExpandGroupSettingCard,
-    SingleDirectionScrollArea, SpinBox, SplashScreen, StateToolTip, StrongBodyLabel, SubtitleLabel, SwitchButton, SwitchSettingCard,
-    TableWidget, Theme, theme, themeColor, TitleLabel, ToolButton, ToolTipFilter, ToolTipPosition
+    SingleDirectionScrollArea, SpinBox, SplashScreen, StrongBodyLabel, SubtitleLabel, SwitchButton, SwitchSettingCard, TableWidget,
+    Theme, theme, themeColor, TitleLabel, ToolButton, ToolTipFilter, ToolTipPosition
 )
 from qframelesswindow import FramelessWindow, TitleBar
 from qframelesswindow.utils import getSystemAccentColor

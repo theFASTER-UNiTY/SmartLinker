@@ -11,26 +11,22 @@ __author__ = "#theF∆STER™ CODE&BU!LD"
 
 # =========================================================
 
-import os
-import sys
-import winreg
-import webbrowser
-import json
-import typing
-import psutil
-import datetime
-import darkdetect
-import subprocess
-import pygame
-import socket
-import requests
-from PyQt6.QtCore import Qt, QFileInfo
-from PyQt6.QtGui import QIcon, QFont, QColor
-from PyQt6.QtWidgets import QWidget, QFileIconProvider, QFileDialog
-from qfluentwidgets import (
-    InfoBar, InfoBarPosition, QConfig, ConfigItem, OptionsConfigItem, OptionsValidator, ColorConfigItem, BoolValidator, qconfig,
-    RangeConfigItem, RangeValidator
+import darkdetect, datetime, json, os, psutil, pygame, requests, socket, subprocess, sys, typing, webbrowser, win32api, winreg
+from PyQt6.QtCore import QEventLoop, QFileInfo, Qt, QSize, QTimer
+from PyQt6.QtGui import QColor, QFont, QIcon
+from PyQt6.QtWidgets import (
+    QAbstractItemView, QApplication, QFileDialog, QFileIconProvider, QHBoxLayout, QTableWidgetItem, QVBoxLayout, QWidget
 )
+from qfluentwidgets import (
+    Action, BodyLabel, BoolValidator, CaptionLabel, CardWidget, ColorConfigItem, ColorDialog, ComboBox, CommandBar, ConfigItem,
+    ElevatedCardWidget, ExpandGroupSettingCard, FluentIcon as FICO, FluentWindow, HyperlinkCard, IconInfoBadge, IconWidget,
+    IndicatorPosition, InfoBadgePosition, InfoBar, InfoBarPosition, LineEdit, MessageBox, MessageBoxBase, NavigationItemPosition,
+    OptionsConfigItem, OptionsSettingCard, OptionsValidator, PrimaryPushButton, PrimaryPushSettingCard, PushButton, PushSettingCard,
+    QConfig, qconfig, RangeConfigItem, RangeValidator, setTheme, setThemeColor, SimpleExpandGroupSettingCard,
+    SingleDirectionScrollArea, SpinBox, SplashScreen, StateToolTip, StrongBodyLabel, SubtitleLabel, SwitchButton, SwitchSettingCard,
+    TableWidget, Theme, theme, themeColor, TitleLabel, ToolButton, ToolTipFilter, ToolTipPosition
+)
+from qframelesswindow import FramelessWindow, TitleBar
 from qframelesswindow.utils import getSystemAccentColor
 from colorama import init, Fore, Back, Style
 from shiboken6 import isValid
@@ -77,6 +73,7 @@ class Config(QConfig):
     lastCheckedDate = ConfigItem("About", "LastCheckedDate", "")
     updateAvailable = ConfigItem("About", "UpdateAvailable", False)
     updateVersion = ConfigItem("About", "UpdateVersion", "")
+    isCheckingUpdates = ConfigItem("About", "IsCheckingUpdates", False)
     qAccentColor = ColorConfigItem("QFluentWidgets", "ThemeColor", "#ff25d9e6")
 
 def smartResourcePath(relativePath: str):

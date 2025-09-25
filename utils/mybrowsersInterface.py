@@ -1,18 +1,3 @@
-import os
-import subprocess
-import win32api
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QColor, QIcon
-from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QTableWidgetItem, QAbstractItemView
-)
-from qfluentwidgets import (
-    TitleLabel, SubtitleLabel, SingleDirectionScrollArea, PushButton, BodyLabel,
-    theme, Theme, PrimaryPushSettingCard, FluentIcon as FICO, MessageBoxBase, CardWidget,
-    IconWidget, ToolButton, LineEdit, CaptionLabel, PushSettingCard, ComboBox,
-    ToolTipFilter, ToolTipPosition, MessageBox, CommandBar, Action, TableWidget,
-    PrimaryPushButton, StrongBodyLabel, themeColor
-)
 from utils.SmartUtils import *
 
 myBrowsList = smartLoadBrowsers()

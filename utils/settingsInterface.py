@@ -1,17 +1,3 @@
-import subprocess
-import winreg
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon, QColor
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
-from qfluentwidgets import (
-    TitleLabel, FluentIcon as FICO, SingleDirectionScrollArea, SubtitleLabel, PushSettingCard,
-    PrimaryPushSettingCard, ExpandGroupSettingCard, PushButton, ComboBox, BodyLabel,
-    OptionsSettingCard, SwitchSettingCard, themeColor, ColorDialog, setThemeColor,
-    Theme, theme, MessageBox, CardWidget, IconWidget, CaptionLabel, ToolButton, ToolTipFilter,
-    MessageBoxBase, SwitchButton, IndicatorPosition, SpinBox, PrimaryPushButton, StrongBodyLabel
-)
-from qfluentwidgets.common.icon import FluentIcon as FIF
-from qframelesswindow.utils import getSystemAccentColor
 from utils.SmartUtils import *
 
 myBrowsList = smartLoadBrowsers()

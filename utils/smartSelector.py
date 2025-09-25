@@ -1,20 +1,3 @@
-__version__ = "1.0.0"
-__author__ = "#theF∆STER™ CODE&BU!LD"
-
-import os
-import sys
-import subprocess
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QColor, QIcon
-from PyQt6.QtWidgets import QVBoxLayout, QHBoxLayout, QApplication
-from qfluentwidgets import (
-    FluentIcon as FICO, IconWidget, TitleLabel, CaptionLabel, ElevatedCardWidget, SingleDirectionScrollArea,
-    PrimaryPushButton, ToolButton, BodyLabel, LineEdit, Theme, setTheme, setThemeColor, PushButton, theme,
-    ToolTipFilter, SwitchButton, MessageBox
-)
-from qframelesswindow import FramelessWindow, TitleBar
-from qframelesswindow.utils import getSystemAccentColor
-from colorama import Fore, Style
 from utils.SmartUtils import *
 
 # ===========================================================================================================

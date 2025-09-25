@@ -1,13 +1,3 @@
-# import os
-# import sys
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon, QColor
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
-from qfluentwidgets import (
-    FluentIcon as FICO, TitleLabel, SingleDirectionScrollArea, IconWidget, CaptionLabel, PrimaryPushSettingCard, SwitchSettingCard,
-    HyperlinkCard, SimpleExpandGroupSettingCard, BodyLabel, ExpandGroupSettingCard, ToolButton, ToolTipFilter, themeColor,
-    ToolTipPosition, CardWidget, PrimaryPushButton, SubtitleLabel
-)
 from utils.SmartUtils import *
 
 class AboutInterface(QWidget):
@@ -20,6 +10,7 @@ class AboutInterface(QWidget):
         self.updateAvailable = False
         self.lastChecked = f"Last checked: {cfg.get(cfg.lastCheckedDate)}" if cfg.get(cfg.lastCheckedDate) else "Click on the following button to check for the latest updates."
         self.updateCard = None
+        self.updateCheckToolTip = None
 
         if bool(cfg.get(cfg.checkUpdatesOnStart)):
             autoCheckTime = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
@@ -74,14 +65,17 @@ class AboutInterface(QWidget):
         aboutSubtitle.setStyleSheet("color: gray")
         aboutTextBox.addWidget(aboutTitle)
         aboutTextBox.addWidget(aboutSubtitle)
-        if (self.updateAvailable and self.updateCard) or bool(cfg.get(cfg.updateAvailable)):
-            layout.addWidget(self.updateCard)
+        layout.addWidget(self.updateCard)
+        if self.updateCard:
+            self.updateCard.setVisible(self.updateAvailable or bool(cfg.get(cfg.updateAvailable)))
+            self.updateCard.setEnabled(self.updateAvailable or bool(cfg.get(cfg.updateAvailable)))
         self.aboutVersion = PrimaryPushSettingCard(
             "Check for updates",
             FICO.INFO,
             "Current version: " + SmartLinkerVersion,
             self.lastChecked
         )
+        #self.aboutVersion.button.clicked.connect(self.checkForUpdates(self.layout(), parent))
         layout.addWidget(self.aboutVersion)
         self.aboutCheckUpdates = SwitchSettingCard(
             FICO.UPDATE,
@@ -111,30 +105,69 @@ class AboutInterface(QWidget):
 
         layout.addStretch(1)
 
-    def checkForUpdates(self, layout: QVBoxLayout, parent):
+    def checkForUpdates(self, parent):
         """ :AboutInterface: Manual update checker """
-        self.latestVersion = smartGetLatestVersionTag()
-        checkTime = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
-        if not self.latestVersion:
-            self.updateAvailable = False
-            self.lastChecked = f"Last checked: {checkTime} (Failed to check for updates)"
-            cfg.set(cfg.lastCheckedDate, checkTime)
-            if self.updateCard: self.updateCard.setHidden(not cfg.get(cfg.updateAvailable))
-        elif Version(self.latestVersion) > Version(SmartLinkerVersion):
-            self.updateAvailable = True
-            self.lastChecked = f"Last checked: {checkTime} (Latest version: {smartGetLatestVersionTag()})"
-            cfg.set(cfg.lastCheckedDate, checkTime)
-            if not self.updateCard:
-                self.updateCard = UpdateAvailableCard("A new update is available for download!", f"You can now download the latest version of {SmartLinkerName} from the official GitHub repository.")
-                layout.insertWidget(2, self.updateCard)
-                self.updateCard.show()
-            smartInfoNotify(parent, "Update available", f"An updated version of {SmartLinkerName} is available for download.")
+        if smartCheckConnectivity():
+            print("Checking for latest version...")
+            smartLog("Checking for latest version...")
+            self.aboutVersion.button.setEnabled(False)
+            if self.updateCheckToolTip:
+                self.updateCheckToolTip = None
+                self.updateCheckToolTip = StateToolTip("Checking for updates", "Please wait a moment...", parent)
+                self.updateCheckToolTip.show()
+            else:
+                self.updateCheckToolTip = StateToolTip("Checking for updates", "Please wait a moment...", parent)
+                self.updateCheckToolTip.show()
+            self.latestVersion = smartGetLatestVersionTag()
+            checkTime = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
+            if not self.latestVersion:
+                self.updateAvailable = False
+                self.lastChecked = f"Last checked: {checkTime} (Failed to check for updates)"
+                cfg.set(cfg.lastCheckedDate, checkTime)
+                if self.updateCard: self.updateCard.setHidden(bool(not cfg.get(cfg.updateAvailable)))
+                self.aboutVersion.button.setEnabled(True)
+                self.updateCheckToolTip.setTitle("Checking complete!")
+                self.updateCheckToolTip.setContent("")
+                self.updateCheckToolTip.setState(True)
+                self.updateCheckToolTip = None
+                print(f"{Fore.YELLOW}No version tags have been found...{Style.RESET_ALL}")
+                smartLog("WARNING: No version tags have been found...")
+                smartWarningNotify(parent, "Warning, be careful!", "The latest version could not be found...")
+            elif Version(self.latestVersion) > Version(SmartLinkerVersion):
+                self.updateAvailable = True
+                self.lastChecked = f"Last checked: {checkTime} (Latest version: {smartGetLatestVersionTag()})"
+                cfg.set(cfg.lastCheckedDate, checkTime)
+                if self.updateCard:
+                    if self.updateCard.isHidden(): self.updateCard.setHidden(False)
+                else:
+                    self.updateCard = UpdateAvailableCard("A new update is available for download!", f"You can now download the latest version of {SmartLinkerName} from the official GitHub repository.")
+                    self.updateCard.setVisible(True)
+                self.aboutVersion.setEnabled(True)
+                self.updateCheckToolTip.setTitle("Checking complete!")
+                self.updateCheckToolTip.setContent("")
+                self.updateCheckToolTip.setState(True)
+                self.updateCheckToolTip = None
+                print(f"{Fore.BLUE}The latest version of {SmartLinkerName} is now available: {self.latestVersion}{Style.RESET_ALL}")
+                smartLog(f"INFO: The latest version of {SmartLinkerName} is now available: {self.latestVersion}")
+                smartInfoNotify(parent, "Update available", f"An updated version of {SmartLinkerName} is available for download.")
+            else:
+                self.updateAvailable = False
+                self.lastChecked = f"Last checked: {checkTime}"
+                cfg.set(cfg.lastCheckedDate, checkTime)
+                if self.updateCard: self.updateCard.setHidden(bool(not cfg.get(cfg.updateAvailable)))
+                self.aboutVersion.button.setEnabled(True)
+                self.updateCheckToolTip.setTitle("Checking complete!")
+                self.updateCheckToolTip.setContent("")
+                self.updateCheckToolTip.setState(True)
+                self.updateCheckToolTip = None
+                print(f"{Fore.BLUE}{SmartLinkerName} is currently up-to-date.{Style.RESET_ALL}")
+                smartLog(f"INFO: {SmartLinkerName} is currently up-to-date.")
+                smartInfoNotify(parent, f"{SmartLinkerName} is up-to-date", "This is currently the latest update available.")
+            self.aboutVersion.setContent(self.lastChecked)
         else:
-            self.updateAvailable = False
-            self.lastChecked = f"Last checked: {checkTime}"
-            cfg.set(cfg.lastCheckedDate, checkTime)
-            if self.updateCard: self.updateCard.setHidden(not cfg.get(cfg.updateAvailable))
-        self.aboutVersion.setContent(self.lastChecked)
+            print(f"{Fore.YELLOW}Your device is not connected to the Internet...{Style.RESET_ALL}")
+            smartLog("WARNING: Device not connected to the Internet...")
+            smartWarningNotify(parent, "Warning, be careful!", "You are not connected to the Internet...")
 
 class AboutAppGroup(SimpleExpandGroupSettingCard):
     """ Class for the informative text about SmartLinker in the About section """

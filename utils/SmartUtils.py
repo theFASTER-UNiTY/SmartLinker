@@ -179,6 +179,46 @@ def smartPlaySound(sound, path: str, label: str):
         print(f"{Fore.RED}Something went wrong while attempting to play the {label} sound: {e}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to play the {label} sound: {e}")
 
+def smartCheckConnectivity(hostname = "8.8.8.8", port = 53, timeout = 5.0):
+    """ SmartUtils
+    ==========
+    Internet connectivity checker
+
+    Parameters
+    ----------
+    hostname: string
+        The IP address or the host name of the target server (8.8.8.8 = Google DNS)
+    port: integer
+        The port to be tested (53 = DNS, 443 = HTTP)
+    timeout: float
+        The maximum connection delay
+    
+    Returns
+    -------
+    isConnected: boolean
+        Whether an internet connection has been established
+    """
+    try:
+        socket.create_connection((hostname, port), timeout)
+        isConnected = True
+    except socket.gaierror:
+        print(f"{Fore.RED}Failed to establish connection: the DNS address cannot be resolved...{Style.RESET_ALL}")
+        smartLog("ERROR: Failed to establish conection: could not resolve DNS address...")
+        isConnected = False
+    except TimeoutError:
+        print(f"{Fore.RED}Failed to establish connection: the timeout has been exceeded...{Style.RESET_ALL}")
+        smartLog("ERROR: Failed to establish conection: timeout exceeded...")
+        isConnected = False
+    except OSError as ose:
+        print(f"{Fore.RED}Failed to establish connection: an OS-related error occured: {ose}{Style.RESET_ALL}")
+        smartLog(f"ERROR: Failed to establish conection because of an OS-related error: {ose}")
+        isConnected = False
+    except Exception as e:
+        print(f"{Fore.RED}Something went wrong while attempting to establish connection: {e}{Style.RESET_ALL}")
+        smartLog(f"ERROR: Failed to establish conection: {e}")
+        isConnected = False
+    finally: return isConnected
+
 def smartIsDarkMode() -> bool:
     """ SmartUtils
     ==========
@@ -806,43 +846,3 @@ def smartGetAlphaFloat(color):
     except Exception as e:
         print(f"{Fore.RED}Something went wrong during alpha value pick: {e}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to pick alpha value from color: {e}")
-
-def smartCheckConnectivity(hostname = "8.8.8.8", port = 53, timeout = 5.0):
-    """ SmartUtils
-    ==========
-    Internet connectivity checker
-
-    Parameters
-    ----------
-    hostname: string
-        The IP address or the host name of the target server (8.8.8.8 = Google DNS)
-    port: integer
-        The port to be tested (53 = DNS, 443 = HTTP)
-    timeout: float
-        The maximum connection delay
-    
-    Returns
-    -------
-    isConnected: boolean
-        Whether an internet connection has been established
-    """
-    try:
-        socket.create_connection((hostname, port), timeout)
-        isConnected = True
-    except socket.gaierror:
-        print(f"{Fore.RED}Failed to establish connection: the DNS address cannot be resolved...{Style.RESET_ALL}")
-        smartLog("ERROR: Failed to establish conection: could not resolve DNS address...")
-        isConnected = False
-    except TimeoutError:
-        print(f"{Fore.RED}Failed to establish connection: the timeout has been exceeded...{Style.RESET_ALL}")
-        smartLog("ERROR: Failed to establish conection: timeout exceeded...")
-        isConnected = False
-    except OSError as ose:
-        print(f"{Fore.RED}Failed to establish connection: an OS-related error occured: {ose}{Style.RESET_ALL}")
-        smartLog(f"ERROR: Failed to establish conection because of an OS-related error: {ose}")
-        isConnected = False
-    except Exception as e:
-        print(f"{Fore.RED}Something went wrong while attempting to establish connection: {e}{Style.RESET_ALL}")
-        smartLog(f"ERROR: Failed to establish conection: {e}")
-        isConnected = False
-    finally: return isConnected

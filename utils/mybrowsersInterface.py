@@ -388,13 +388,13 @@ class MyBrowsersInterface(QWidget):
         print("Pending operation: Adding a new browser to the SmartList...\n" \
               f"Browser name: {name}\nBrowser complete path: {path}")
         smartLog(f"Adding a new browser to the SmartList...\nBrowser name: {name}\nBrowser path: {path}")
+        for browser in myBrowsList["MyBrowsers"]:
+            if browser["exec"] == os.path.basename(path): smartWarningNotify(parent, "Warning, be careful!", f"The new browser has the same executable name as {browser["name"]}.\nIt is not really an issue, but it might be confusing for {SmartLinkerName}...")
         myBrowsList["MyBrowsers"].append({
             "name": name,
             "path": path,
             "exec": os.path.basename(path)
         })
-        for browser in myBrowsList["MyBrowsers"]:
-            if browser["exec"] == os.path.basename(path): smartWarningNotify(parent, "Warning, be careful!", f"The new browser has the same executable name as {browser["name"]}.\nIt is not really an issue, but it might be confusing for {SmartLinkerName}...")
         smartWriteBrowsers(myBrowsList)
         self.refreshBrowsers(parent)
         smartSuccessNotify(self, "Adding complete!", f"{name} has been succesfully added to your SmartList!")

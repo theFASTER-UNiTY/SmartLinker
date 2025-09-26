@@ -70,9 +70,7 @@ class SettingsInterface(QWidget):
         soundLabel.setAlignment(Qt.AlignmentFlag.AlignTop)
         layout.addWidget(soundLabel)
         layout.addWidget(self.widgetDef.optionSoundEffects)
-        self.widgetDef.optionSoundEffects.switchButton.checkedChanged.connect(lambda checked: (
-            self.toggleSoundsAvailability(checked),
-        ))
+        self.widgetDef.optionSoundEffects.switchButton.checkedChanged.connect(lambda checked: self.toggleSoundsAvailability(checked))
         self.optionSoundConfig = SoundFxConfigGroup(self)
         layout.addWidget(self.optionSoundConfig)
 
@@ -233,7 +231,6 @@ class SettingsInterface(QWidget):
         if self.optionCustomAccentColorDlg.exec():
             setThemeColor(self.optionCustomAccentColorDlg.color, save=True)           
             cfg.set(cfg.accentColor, self.optionCustomAccentColorDlg.color.name())
-            # cfg.set(cfg.qAccentColor, self.optionCustomAccentColorDlg.color.name())
 
     def setAsDefaultBrowser(self):
         smartExePath = os.path.dirname(sys.executable)
@@ -709,7 +706,7 @@ class FlagsSettingGroup(ExpandGroupSettingCard):
         self.splashSwitchButton.setChecked(cfg.get(cfg.showSplash))
         self.splashSwitchButton.checkedChanged.connect(lambda checked: (
             self.splashDurationSpin.setEnabled(checked),
-            cfg.set(cfg.showSplash, checked),
+            cfg.set(cfg.showSplash, checked)
         ))
 
         # Second group - Splash duration
@@ -717,7 +714,9 @@ class FlagsSettingGroup(ExpandGroupSettingCard):
         self.splashDurationSpin = SpinBox()
         self.splashDurationSpin.setRange(0, 10000)
         self.splashDurationSpin.setValue(cfg.get(cfg.splashDuration))
-        self.splashDurationSpin.valueChanged.connect(lambda value: cfg.set(cfg.splashDuration, value))
+        self.splashDurationSpin.valueChanged.connect(lambda value: (
+            cfg.set(cfg.splashDuration, value)
+        ))
         self.splashDurationSpin.setEnabled(cfg.get(cfg.showSplash))
 
         # Third group - Acrylic sidebar

@@ -4,7 +4,6 @@ from utils.SmartUtils import *
 
 myBrowsList = smartLoadBrowsers()
 if len(sys.argv) > 1: requestURL = sys.argv[1]
-cfg.set(cfg.qAccentColor, getSystemAccentColor())
 setThemeColor(QColor(cfg.get(cfg.accentColor)) if cfg.get(cfg.accentMode) == "Custom" else QColor(cfg.get(cfg.qAccentColor)))
 
 class CustomTitleBar(TitleBar):
@@ -89,8 +88,6 @@ class SmartSelectorGUI(FramelessWindow):
         layout.setSpacing(10)
 
         # List of opened SmartList browsers
-        # self.descLabel = BodyLabel("Choose one of your browsers to load the forwarded URL")
-        # layout.addWidget(self.descLabel)
         self.myBrowsScroll = SingleDirectionScrollArea(self, Qt.Orientation.Horizontal)
         self.myBrowsScroll.setWidgetResizable(True)
         self.myBrowsScroll.setContentsMargins(0, 0, 0, 0)
@@ -179,8 +176,9 @@ class SmartSelectorGUI(FramelessWindow):
         self.closeOnLoadCheck.setChecked(cfg.get(cfg.closeOnBrowserSelect))
         self.closeOnLoadCheck.setOffText("Do not close window on browser select")
         self.closeOnLoadCheck.setOnText("Close window on browser select")
-        self.closeOnLoadCheck.checkedChanged.connect(lambda checked: cfg.set(cfg.closeOnBrowserSelect, checked))
-        # layout.addWidget(self.closeOnLoadCheck)
+        self.closeOnLoadCheck.checkedChanged.connect(lambda checked: (
+            cfg.set(cfg.closeOnBrowserSelect, checked)
+        ))
 
         layout.addStretch(1)
 

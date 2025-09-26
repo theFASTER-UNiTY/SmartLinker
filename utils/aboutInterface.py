@@ -6,28 +6,8 @@ class AboutInterface(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("About-SmartLinker")
-        self.latestVersion = smartGetLatestVersionTag() if smartCheckConnectivity() else ""
-        self.updateAvailable = False
-        self.lastChecked = f"Last checked: {cfg.get(cfg.lastCheckedDate)}" if cfg.get(cfg.lastCheckedDate) else "Click on the following button to check for the latest updates."
-        self.updateCard = None
-        self.updateCheckToolTip = None
-
-        if bool(cfg.get(cfg.checkUpdatesOnStart)):
-            autoCheckTime = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
-            if not self.latestVersion:
-                self.updateAvailable = False
-                self.lastChecked = f"Last checked: {autoCheckTime} (Failed to check for updates)"
-                cfg.set(cfg.lastCheckedDate, autoCheckTime)
-            elif Version(self.latestVersion) > Version(SmartLinkerVersion):
-                self.updateAvailable = True
-                self.lastChecked = f"Last checked: {autoCheckTime} (Latest version: {smartGetLatestVersionTag()})"
-                cfg.set(cfg.lastCheckedDate, autoCheckTime)
-                self.updateCard = UpdateAvailableCard("A new update is available for download!", f"You can now download the latest version of {SmartLinkerName} from the official GitHub repository.")
-            else:
-                self.updateAvailable = False
-                self.lastChecked = f"Last checked: {autoCheckTime}"
-                cfg.set(cfg.lastCheckedDate, autoCheckTime)
-        elif bool(cfg.get(cfg.updateAvailable)): self.updateCard = UpdateAvailableCard("A new update is available for download!", f"You can now download the latest version of {SmartLinkerName} from the official GitHub repository.")
+        self.lastChecked = f"Last checked: {cfg.get(cfg.lastCheckedDate)}{f" (Latest version: {cfg.get(cfg.updateVersion)})" if cfg.get(cfg.updateAvailable) else ""}" if cfg.get(cfg.lastCheckedDate) \
+                        else "Click on the following button to check for the latest updates."
 
         mainAboutLayout = QVBoxLayout(self)
         ### mainAboutLayout.setContentsMargins(0, 60, 0, 0) # for split fluent window
@@ -65,17 +45,12 @@ class AboutInterface(QWidget):
         aboutSubtitle.setStyleSheet("color: gray")
         aboutTextBox.addWidget(aboutTitle)
         aboutTextBox.addWidget(aboutSubtitle)
-        layout.addWidget(self.updateCard)
-        if self.updateCard:
-            self.updateCard.setVisible(self.updateAvailable or bool(cfg.get(cfg.updateAvailable)))
-            self.updateCard.setEnabled(self.updateAvailable or bool(cfg.get(cfg.updateAvailable)))
         self.aboutVersion = PrimaryPushSettingCard(
             "Check for updates",
             FICO.INFO,
             "Current version: " + SmartLinkerVersion,
             self.lastChecked
         )
-        #self.aboutVersion.button.clicked.connect(self.checkForUpdates(self.layout(), parent))
         layout.addWidget(self.aboutVersion)
         self.aboutCheckUpdates = SwitchSettingCard(
             FICO.UPDATE,
@@ -105,69 +80,30 @@ class AboutInterface(QWidget):
 
         layout.addStretch(1)
 
-    def checkForUpdates(self, parent):
-        """ :AboutInterface: Manual update checker """
-        if smartCheckConnectivity():
-            print("Checking for latest version...")
-            smartLog("Checking for latest version...")
-            self.aboutVersion.button.setEnabled(False)
-            if self.updateCheckToolTip:
-                self.updateCheckToolTip = None
-                self.updateCheckToolTip = StateToolTip("Checking for updates", "Please wait a moment...", parent)
-                self.updateCheckToolTip.show()
-            else:
-                self.updateCheckToolTip = StateToolTip("Checking for updates", "Please wait a moment...", parent)
-                self.updateCheckToolTip.show()
-            self.latestVersion = smartGetLatestVersionTag()
-            checkTime = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
-            if not self.latestVersion:
-                self.updateAvailable = False
-                self.lastChecked = f"Last checked: {checkTime} (Failed to check for updates)"
-                cfg.set(cfg.lastCheckedDate, checkTime)
-                if self.updateCard: self.updateCard.setHidden(bool(not cfg.get(cfg.updateAvailable)))
-                self.aboutVersion.button.setEnabled(True)
-                self.updateCheckToolTip.setTitle("Checking complete!")
-                self.updateCheckToolTip.setContent("")
-                self.updateCheckToolTip.setState(True)
-                self.updateCheckToolTip = None
-                print(f"{Fore.YELLOW}No version tags have been found...{Style.RESET_ALL}")
-                smartLog("WARNING: No version tags have been found...")
-                smartWarningNotify(parent, "Warning, be careful!", "The latest version could not be found...")
-            elif Version(self.latestVersion) > Version(SmartLinkerVersion):
-                self.updateAvailable = True
-                self.lastChecked = f"Last checked: {checkTime} (Latest version: {smartGetLatestVersionTag()})"
-                cfg.set(cfg.lastCheckedDate, checkTime)
-                if self.updateCard:
-                    if self.updateCard.isHidden(): self.updateCard.setHidden(False)
-                else:
-                    self.updateCard = UpdateAvailableCard("A new update is available for download!", f"You can now download the latest version of {SmartLinkerName} from the official GitHub repository.")
-                    self.updateCard.setVisible(True)
-                self.aboutVersion.setEnabled(True)
-                self.updateCheckToolTip.setTitle("Checking complete!")
-                self.updateCheckToolTip.setContent("")
-                self.updateCheckToolTip.setState(True)
-                self.updateCheckToolTip = None
-                print(f"{Fore.BLUE}The latest version of {SmartLinkerName} is now available: {self.latestVersion}{Style.RESET_ALL}")
-                smartLog(f"INFO: The latest version of {SmartLinkerName} is now available: {self.latestVersion}")
-                smartInfoNotify(parent, "Update available", f"An updated version of {SmartLinkerName} is available for download.")
-            else:
-                self.updateAvailable = False
-                self.lastChecked = f"Last checked: {checkTime}"
-                cfg.set(cfg.lastCheckedDate, checkTime)
-                if self.updateCard: self.updateCard.setHidden(bool(not cfg.get(cfg.updateAvailable)))
-                self.aboutVersion.button.setEnabled(True)
-                self.updateCheckToolTip.setTitle("Checking complete!")
-                self.updateCheckToolTip.setContent("")
-                self.updateCheckToolTip.setState(True)
-                self.updateCheckToolTip = None
-                print(f"{Fore.BLUE}{SmartLinkerName} is currently up-to-date.{Style.RESET_ALL}")
-                smartLog(f"INFO: {SmartLinkerName} is currently up-to-date.")
-                smartInfoNotify(parent, f"{SmartLinkerName} is up-to-date", "This is currently the latest update available.")
-            self.aboutVersion.setContent(self.lastChecked)
-        else:
-            print(f"{Fore.YELLOW}Your device is not connected to the Internet...{Style.RESET_ALL}")
-            smartLog("WARNING: Device not connected to the Internet...")
-            smartWarningNotify(parent, "Warning, be careful!", "You are not connected to the Internet...")
+        self.updateSnack = QWidget()
+        self.updateSnack.setObjectName("ASnackBase")
+        self.updateSnack.setStyleSheet(f"#ASnackBase {{background-color: rgba({smartConvertToRGB(themeColor().name())}, 0.25); margin: 10px; margin-top: 0; border-radius: 5px}}")
+        mainAboutLayout.addWidget(self.updateSnack)
+        self.updateSnack.setVisible(bool(cfg.get(cfg.updateAvailable))) 
+        self.updateSnack.setEnabled(bool(cfg.get(cfg.updateAvailable))) 
+        self.updateSnackLayout = QHBoxLayout(self.updateSnack)
+        self.updateSnackLayout.setContentsMargins(30, 15, 30, 25)
+        self.updateSnackIcon = IconWidget(FICO.IOT)
+        self.updateSnackIcon.setFixedSize(40, 40)
+        self.updateSnackLayout.setSpacing(20)
+        self.updateSnackLayout.addWidget(self.updateSnackIcon)
+        self.updateSnackLabelBox = QVBoxLayout()
+        self.updateSnackLabelBox.setContentsMargins(0, 0, 0, 0)
+        self.updateSnackLabelBox.setSpacing(0)
+        self.updateSnackLabel = SubtitleLabel("A new update is available for download!")
+        self.updateSnackLabelBox.addWidget(self.updateSnackLabel, 0, Qt.AlignmentFlag.AlignVCenter)
+        self.updateSnackSublabel = CaptionLabel(f"You can now download the latest version of {SmartLinkerName} from the official GitHub repository.")
+        self.updateSnackSublabel.setTextColor(QColor("#606060"), QColor("#D2D2D2"))
+        self.updateSnackLabelBox.addWidget(self.updateSnackSublabel, 0, Qt.AlignmentFlag.AlignVCenter)
+        self.updateSnackLayout.addLayout(self.updateSnackLabelBox)
+        self.updateSnackLayout.addStretch(1)
+        self.updateSnackButton = PrimaryPushButton(FICO.DOWNLOAD, "Download now")
+        self.updateSnackLayout.addWidget(self.updateSnackButton)
 
 class AboutAppGroup(SimpleExpandGroupSettingCard):
     """ Class for the informative text about SmartLinker in the About section """
@@ -281,35 +217,3 @@ class ResourcesGroup(ExpandGroupSettingCard):
 
 # HTML icon attribution - <a href="https://www.flaticon.com/free-icons/development" title="development icons">Development icons created by Bharat Icons - Flaticon</a>
 # SmartLinker icon attribution - <a href="https://www.flaticon.com/free-icons/link" title="link icons">Link icons created by Freepik - Flaticon</a>
-
-class UpdateAvailableCard(CardWidget):
-
-    def __init__(self, title, content, parent=None):
-        super().__init__(parent)
-        self.iconWidget = IconWidget(FICO.IOT)
-        self.titleLabel = SubtitleLabel(title, self)
-        self.contentLabel = CaptionLabel(content, self)
-        self.downloadButton = PrimaryPushButton('Download now', self)
-
-        self.hBoxLayout = QHBoxLayout(self)
-        self.vBoxLayout = QVBoxLayout()
-
-        self.setFixedHeight(80)
-        self.setBackgroundColor(QColor(smartGetRed(themeColor()), smartGetGreen(themeColor()), smartGetBlue(themeColor()), 127)) # type: ignore
-        self.iconWidget.setFixedSize(40, 40)
-        self.contentLabel.setTextColor(QColor("#606060"), QColor("#d2d2d2"))
-        # self.downloadButton.setFixedWidth(120)
-
-        self.hBoxLayout.setContentsMargins(20, 11, 20, 11)
-        self.hBoxLayout.setSpacing(15)
-        self.hBoxLayout.addWidget(self.iconWidget)
-
-        self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
-        self.vBoxLayout.setSpacing(0)
-        self.vBoxLayout.addWidget(self.titleLabel, 0, Qt.AlignmentFlag.AlignVCenter)
-        self.vBoxLayout.addWidget(self.contentLabel, 0, Qt.AlignmentFlag.AlignVCenter)
-        self.vBoxLayout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-        self.hBoxLayout.addLayout(self.vBoxLayout)
-
-        self.hBoxLayout.addStretch(1)
-        self.hBoxLayout.addWidget(self.downloadButton, 0, Qt.AlignmentFlag.AlignRight)

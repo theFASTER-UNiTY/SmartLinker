@@ -12,7 +12,7 @@ __author__ = "#theF∆STER™ CODE&BU!LD"
 # (In case you would wonder...)
 # =========================================================
 
-import darkdetect, datetime, json, os, psutil, pygame, requests, socket, subprocess, sys, typing, webbrowser, win32api, winreg
+import darkdetect, datetime, json, os, pickle, psutil, pygame, requests, socket, subprocess, sys, typing, webbrowser, win32api, winreg
 from PyQt6.QtCore import QEventLoop, QFileInfo, Qt, QSize, QTimer
 from PyQt6.QtGui import QColor, QFont, QIcon
 from PyQt6.QtWidgets import (
@@ -39,11 +39,52 @@ SmartLinkerID: str = "theFASTER.SmartLinker"
 SmartLinkerName: str = "SmartLinker"
 SmartLinkerVersion: str = __version__
 SmartLinkerAuthor: str = __author__
+SmartLinkerGitRepoURL: str = "https://github.com/theFASTER-UNiTY/SmartLinker"
 SmartLinkerGitRepoAPI: str = "https://api.github.com/repos/theFASTER-UNiTY/SmartLinker"
 PURPLE = "\x1b[35m"
 init()
 pygame.init()
 pygame.mixer.init()
+configTemplate = {
+	"General": {
+		"MainBrowser": "",
+		"MainBrowserPath": "",
+		"MainBrowserIsManual": False
+	},
+	"Personalization": {
+		"AppTheme": "Auto",
+		"AccentMode": "System",
+		"CustomAccentColorHex": "#ff793bcc",
+		"EnableMicaEffect": True,
+		"ShowCommandBar": False,
+		"ShowSplash": True,
+		"SplashDuration": 3000,
+		"EnableAcrylicOnSidebar": True,
+		"ShowUpdateBanners": True
+	},
+	"Sound": {
+		"EnableSoundEffects": False,
+		"StartupSFXPath": "",
+		"SuccessSFXPath": "",
+		"InfoSFXPath": "",
+		"WarningSFXPath": "",
+		"ErrorSFXPath": "",
+		"QuestionSFXPath": ""
+	},
+	"Selector": {
+		"CloseOnBrowserSelect": False
+	},
+	"About": {
+		"CheckUpdatesOnStart": True,
+		"LastCheckedDate": "",
+		"UpdateAvailable": False,
+		"UpdateVersion": ""
+	},
+	"QFluentWidgets": {
+		"ThemeMode": "",
+		"ThemeColor": ""
+	}
+}
 
 class Config(QConfig):
     """ SmartUtils
@@ -94,32 +135,35 @@ def smartResourcePath(relativePath: str):
 
 cfg = Config()
 cfgFilePath = smartResourcePath("bin/config.json")
-browsersCfgFilePath = smartResourcePath("bin/browsers_config.json")
+browsersCfgFilePathJSON = smartResourcePath("bin/browsers_config.json")
+browsersCfgFilePath = smartResourcePath("bin/browsers_config.dat")
 qconfig.load(cfgFilePath, cfg)
 soundStreamer = None
 
-def smartLoadSettings():
-    """ SmartUtils
-    ==========
-    Loader of all the saved settings """
-    try:
-        with open(cfgFilePath, "r") as settingReader:
-            return json.load(settingReader)
-    except Exception as e: print(e)
-
-def smartLoadBrowsers():
+def smartLoadBrowsersJSON():
     """ SmartUtils
     ==========
     Loader of all the saved browsers """
     try:
         with open(browsersCfgFilePath, "r") as browserReader:
             return json.load(browserReader)
+    except: return {
+            "MyBrowsers": []
+        }
+    
+def smartLoadBrowsers():
+    """ SmartUtils
+    ==========
+    Loader of all the saved browsers """
+    try:
+        with open(browsersCfgFilePath, "rb") as browserReader:
+            return pickle.load(browserReader)
     except:
         return {
             "MyBrowsers": []
         }
 
-def smartWriteBrowsers(browsers: dict[str, list[str]]):
+def smartWriteBrowsersJSON(browsers: dict[str, list[str]]):
     """ SmartUtils
     ==========
     Saver of all the changes made to browsers list
@@ -131,6 +175,19 @@ def smartWriteBrowsers(browsers: dict[str, list[str]]):
     """
     with open(browsersCfgFilePath, "w") as browserWriter:
         json.dump(browsers, browserWriter, indent=4)
+
+def smartWriteBrowsers(browsers: dict[str, list[str]]):
+    """ SmartUtils
+    ==========
+    Saver of all the changes made to browsers list
+    
+    Parameters
+    ----------
+    browsers: dictionary[string | list of strings]
+        The browsers list you want to save to the browsers config file
+    """
+    with open(browsersCfgFilePath, "wb") as browserWriter:
+        pickle.dump(browsers, browserWriter)
 
 def restartApp():
     """ SmartUtils

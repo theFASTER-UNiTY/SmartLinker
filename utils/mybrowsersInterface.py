@@ -393,22 +393,9 @@ class MyBrowsersInterface(QWidget):
             "path": path,
             "exec": os.path.basename(path)
         })
+        for browser in myBrowsList["MyBrowsers"]:
+            if browser["exec"] == os.path.basename(path): smartWarningNotify(parent, "Warning, be careful!", f"The new browser has the same executable name as {browser["name"]}.\nIt is not really an issue, but it might be confusing for {SmartLinkerName}...")
         smartWriteBrowsers(myBrowsList)
-        """ newBrowserCard = MyBrowsersCard(
-            smartGetFileIcon(path),
-            name,
-            path
-        )
-        newBrowserCard.editButton.setToolTip(f"Edit {name}")
-        newBrowserCard.editButton.installEventFilter(ToolTipFilter(newBrowserCard.editButton, showDelay=300, position=ToolTipPosition.TOP))
-        newBrowserCard.deleteButton.setToolTip(f"Delete {name} from my SmartList")
-        newBrowserCard.deleteButton.installEventFilter(ToolTipFilter(newBrowserCard.deleteButton, showDelay=300, position=ToolTipPosition.TOP))
-        newBrowserCard.editButton.clicked.connect(lambda checked: smartInfoNotify(self, "Coming soon...", "This feature will be added in future updates."))
-        newBrowserCard.deleteButton.clicked.connect(lambda checked: print(f"{Fore.RED}Delete not available yet...{Style.RESET_ALL}"))
-        newBrowserCard.openButton.clicked.connect(lambda checked: self.launchBrowser(path, name))
-        self.mybrowsLayout.addWidget(newBrowserCard)
-        self.mybrowsEmptyMsg.setHidden(True)
-        self.mybrowsSub.setHidden(False) """
         self.refreshBrowsers(parent)
         smartSuccessNotify(self, "Adding complete!", f"{name} has been succesfully added to your SmartList!")
         print(f"{Fore.GREEN}'{name}' has been successfully added to your SmartList!{Style.RESET_ALL}")

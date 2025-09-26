@@ -376,7 +376,7 @@ class SettingsInterface(QWidget):
                 smartLog(f"{SmartLinkerName} is not your system's default browser yet...")
         except Exception as e:
             smartErrorNotify(self, "Oops! Something went wrong...", f"An error occured while attempting to set {SmartLinkerName} as the default browser:\n{e}")
-            print(f"{Fore.RED}Something went wrong while attempting to set {SmartLinkerName} as the default browser: {e}{Style.RESET_ALL}")
+            print(f"{Fore.RED}An error occured while attempting to set {SmartLinkerName} as the default browser: {e}{Style.RESET_ALL}")
             smartLog(f"ERROR: Failed to set {SmartLinkerName} as the default browser: {e}")
 
     def removeDefaultBrowserKeys(self):
@@ -402,7 +402,7 @@ class SettingsInterface(QWidget):
             smartLog("SUCCESS: The previous IDs have been restored successfully!")
         except Exception as e:
             # smartErrorNotify(self, "Oops! Something went wrong...", f"An error occured while attempting to restore the previous default browser ID: {e}")
-            print(f"{Fore.RED}Something went wrong while attempting to restore the previous default browser ID: {e}{Style.RESET_ALL}")
+            print(f"{Fore.RED}An error occured while attempting to restore the previous default browser ID: {e}{Style.RESET_ALL}")
             smartLog(f"ERROR: Failed to to restore the previous default browser ID: {e}")
         try:
             # Delete the main app key
@@ -440,7 +440,7 @@ class SettingsInterface(QWidget):
             self.widgetDef.optionSetAsDefault.contentLabel.setText(f"For {SmartLinkerName} to work correctly, you need to set it as your system's default web browser.")
         except Exception as e:
             smartErrorNotify(self, "Oops! Something went wrong...", f"An error occured while attempting to delete {SmartLinkerName}'s registry keys:\n{e}")
-            print(f"{Fore.RED}Something went wrong while attempting to delete {SmartLinkerName}'s registry keys: {e}{Style.RESET_ALL}")
+            print(f"{Fore.RED}An error occured while attempting to delete {SmartLinkerName}'s registry keys: {e}{Style.RESET_ALL}")
             smartLog(f"ERROR: Failed to delete {SmartLinkerName}'s registry keys: {e}")
 
     def toggleSoundsAvailability(self, checked):
@@ -816,6 +816,7 @@ class SelectFromListDialog(MessageBoxBase):
 
         self.icon.setFixedSize(64, 64)
         self.browsCombo.setPlaceholderText("Select a SmartList browser")
+        myBrowsList = smartLoadBrowsers()
         for browser in myBrowsList["MyBrowsers"]:
             self.browsCombo.addItem(browser["name"], smartGetFileIcon(browser["path"]))
         if cfg.get(cfg.mainBrowserPath) and cfg.get(cfg.mainBrowserIsManual):
@@ -1044,7 +1045,7 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
                 smartLog("WARNING: Unable to play the startup sound, because it has not been loaded...")
         except Exception as e:
             sound = None
-            print(f"{Fore.RED}Something went wrong while attempting to play the startup sound: {e}{Style.RESET_ALL}")
+            print(f"{Fore.RED}An error occured while attempting to play the startup sound: {e}{Style.RESET_ALL}")
             smartLog(f"ERROR: Failed to play the startup sound: {e}")
 
     def soundRemove(self, soundType: str, config, parent):

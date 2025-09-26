@@ -323,7 +323,7 @@ class MyBrowsersInterface(QWidget):
                                 smartLog(f"SUCCESS: '{self.loadLinkDlg.linkEdit.text()}' has been successfully loaded into {browser["name"]}.")
                             except Exception as e:
                                 smartErrorNotify(self, "Oops! Something went wrong...", f"An error occured while attempting to load your link into {browser["name"]}: {e}")
-                                print(f"{Fore.RED}Something went wrong while attempting to load {self.loadLinkDlg.linkEdit.text()} into {browser["name"]}: {e}{Style.RESET_ALL}")
+                                print(f"{Fore.RED}An error occured while attempting to load {self.loadLinkDlg.linkEdit.text()} into {browser["name"]}: {e}{Style.RESET_ALL}")
                                 smartLog(f"ERROR: Failed while loading '{self.loadLinkDlg.linkEdit.text()}' into {browser["name"]}: {e}")
                             break
                         else:
@@ -339,7 +339,7 @@ class MyBrowsersInterface(QWidget):
                                 smartLog(f"SUCCESS: '{self.loadLinkDlg.linkEdit.text()}' has been successfully loaded into {cfg.get(cfg.mainBrowserPath)}.")
                             except Exception as e:
                                 smartErrorNotify(self, "Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(cfg.get(cfg.mainBrowserPath))}: {e}")
-                                print(f"{Fore.RED}Something went wrong while attempting to load {self.loadLinkDlg.linkEdit.text()} into {cfg.get(cfg.mainBrowserPath)}: {e}{Style.RESET_ALL}")
+                                print(f"{Fore.RED}An error occured while attempting to load {self.loadLinkDlg.linkEdit.text()} into {cfg.get(cfg.mainBrowserPath)}: {e}{Style.RESET_ALL}")
                                 smartLog(f"ERROR: Failed while loading '{self.loadLinkDlg.linkEdit.text()}' into {cfg.get(cfg.mainBrowserPath)}: {e}")
                             break
                     else:
@@ -357,8 +357,8 @@ class MyBrowsersInterface(QWidget):
                     smartLog(f"SUCCESS: '{self.loadLinkDlg.linkEdit.text()}' has been successfully loaded into other browser '{self.loadLinkDlg.otherBrowsEdit.text()}'")
                 except Exception as e:
                     smartErrorNotify(self, "Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(self.loadLinkDlg.otherBrowsEdit.text())}: {e}")
-                    print(f"{Fore.RED}Something went wrong while attempting to load {self.loadLinkDlg.linkEdit.text()} into '{os.path.basename(self.loadLinkDlg.otherBrowsEdit.text())}': {e}{Style.RESET_ALL}")
-                    smartLog(f"ERROR: Failed while loading '{self.loadLinkDlg.linkEdit.text()}' into browser at path '{self.loadLinkDlg.otherBrowsEdit.text()}': {e}")
+                    print(f"{Fore.RED}An error occured while attempting to load {self.loadLinkDlg.linkEdit.text()} into '{os.path.basename(self.loadLinkDlg.otherBrowsEdit.text())}': {e}{Style.RESET_ALL}")
+                    smartLog(f"ERROR: Failed to load '{self.loadLinkDlg.linkEdit.text()}' into browser at path '{self.loadLinkDlg.otherBrowsEdit.text()}': {e}")
 
     def launchBrowser(self, path: str, name: str):
         """ :MyBrowsersInterface: Specified browser execution handler """
@@ -369,8 +369,8 @@ class MyBrowsersInterface(QWidget):
                 smartLog(f'SUCCESS: Launched {name} from path: "{path}"')
             except Exception as e:
                 smartErrorNotify(self, "Oops! Something went wrong...", f"An error occured while launching {name}:\n{e}")
-                print(f"{Fore.RED}Something went wrong while launching {name}: {e}{Style.RESET_ALL}")
-                smartLog(f"ERROR: Failed launching {name}: {e}")
+                print(f"{Fore.RED}An error occured while launching {name}: {e}{Style.RESET_ALL}")
+                smartLog(f"ERROR: Failed to launch {name}: {e}")
         else:
             smartWarningNotify(self, "Warning, be careful!", f"The executable for {name} does not seem to exist at the known location anymore...")
             print(f"{Fore.YELLOW}WARNING!! The executable for {name} cannot be found at the specified location... ({path}){Style.RESET_ALL}")
@@ -460,13 +460,11 @@ class NewBrowserDialog(MessageBoxBase):
         self.viewLayout.addWidget(self.title)
         self.viewLayout.addLayout(self.iconLine)
         self.iconLine.addWidget(self.icon, 0, Qt.AlignmentFlag.AlignCenter)
-        # self.viewLayout.addWidget(CaptionLabel("Browser executable path"))
         self.viewLayout.addLayout(self.pathRow)
         self.pathRow.addWidget(self.pathEdit)
         self.pathRow.addWidget(self.browseBtn)
         self.viewLayout.addWidget(self.pathWarningLabel)
         self.pathWarningLabel.setHidden(True)
-        # self.viewLayout.addWidget(CaptionLabel("Browser name (you can type whatever name you want)"))
         self.viewLayout.addWidget(self.nameEdit)
         self.viewLayout.addWidget(self.nameWarningLabel)
         self.nameWarningLabel.setHidden(True)
@@ -476,10 +474,11 @@ class NewBrowserDialog(MessageBoxBase):
 
     def browseDialog(self):
         """ :NewBrowserDialog: Browser executable provider through file picker dialog """
-        self.pathEdit.setText(smartBrowseFileDialog(self, "Select a browser executable", "", "Executables (*.exe)"))
+        self.pathEdit.setText(smartBrowseFileDialog(self, "Select a browser executable", "", "Executables (*.exe)").replace("/", "\\"))
 
-    def pathChangeListener(self, text):
+    def pathChangeListener(self, text: str):
         """ :NewBrowserDialog: Listener for the path entry provided text """
+        self.pathEdit.setText(text.replace("/", "\\"))
         myBrowsList = smartLoadBrowsers()
         for browser in myBrowsList["MyBrowsers"]:
             if browser["path"] == text:
@@ -489,7 +488,6 @@ class NewBrowserDialog(MessageBoxBase):
                 self.addBlock = False
                 self.pathWarningLabel.setHidden(True)
         self.updateIcon(text)
-        self.updateBrowserName(text)
 
     def updateIcon(self, text):
         """ :NewBrowserDialog: Specified executable icon provider """
@@ -498,31 +496,7 @@ class NewBrowserDialog(MessageBoxBase):
                 self.icon.setIcon(QIcon(smartGetFileIcon(text)))
             else: self.icon.setIcon(FICO.ADD_TO)
         else: self.icon.setIcon(FICO.ADD_TO)
-    
-    def updateBrowserName(self, text):
-        if text.lower().endswith(".exe"):
-            if os.path.exists(text):
-                productName = ""
-                self.nameEdit.setEnabled(True)
-                try:
-                    info = win32api.GetFileVersionInfo(text, '\\')
-                    # Extract ProductName from the version info dictionary
-                    for block in info:
-                        if isinstance(info[block], dict) and 'ProductName' in info[block]:
-                            productName = info[block]['ProductName']
-                            break
-                    # print(productName)
-                    self.nameEdit.setText(productName)
-                except Exception as e: print(e)
-            else:
-                self.nameEdit.setText("")
-                self.nameEdit.setEnabled(False)
-                self.nameWarningLabel.setHidden(True)
-        else:
-            self.nameEdit.setText("")
-            self.nameEdit.setEnabled(False)
-            self.nameWarningLabel.setHidden(True)
-    
+        
     def validate(self) -> bool:
         path = self.pathEdit.text()
         if path.lower().endswith(".exe"):

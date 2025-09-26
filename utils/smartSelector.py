@@ -228,7 +228,7 @@ class SmartSelectorGUI(FramelessWindow):
                             print(f"{Fore.GREEN}'{requestURL}' has been successfully loaded into {browser["name"]}.{Style.RESET_ALL}")
                         except Exception as e:
                             smartErrorNotify(self, "Oops! Something went wrong...", f"An error occured while attempting to load your link into {browser["name"]}: {e}")
-                            print(f"{Fore.RED}Something went wrong while attempting to load your link into {browser["name"]}: {e}{Style.RESET_ALL}")
+                            print(f"{Fore.RED}An error occured while attempting to load your link into {browser["name"]}: {e}{Style.RESET_ALL}")
                         break
                     else:
                         smartWarningNotify(self, "Warning, be careful!", f"The path to {browser["name"]} as registered in your SmartList is empty...")
@@ -274,13 +274,13 @@ class SmartSelectorGUI(FramelessWindow):
         if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smartPlaySound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
         if restartDlg.exec():
             try:
-                restartApp()
+                smartRestartApp()
                 print("Restarting the Smart Selector...")
                 smartSelectorLog("Restarting the Smart Selector...")
             except Exception as e:
                 smartErrorNotify(self, "Oops! Something went wrong...", f"An error occured while attempting to restart SmartLinker: {e}")
                 print(f"{Fore.RED}An error occured while attempting to restart the Smart Selector: {e}{Style.RESET_ALL}")
-                smartSelectorLog(f"Something went wrong while attempting to restart the Smart Selector: {e}")
+                smartSelectorLog(f"ERROR: Failed to restart the Smart Selector: {e}")
 
 class BrowserCard(ElevatedCardWidget):
     def __init__(self, icon: QIcon | str, name: str, status: str, parent=None):

@@ -135,7 +135,6 @@ def smartResourcePath(relativePath: str):
 
 cfg = Config()
 cfgFilePath = smartResourcePath("bin/config.json")
-browsersCfgFilePathJSON = smartResourcePath("bin/browsers_config.json")
 browsersCfgFilePath = smartResourcePath("bin/browsers_config.dat")
 qconfig.load(cfgFilePath, cfg)
 soundStreamer = None
@@ -200,6 +199,26 @@ def stopApp():
     ==========
     Global function to stop the app process """
     sys.exit()
+
+def smartRestartApp():
+    """ SmartUtils
+    ==========
+    Global function to restart the app """
+    execPath = sys.executable
+    execArgs = sys.argv
+    
+    try:
+        subprocess.Popen([execPath] + execArgs[1:])
+        sys.exit()
+    except Exception as e:
+        print(f"{Fore.RED}Something went wrong while attempting to restart {SmartLinkerName} with 'subprocess': {e}{Style.RESET_ALL}\nRetrying with 'os.execv'...")
+        smartLog(f"ERROR: Failed to restart {SmartLinkerName} with 'subprocess': {e}")
+        smartLog("Retrying with 'os.execv'...")
+        try:
+            os.execv(execPath, tuple([execPath] + execArgs[1:]))
+        except Exception as ee:
+            print(f"{Fore.RED}Something went wrong while attempting to restart {SmartLinkerName} with 'os.execv': {ee}\nFailed to restart {SmartLinkerName}, please try again...{Style.RESET_ALL}")
+            smartLog(f"ERROR: Failed to restart {SmartLinkerName} with 'os.execv': {ee}")
 
 def isDarkModeEnabled() -> bool:
     """ SmartUtils
@@ -523,12 +542,13 @@ def smartConsoleScript() -> str:
     consName: string
         The rendered SmartLinker name
     """
-    return f"{PURPLE}███████╗███╗   ███╗ █████╗ ██████╗ ████████╗{Fore.BLUE}██╗     ██╗███╗   ██╗██╗  ██╗███████╗██████╗ {Style.RESET_ALL}\n" \
+    return f"{PURPLE}============================{Style.RESET_ALL} {SmartLinkerAuthor} presents {Fore.BLUE}============================{Style.RESET_ALL}\n\n" \
+           f"{PURPLE}███████╗███╗   ███╗ █████╗ ██████╗ ████████╗{Fore.BLUE}██╗     ██╗███╗   ██╗██╗  ██╗███████╗██████╗ {Style.RESET_ALL}\n" \
            f"{PURPLE}██╔════╝████╗ ████║██╔══██╗██╔══██╗╚══██╔══╝{Fore.BLUE}██║     ██║████╗  ██║██║ ██╔╝██╔════╝██╔══██╗{Style.RESET_ALL}\n" \
            f"{PURPLE}███████╗██╔████╔██║███████║██████╔╝   ██║   {Fore.BLUE}██║     ██║██╔██╗ ██║█████╔╝ █████╗  ██████╔╝{Style.RESET_ALL}\n" \
            f"{PURPLE}╚════██║██║╚██╔╝██║██╔══██║██╔══██╗   ██║   {Fore.BLUE}██║     ██║██║╚██╗██║██╔═██╗ ██╔══╝  ██╔══██╗{Style.RESET_ALL}\n" \
            f"{PURPLE}███████║██║ ╚═╝ ██║██║  ██║██║  ██║   ██║   {Fore.BLUE}███████╗██║██║ ╚████║██║  ██╗███████╗██║  ██║{Style.RESET_ALL}\n" \
-           f"{PURPLE}╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   {Fore.BLUE}╚══════╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝{Style.RESET_ALL}\n" \
+           f"{PURPLE}╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   {Fore.BLUE}╚══════╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝{Style.RESET_ALL}\n\n" \
            f"{PURPLE}================================={Style.RESET_ALL} Mastering URL Handling {Fore.BLUE}================================{Style.RESET_ALL}\n"
 
 def smartLog(message):

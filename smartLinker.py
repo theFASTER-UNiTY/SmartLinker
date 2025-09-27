@@ -27,6 +27,7 @@ class SmartLinkerGUI(FluentWindow):
         self.myBrowsers = smartLoadBrowsers()
         self.removeKeysDlg = None
         self.listSelectDlg = None
+        self.aboutIconBadge = None
         self.updateDownloadDlg = None
         self.updateCheckToolTip = None
 
@@ -205,11 +206,11 @@ class SmartLinkerGUI(FluentWindow):
                 cfg.set(cfg.updateAvailable, True)
                 cfg.set(cfg.updateVersion, self.latestVersion)
                 self.confirmDownloadUpdate()
-                aboutItem = self.navigationInterface.widget(self.aboutInterface.objectName())
-                IconInfoBadge.attension(
+                self.aboutItem = self.navigationInterface.widget(self.aboutInterface.objectName())
+                self.aboutIconBadge = IconInfoBadge.attension(
                     FICO.SYNC,
-                    aboutItem.parent(),
-                    aboutItem,
+                    self.aboutItem.parent(),
+                    self.aboutItem,
                     InfoBadgePosition.NAVIGATION_ITEM
                 )
                 self.mybrowsInterface.updateSnack.setVisible(True)
@@ -224,6 +225,8 @@ class SmartLinkerGUI(FluentWindow):
             else:
                 self.lastChecked = f"Last checked: {checkTime}"
                 cfg.set(cfg.lastCheckedDate, checkTime)
+                cfg.set(cfg.updateAvailable, False)
+                cfg.set(cfg.updateVersion, "")
                 self.mybrowsInterface.updateSnack.setVisible(False)
                 self.mybrowsInterface.updateSnack.setEnabled(False)
                 self.settingInterface.updateSnack.setVisible(False)

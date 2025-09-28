@@ -9,7 +9,7 @@ __version__ = "v1.0.0"
 __author__ = "#theF∆STER™ CODE&BU!LD"
 
 # NOTE: CODE&BU!LD is actually the software development section of the UN!TY group.
-# (In case you would wonder...)
+# (In case you would be wondering...)
 # =========================================================
 
 import darkdetect, datetime, json, os, pickle, psutil, pygame, requests, socket, subprocess, sys, typing, webbrowser, win32api, winreg
@@ -39,6 +39,7 @@ SmartLinkerID: str = "theFASTER.SmartLinker"
 SmartLinkerName: str = "SmartLinker"
 SmartLinkerVersion: str = __version__
 SmartLinkerAuthor: str = __author__
+SmartLinkerOwner: str = "#theF∆STER™ UN!TY"
 SmartLinkerGitRepoURL: str = "https://github.com/theFASTER-UNiTY/SmartLinker"
 SmartLinkerGitRepoAPI: str = "https://api.github.com/repos/theFASTER-UNiTY/SmartLinker"
 PURPLE = "\x1b[35m"
@@ -571,6 +572,7 @@ def smartLog(message):
             logger.write(f"[{timestamp}] {message}\n")
     except Exception as e:
         print(f"{Fore.RED}An error occured while attempting to log the last event in the log file: {e}{Style.RESET_ALL}")
+        return
 
 def smartSelectorLog(message):
     """ SmartUtils
@@ -588,6 +590,7 @@ def smartSelectorLog(message):
             logger.write(f"[{timestamp}] {message}\n")
     except Exception as e:
         print(f"{Fore.RED}An error occured while attempting to log the last event in the Selector log file: {e}{Style.RESET_ALL}")
+        return
 
 def smartEmptyLog():
     """ SmartUtils
@@ -600,6 +603,7 @@ def smartEmptyLog():
                         "-------------------------------------------\n\n")
     except Exception as e:
         print(f"{Fore.RED}An error occured while attempting to initialize the log file: {e}{Style.RESET_ALL}")
+        return
 
 def smartEmptySelectorLog():
     """ SmartUtils
@@ -612,6 +616,7 @@ def smartEmptySelectorLog():
                         "--------------------------------------------\n\n")
     except Exception as e:
         print(f"{Fore.RED}An error occured while attempting to initialize the Selector log file: {e}{Style.RESET_ALL}")
+        return
 
 def smartHideLayoutWidgets(layout):
     """ SmartUtils

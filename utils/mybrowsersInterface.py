@@ -478,7 +478,6 @@ class NewBrowserDialog(MessageBoxBase):
 
     def pathChangeListener(self, text: str):
         """ :NewBrowserDialog: Listener for the path entry provided text """
-        self.pathEdit.setText(text.replace("/", "\\"))
         myBrowsList = smartLoadBrowsers()
         for browser in myBrowsList["MyBrowsers"]:
             if browser["path"] == text:
@@ -488,6 +487,31 @@ class NewBrowserDialog(MessageBoxBase):
                 self.addBlock = False
                 self.pathWarningLabel.setHidden(True)
         self.updateIcon(text)
+        self.updateBrowserName(text)
+
+    def updateBrowserName(self, text):
+        if text.lower().endswith(".exe"):
+            if os.path.exists(text):
+                self.nameEdit.setEnabled(True)
+                """ productName = ""
+                try:
+                    info = win32api.GetFileVersionInfo(text, '\\')
+                    # Extract ProductName from the version info dictionary
+                    for block in info:
+                        if isinstance(info[block], dict) and 'ProductName' in info[block]:
+                            productName = info[block]['ProductName']
+                            break
+                    # print(productName)
+                    self.nameEdit.setText(productName)
+                except Exception as e: print(e) """
+            else:
+                self.nameEdit.setText("")
+                self.nameEdit.setEnabled(False)
+                self.nameWarningLabel.setHidden(True)
+        else:
+            self.nameEdit.setText("")
+            self.nameEdit.setEnabled(False)
+            self.nameWarningLabel.setHidden(True)
 
     def updateIcon(self, text):
         """ :NewBrowserDialog: Specified executable icon provider """
@@ -588,7 +612,7 @@ class EditBrowserDialog(MessageBoxBase):
                 self.addBlock = False
                 self.pathWarningLabel.setHidden(True)
         self.updateIcon(text)
-        # self.updateBrowserName(text)
+        self.updateBrowserName(text)
     
     def nameChangeListener(self, text):
         """ :EditBrowserDialog: Listener for the name entry provided text """
@@ -612,8 +636,8 @@ class EditBrowserDialog(MessageBoxBase):
     def updateBrowserName(self, text):
         if text.lower().endswith(".exe"):
             if os.path.exists(text):
-                productName = ""
                 self.nameEdit.setEnabled(True)
+                """ productName = ""
                 try:
                     info = win32api.GetFileVersionInfo(text, '\\')
                     # Extract ProductName from the version info dictionary
@@ -623,7 +647,7 @@ class EditBrowserDialog(MessageBoxBase):
                             break
                     # print(productName)
                     self.nameEdit.setText(productName)
-                except Exception as e: print(e)
+                except Exception as e: print(e) """
             else:
                 self.nameEdit.setText("")
                 self.nameEdit.setEnabled(False)

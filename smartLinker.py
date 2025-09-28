@@ -85,10 +85,6 @@ class SmartLinkerGUI(FluentWindow):
             self.settingInterface.widgetDef.optionSetAsDefault.titleLabel.setText("Thank you for making me your personal favorite!"),
             self.settingInterface.widgetDef.optionSetAsDefault.contentLabel.setText("SmartLinker is currently your system's default web browser.")
         )) """
-        self.settingInterface.widgetDef.optionSetAsDefault.button.clicked.connect(self.settingInterface.setAsDefaultBrowser)
-        self.settingInterface.widgetDef.optionMainBrowserManual.button.clicked.connect(lambda: self.settingInterface.manualSelect(self))
-        self.settingInterface.optionMainBrowser.selectButton.clicked.connect(lambda: self.setFromList(self.settingInterface.optionMainBrowser.mybrowsCombo.currentText()))
-        self.settingInterface.optionMainBrowser.mybrowsRefresh.clicked.connect(lambda: self.settingInterface.optionMainBrowser.refreshBrowsersCombo(self, self.settingInterface.optionMainBrowser.mybrowsCombo))
         self.settingInterface.widgetDef.optionMainBrowserCard.fromStorageButton.clicked.connect(lambda: self.settingInterface.cardManualSelect(self))
         self.settingInterface.widgetDef.optionMainBrowserCard.fromListButton.clicked.connect(lambda: self.settingInterface.cardSetFromList(self))
         self.settingInterface.widgetDef.optionMainBrowserCard.removeMainButton.clicked.connect(lambda: self.settingInterface.cardRemove(self))
@@ -104,7 +100,6 @@ class SmartLinkerGUI(FluentWindow):
             self.mybrowsInterface.mybrowsLoadLinkCard.setHidden(checked),
             self.mybrowsInterface.myBrowsClearCard.setHidden(checked)
         ))
-        self.settingInterface.debugDelRegKeys.button.clicked.connect(self.confirmRemoveKeys)
         self.settingInterface.debugRestart.button.clicked.connect(self.confirmRestart)
         self.settingInterface.debugStop.button.clicked.connect(self.confirmStop)
         self.aboutInterface.aboutVersion.button.clicked.connect(self.checkForUpdates)
@@ -153,33 +148,17 @@ class SmartLinkerGUI(FluentWindow):
     def toggleTheme(self, button):
         if button.text() == "Use system setting":
             setTheme(Theme.AUTO)
-            self.settingInterface.widgetDef.optionSetAsDefault.iconLabel.setIcon(QIcon(smartResourcePath("resources/images/icons/icon_monochrome_black.ico"))) if not isDarkModeEnabled() \
-            else self.settingInterface.widgetDef.optionSetAsDefault.iconLabel.setIcon(QIcon(smartResourcePath("resources/images/icons/icon_monochrome.ico")))
+            self.settingInterface.widgetDef.optionMainBrowserCard.iconWidget.setIcon(QIcon(smartResourcePath("resources/images/icons/icon_outline_black.ico"))) if not isDarkModeEnabled() \
+            else self.settingInterface.widgetDef.optionMainBrowserCard.iconWidget.setIcon(QIcon(smartResourcePath("resources/images/icons/icon_outline.ico")))
             self.mybrowsInterface.mybrowsScroll.setStyleSheet(self.mybrowsInterface.lightSheetOnDark if isDarkModeEnabled() else self.mybrowsInterface.darkSheetOnLight)
         elif button.text() == "Dark":
             setTheme(Theme.DARK)
-            self.settingInterface.widgetDef.optionSetAsDefault.iconLabel.setIcon(QIcon(smartResourcePath("resources/images/icons/icon_monochrome.ico")))
+            self.settingInterface.widgetDef.optionMainBrowserCard.iconWidget.setIcon(QIcon(smartResourcePath("resources/images/icons/icon_outline.ico")))
             self.mybrowsInterface.mybrowsScroll.setStyleSheet(self.mybrowsInterface.lightSheetOnDark)
         else:
             setTheme(Theme.LIGHT)
-            self.settingInterface.widgetDef.optionSetAsDefault.iconLabel.setIcon(QIcon(smartResourcePath("resources/images/icons/icon_monochrome_black.ico")))
+            self.settingInterface.widgetDef.optionMainBrowserCard.iconWidget.setIcon(QIcon(smartResourcePath("resources/images/icons/icon_outline_black.ico")))
             self.mybrowsInterface.mybrowsScroll.setStyleSheet(self.mybrowsInterface.darkSheetOnLight)
-
-    def setFromList(self, text):
-        if (not self.settingInterface.optionMainBrowser.mybrowsCombo.count() == 0) or self.settingInterface.optionMainBrowser.mybrowsCombo.currentText():
-            self.myBrowsers = smartLoadBrowsers()
-            for browser in self.myBrowsers["MyBrowsers"]:
-                if browser["name"] == text:
-                    cfg.set(cfg.mainBrowser, text)
-                    cfg.set(cfg.mainBrowserPath, browser["path"])
-                    cfg.set(cfg.mainBrowserIsManual, False)
-                    break
-            self.settingInterface.optionMainBrowser.selectLabel.setText(f"{text} is your current main browser")
-            self.settingInterface.optionMainBrowser.selectButton.setEnabled(False)
-            self.settingInterface.optionMainBrowser.selectButton.setText("Main browser set")
-            self.settingInterface.widgetDef.optionMainBrowserManual.iconLabel.setIcon(FICO.APPLICATION)
-            self.settingInterface.widgetDef.optionMainBrowserManual.contentLabel.setText(f"Your current main browser has been set from your SmartList ({text}).")
-            self.settingInterface.widgetDef.optionMainBrowserManual.button.setText("Select from storage")
 
     def checkForUpdates(self):
         self.lastChecked = self.aboutInterface.aboutVersion.contentLabel.text()
@@ -195,14 +174,12 @@ class SmartLinkerGUI(FluentWindow):
             
             if not self.latestVersion:
                 self.lastChecked = f"Last checked: {checkTime} (Failed to check for updates)"
-                cfg.set(cfg.lastCheckedDate, checkTime)
                 print(f"{Fore.YELLOW}No version tags have been found...{Style.RESET_ALL}")
                 smartLog("WARNING: No version tags have been found...")
                 smartWarningNotify(self, "Warning, be careful!", "The latest version could not be found...")
             
             elif Version(self.latestVersion) > Version(SmartLinkerVersion):
                 self.lastChecked = f"Last checked: {checkTime} (Latest version: {self.latestVersion})"
-                cfg.set(cfg.lastCheckedDate, checkTime)
                 cfg.set(cfg.updateAvailable, True)
                 cfg.set(cfg.updateVersion, self.latestVersion)
                 self.confirmDownloadUpdate()
@@ -224,7 +201,6 @@ class SmartLinkerGUI(FluentWindow):
             
             else:
                 self.lastChecked = f"Last checked: {checkTime}"
-                cfg.set(cfg.lastCheckedDate, checkTime)
                 cfg.set(cfg.updateAvailable, False)
                 cfg.set(cfg.updateVersion, "")
                 self.mybrowsInterface.updateSnack.setVisible(False)
@@ -237,6 +213,7 @@ class SmartLinkerGUI(FluentWindow):
                 smartLog(f"INFO: {SmartLinkerName} is currently up-to-date.")
                 smartInfoNotify(self, f"{SmartLinkerName} is up-to-date", "This is currently the latest update available.")
 
+            cfg.set(cfg.lastCheckedDate, checkTime)
         else:
             print(f"{Fore.YELLOW}Please check your internet connection, then try again...{Style.RESET_ALL}")
             smartLog("WARNING: Unable to connect to the Internet...")
@@ -309,18 +286,6 @@ class SmartLinkerGUI(FluentWindow):
         self.updateDownloadDlg.show()
         smartPlaySound(soundStreamer, cfg.get(cfg.infoSFXPath), "update confirmation dialog")
 
-    def confirmRemoveKeys(self):
-        if not self.removeKeysDlg:
-            self.removeKeysDlg = MessageBox(
-                "Remove all registry keys",
-                f"Are you sure you really want to remove every single {SmartLinkerName}-related information from Windows registry?",
-                self
-            )
-            self.removeKeysDlg.yesButton.setText("Remove all")
-            self.removeKeysDlg.cancelButton.setText("Cancel")
-        if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smartPlaySound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
-        if self.removeKeysDlg.exec(): self.settingInterface.removeDefaultBrowserKeys()
-
     def confirmRestart(self):
         restartDlg = MessageBox(
             "Restart confirmation",
@@ -353,6 +318,8 @@ class SmartLinkerGUI(FluentWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    app.setOrganizationName("")
+    app.setApplicationVersion(SmartLinkerVersion)
     if len(sys.argv) > 1: appWindow = SmartSelectorGUI()
     else:
         appWindow = SmartLinkerGUI()

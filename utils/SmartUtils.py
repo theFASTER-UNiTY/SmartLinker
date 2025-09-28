@@ -185,8 +185,12 @@ def smartWriteBrowsers(browsers: dict[str, list[str]]):
     browsers: dictionary[string | list of strings]
         The browsers list you want to save to the browsers config file
     """
-    with open(browsersCfgFilePath, "wb") as browserWriter:
-        pickle.dump(browsers, browserWriter)
+    try:
+        with open(browsersCfgFilePath, "wb") as browserWriter:
+            pickle.dump(browsers, browserWriter)
+    except Exception as e:
+        print(f"{Fore.RED}An error occured while attempting to save browser-related changes: {e}{Style.RESET_ALL}")
+        smartLog(f"ERROR: Failed to save browser-related changes: {e}")
 
 def restartApp():
     """ SmartUtils
@@ -561,9 +565,12 @@ def smartLog(message):
     message: Any
         The message you want to write in the log
     """
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with open("SmartLinkerReport.log", 'a', encoding="utf-8") as logger:
-        logger.write(f"[{timestamp}] {message}\n")
+    try:
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with open("SmartLinkerReport.log", 'a', encoding="utf-8") as logger:
+            logger.write(f"[{timestamp}] {message}\n")
+    except Exception as e:
+        print(f"{Fore.RED}An error occured while attempting to log the last event in the log file: {e}{Style.RESET_ALL}")
 
 def smartSelectorLog(message):
     """ SmartUtils
@@ -575,27 +582,36 @@ def smartSelectorLog(message):
     message: Any
         The message you want to write in the log
     """
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with open("SmartSelectorReport.log", 'a', encoding="utf-8") as logger:
-        logger.write(f"[{timestamp}] {message}\n")
+    try:
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with open("SmartSelectorReport.log", 'a', encoding="utf-8") as logger:
+            logger.write(f"[{timestamp}] {message}\n")
+    except Exception as e:
+        print(f"{Fore.RED}An error occured while attempting to log the last event in the Selector log file: {e}{Style.RESET_ALL}")
 
 def smartEmptyLog():
     """ SmartUtils
     ==========
     SmartLinker activity log initializing tool
     """
-    with open("SmartLinkerReport.log", 'w') as clear:
-        clear.write("SmartLinker - Smart Manager Activity Report\n" \
-                    "-------------------------------------------\n\n")
+    try:
+        with open("SmartLinkerReport.log", 'w') as clear:
+            clear.write("SmartLinker - Smart Manager Activity Report\n" \
+                        "-------------------------------------------\n\n")
+    except Exception as e:
+        print(f"{Fore.RED}An error occured while attempting to initialize the log file: {e}{Style.RESET_ALL}")
 
 def smartEmptySelectorLog():
     """ SmartUtils
     ==========
     Smart Selector activity log initializing tool
     """
-    with open("SmartSelectorReport.log", 'w') as clear:
-        clear.write("SmartLinker - Smart Selector Activity Report\n" \
-                    "--------------------------------------------\n\n")
+    try:
+        with open("SmartSelectorReport.log", 'w') as clear:
+            clear.write("SmartLinker - Smart Selector Activity Report\n" \
+                        "--------------------------------------------\n\n")
+    except Exception as e:
+        print(f"{Fore.RED}An error occured while attempting to initialize the Selector log file: {e}{Style.RESET_ALL}")
 
 def smartHideLayoutWidgets(layout):
     """ SmartUtils

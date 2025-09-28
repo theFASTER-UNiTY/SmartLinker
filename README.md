@@ -1,7 +1,7 @@
 <p align="center">
   <img width="25%" align="center" src="https://github.com/theFASTER-UNiTY/SmartLinker/blob/master/resources/images/icons/png/icon_shadow_1.png?raw=true" alt="logo">
 </p>
-  <h1 align="center">
+<h1 align="center">
   SmartLinker
 </h1>
 <p align="center">

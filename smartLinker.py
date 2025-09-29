@@ -320,7 +320,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setOrganizationName("")
     app.setApplicationVersion(SmartLinkerVersion)
-    if len(sys.argv) > 1: appWindow = SmartSelectorGUI()
+    if len(sys.argv) > 1: appWindow = SmartSelectorGUI(sys.argv[1:])
     else:
         appWindow = SmartLinkerGUI()
         appWindow.show()

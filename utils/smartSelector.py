@@ -3,7 +3,6 @@ from utils.SmartUtils import *
 # ===========================================================================================================
 
 myBrowsList = smartLoadBrowsers()
-if len(sys.argv) > 1: requestURL = sys.argv[1]
 setThemeColor(QColor(cfg.get(cfg.accentColor)) if cfg.get(cfg.accentMode) == "Custom" else QColor(cfg.get(cfg.qAccentColor)))
 
 class CustomTitleBar(TitleBar):
@@ -40,7 +39,7 @@ class CustomTitleBar(TitleBar):
         ) """
 
 class SmartSelectorGUI(FramelessWindow):
-    def __init__(self, parent=None):
+    def __init__(self, requestArgs: list[str], parent=None):
         super().__init__(parent=parent)
         print(smartConsoleScript())
         self.lightSheetOnDark: str = "SingleDirectionScrollArea {background-color: rgba(242, 242, 242, 0.05); border: 1px solid rgba(242, 242, 242, 0.25)}"
@@ -52,13 +51,14 @@ class SmartSelectorGUI(FramelessWindow):
         else: setTheme(Theme.AUTO)
         self.setTitleBar(CustomTitleBar(self))
         self.setWindowIcon(QIcon(smartResourcePath("resources/images/icons/icon.ico")))
-        self.setWindowTitle("Smart Selector | SmartLinker")
+        self.setWindowTitle(f"Smart Selector | {SmartLinkerName}")
         self.setStyleSheet(("background: white" if not smartIsDarkMode() else "") if cfg.get(cfg.appTheme) == "Auto" else
                            "" if cfg.get(cfg.appTheme) == "Dark" else "background: white")
         self.titleHeight = self.titleBar.height()
         self.setMinimumSize(750, 550)
         self.bottomLightSheet: str = "background-color: #F3F3F3; border: 1px solid #E5E5E5"
         self.bottomDarkSheet: str = "background-color: #161616; border: 1px solid #000000" # original: #202020, #1D1D1D
+        self.requestURL = requestArgs[1]
 
         mainLayout = QVBoxLayout(self)
         mainLayout.setContentsMargins(0, self.titleHeight, 0, 0)
@@ -68,13 +68,14 @@ class SmartSelectorGUI(FramelessWindow):
         mainLayout.addLayout(mainTitleLine)
         mainIcon = IconWidget(QIcon(smartResourcePath("resources/images/icons/icon.ico")))
         mainIcon.setFixedSize(56, 56)
-        mainTitleLine.addWidget(mainIcon)
+        mainTitleLine.addWidget(mainIcon, 0, Qt.AlignmentFlag.AlignCenter)
         mainTitleBox = QVBoxLayout()
         mainTitleBox.setContentsMargins(10, 20, 0, 20)
         mainTitleLine.addLayout(mainTitleBox)
         mainTitleBox.addWidget(TitleLabel("New URL loading request detected!"))
-        self.mainSubtitle = CaptionLabel(f"Which browser do you want to load '{requestURL}' into?")
+        self.mainSubtitle = CaptionLabel(f"Which browser do you want to load '{self.requestURL}' into?")
         self.mainSubtitle.setStyleSheet("color: gray")
+        self.mainSubtitle.setWordWrap(True)
         mainTitleBox.addWidget(self.mainSubtitle)
         mainScroll = SingleDirectionScrollArea(self, Qt.Orientation.Vertical)
         mainScroll.setWidgetResizable(True)
@@ -121,9 +122,10 @@ class SmartSelectorGUI(FramelessWindow):
                     smartGetFileIcon(browser["path"]),
                     browser["name"],
                     "Running" if self.isRunning else "",
+                    self.requestURL,
                     self
                 )
-                # browsCard.clicked.connect(lambda checked, name=browser["name"], reqURL=requestURL: self.cardSelect(name, reqURL))
+                # browsCard.clicked.connect(lambda checked, name=browser["name"], reqURL=self.requestURL: self.cardSelect(name, reqURL))
                 self.myBrowsLayout.addWidget(browsCard)
         if (cfg.get(cfg.mainBrowserPath) and cfg.get(cfg.mainBrowserIsManual)):
             print(f"Browser in queue: {os.path.basename(cfg.get(cfg.mainBrowserPath))}\n" \
@@ -137,6 +139,7 @@ class SmartSelectorGUI(FramelessWindow):
                 smartGetFileIcon(cfg.get(cfg.mainBrowserPath)),
                 os.path.basename(cfg.get(cfg.mainBrowserPath)),
                 "Manual - Running" if self.isRunning else "Manual",
+                self.requestURL,
                 self
             )
             # browsCard.clicked.connect(lambda checked, name=browser["name"], reqURL=requestURL: self.cardSelect(name, reqURL))
@@ -191,7 +194,7 @@ class SmartSelectorGUI(FramelessWindow):
         bottomLayout.setContentsMargins(40, 30, 40, 30)
         bottomLayout.setSpacing(15)
         self.requestLinkEdit = LineEdit()
-        self.requestLinkEdit.setText(requestURL)
+        self.requestLinkEdit.setText(self.requestURL)
         self.requestLinkEdit.setReadOnly(True)
         bottomLayout.addWidget(self.requestLinkEdit)
         self.requestLinkCopy = PrimaryPushButton(FICO.COPY, "Copy link")
@@ -204,19 +207,13 @@ class SmartSelectorGUI(FramelessWindow):
         bottomLayout.addWidget(self.restartBtn)
         
         self.titleBar.raise_()
-        print(f"Loading '{requestURL}'...\n")
-        smartSelectorLog(f"Loading '{requestURL}'...")
+        print(f"Loading '{self.requestURL}'...\n")
+        smartSelectorLog(f"Loading '{self.requestURL}'...")
         if self.runningBrowsers: self.show()
         elif cfg.get(cfg.mainBrowserPath):
-            subprocess.Popen([cfg.get(cfg.mainBrowserPath), requestURL])
+            subprocess.Popen([cfg.get(cfg.mainBrowserPath), self.requestURL])
             sys.exit()
         else: self.show()
-
-    def removeMaximizeFlags(self):
-        flags = self.windowFlags()
-        flags &= ~Qt.WindowType.WindowMaximizeButtonHint
-        #flags &= ~Qt.WindowType.WindowResizable
-        self.setWindowFlags(flags)
 
     def cardSelect(self, name, link):
         if myBrowsList["MyBrowsers"]:
@@ -225,7 +222,7 @@ class SmartSelectorGUI(FramelessWindow):
                     if browser["path"]:
                         try:
                             subprocess.Popen([browser["path"], link])
-                            print(f"{Fore.GREEN}'{requestURL}' has been successfully loaded into {browser["name"]}.{Style.RESET_ALL}")
+                            print(f"{Fore.GREEN}'{self.requestURL}' has been successfully loaded into {browser["name"]}.{Style.RESET_ALL}")
                         except Exception as e:
                             smartErrorNotify(self, "Oops! Something went wrong...", f"An error occured while attempting to load your link into {browser["name"]}: {e}")
                             print(f"{Fore.RED}An error occured while attempting to load your link into {browser["name"]}: {e}{Style.RESET_ALL}")
@@ -246,7 +243,7 @@ class SmartSelectorGUI(FramelessWindow):
         if otherPath:
             if os.path.exists(otherPath):
                 try:
-                    subprocess.Popen([otherPath, requestURL])
+                    subprocess.Popen([otherPath, self.requestURL])
                     print(f"{Fore.BLUE}Selected external browser at path: '{otherPath}'{Style.RESET_ALL}")
                     smartSelectorLog(f"Selected external browser at path: '{otherPath}'")
                 except Exception as e: smartErrorNotify(self, "Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(otherPath)}: {e}")
@@ -283,7 +280,7 @@ class SmartSelectorGUI(FramelessWindow):
                 smartSelectorLog(f"ERROR: Failed to restart the Smart Selector: {e}")
 
 class BrowserCard(ElevatedCardWidget):
-    def __init__(self, icon: QIcon | str, name: str, status: str, parent=None):
+    def __init__(self, icon: QIcon | str, name: str, status: str, reqURL: str, parent=None):
         super().__init__(parent)
         self.statusLabel = CaptionLabel(status)
         self.iconWidget = IconWidget(icon, self)
@@ -292,7 +289,7 @@ class BrowserCard(ElevatedCardWidget):
 
         self.iconWidget.setFixedSize(56, 56)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.selectButton.clicked.connect(lambda: self.cardSelect(name, requestURL, parent))
+        self.selectButton.clicked.connect(lambda: self.cardSelect(name, reqURL, parent))
 
         self.vBoxLayout = QVBoxLayout(self)
         self.vBoxLayout.setAlignment(Qt.AlignmentFlag.AlignCenter)

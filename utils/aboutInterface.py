@@ -10,11 +10,9 @@ class AboutInterface(QWidget):
                         else "Click on the following button to check for the latest updates."
 
         mainAboutLayout = QVBoxLayout(self)
-        ### mainAboutLayout.setContentsMargins(0, 60, 0, 0) # for split fluent window
-        mainAboutLayout.setContentsMargins(0, 20, 0, 0) # for fluent window
+        mainAboutLayout.setContentsMargins(0, 20, 0, 0)
         mainTitleLine = QHBoxLayout()
-        ### mainTitleLine.setContentsMargins(80, 0, 0, 0) # for split fluent window
-        mainTitleLine.setContentsMargins(40, 0, 0, 0) # for split fluent window
+        mainTitleLine.setContentsMargins(40, 0, 0, 0)
         mainAboutLayout.addLayout(mainTitleLine)
         self.title = TitleLabel("About", self)
         self.title.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -27,8 +25,7 @@ class AboutInterface(QWidget):
         mainAboutScroll.setWidget(mainAboutScrollContent)
         mainAboutScroll.setAlignment(Qt.AlignmentFlag.AlignTop)
         mainAboutScroll.setStyleSheet("background-color: rgba(0, 0, 0, 0); border: 0px solid #FFFFFF")
-        ### mainAboutScrollContent.setContentsMargins(80, 0, 80, 0) # for split fluent window
-        mainAboutScrollContent.setContentsMargins(40, 0, 40, 0) # for split fluent window
+        mainAboutScrollContent.setContentsMargins(40, 0, 40, 0)
         layout = QVBoxLayout(mainAboutScrollContent)
         layout.setSpacing(5)
 
@@ -132,7 +129,7 @@ class AboutAppGroup(SimpleExpandGroupSettingCard):
         self.add_group(self.aboutInfo)
 
     def add_group(self, label):
-        """ Add informative text to the group. """
+        """ :AboutApp: Add informative text to the group. """
         wid = QWidget()
         wid.setFixedHeight(self.aboutInfo.sizeHint().height())
         widLayout = QHBoxLayout(wid)
@@ -143,7 +140,7 @@ class AboutAppGroup(SimpleExpandGroupSettingCard):
         self.addGroupWidget(wid)
 
 class ResourcesGroup(ExpandGroupSettingCard):
-    """ Class made for the Resources group in the About section """
+    """ Class for the Resources group in the About section """
     
     def __init__(self, parent=None):
         super().__init__(
@@ -158,7 +155,7 @@ class ResourcesGroup(ExpandGroupSettingCard):
         self.pyQtLine.setSpacing(10)
         self.pyQtLabel = BodyLabel("PyQt6 - The official Qt library for Python")
         self.pyQtLabel.setWordWrap(True)
-        # self.pyQtLabel.setStyleSheet(f"color: {themeColor().name()}")
+        self.pyQtLabel.setTextColor(themeColor())
         self.pyQtBtn = ToolButton(QIcon(smartResourcePath("resources/images/icons/pyqt6_icon.ico")))
         self.pyQtBtn.setToolTip("Python GUIs website")
         self.pyQtBtn.installEventFilter(ToolTipFilter(self.pyQtBtn, showDelay=300, position=ToolTipPosition.TOP))
@@ -166,14 +163,13 @@ class ResourcesGroup(ExpandGroupSettingCard):
         self.pyQtBtn2.setToolTip("Qt Documentation website")
         self.pyQtBtn2.installEventFilter(ToolTipFilter(self.pyQtBtn2, showDelay=300, position=ToolTipPosition.TOP))
         self.pyQtLine.addWidget(self.pyQtLabel)
-        # self.pyQtLine.addStretch(0)
         self.pyQtLine.addWidget(self.pyQtBtn)
         self.pyQtLine.addWidget(self.pyQtBtn2)
         self.qFluentLine = QHBoxLayout()
         self.qFluentLine.setSpacing(10)
         self.qFluentLabel = BodyLabel("zhiyiYo/QFluentWidgets - A Qt-based GUI library for Python inspired by Windows 11's Fluent Design")
         self.qFluentLabel.setWordWrap(True)
-        # self.qFluentLabel.setStyleSheet(f"color: {themeColor().name()}")
+        self.qFluentLabel.setTextColor(themeColor())
         self.qFluentBtn = ToolButton(QIcon(smartResourcePath("resources/images/icons/qfluentwidgets_icon.ico")))
         self.qFluentBtn.setToolTip("QFluentWidgets website")
         self.qFluentBtn.installEventFilter(ToolTipFilter(self.qFluentBtn, showDelay=300, position=ToolTipPosition.TOP))
@@ -181,19 +177,17 @@ class ResourcesGroup(ExpandGroupSettingCard):
         self.qFluentBtn2.setToolTip("QFluentWidgets GitHub repository")
         self.qFluentBtn2.installEventFilter(ToolTipFilter(self.qFluentBtn2, showDelay=300, position=ToolTipPosition.TOP))
         self.qFluentLine.addWidget(self.qFluentLabel)
-        # self.qFluentLine.addStretch(1)
         self.qFluentLine.addWidget(self.qFluentBtn)
         self.qFluentLine.addWidget(self.qFluentBtn2)
         self.flaticonLine = QHBoxLayout()
         self.flaticonLine.setSpacing(10)
         self.flaticonLabel = BodyLabel("Flaticon - The largest database of free icons available in multiple formats (credits to Freepik for the SmartLinker icon)")
         self.flaticonLabel.setWordWrap(True)
-        # self.flaticonLabel.setStyleSheet(f"color: {themeColor().name()}")
+        self.flaticonLabel.setTextColor(themeColor())
         self.flaticonBtn = ToolButton(QIcon(smartResourcePath("resources/images/icons/flaticon_icon.ico")))
         self.flaticonBtn.setToolTip("Flaticon website")
         self.flaticonBtn.installEventFilter(ToolTipFilter(self.flaticonBtn, showDelay=300, position=ToolTipPosition.TOP))
         self.flaticonLine.addWidget(self.flaticonLabel)
-        # self.flaticonLine.addStretch(1)
         self.flaticonLine.addWidget(self.flaticonBtn)
 
         self.viewLayout.setContentsMargins(0, 0, 0, 0)
@@ -202,7 +196,7 @@ class ResourcesGroup(ExpandGroupSettingCard):
         self.add_group()
 
     def add_group(self):
-        """ Add resources elements to the group. """
+        """ :Resources: Add resources elements to the group. """
         wid = QWidget()
         # wid.setFixedHeight(60)
         widLayout = QVBoxLayout(wid)
@@ -216,4 +210,3 @@ class ResourcesGroup(ExpandGroupSettingCard):
         self.addGroupWidget(wid)
 
 # HTML icon attribution - <a href="https://www.flaticon.com/free-icons/development" title="development icons">Development icons created by Bharat Icons - Flaticon</a>
-# SmartLinker icon attribution - <a href="https://www.flaticon.com/free-icons/link" title="link icons">Link icons created by Freepik - Flaticon</a>

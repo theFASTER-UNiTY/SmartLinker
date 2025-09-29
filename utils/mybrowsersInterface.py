@@ -473,11 +473,11 @@ class NewBrowserDialog(MessageBoxBase):
         self.yesButton.setText("Add to SmartList")
 
     def browseDialog(self):
-        """ :NewBrowserDialog: Browser executable provider through file picker dialog """
+        """ :NewBrowserDialog: Provide a browser executable through file picker dialog """
         self.pathEdit.setText(smartBrowseFileDialog(self, "Select a browser executable", "", "Executables (*.exe)").replace("/", "\\"))
 
     def pathChangeListener(self, text: str):
-        """ :NewBrowserDialog: Listener for the path entry provided text """
+        """ :NewBrowserDialog: Make actions whenever the path entry content is changed """
         myBrowsList = smartLoadBrowsers()
         for browser in myBrowsList["MyBrowsers"]:
             if browser["path"] == text:
@@ -514,7 +514,7 @@ class NewBrowserDialog(MessageBoxBase):
             self.nameWarningLabel.setHidden(True)
 
     def updateIcon(self, text):
-        """ :NewBrowserDialog: Specified executable icon provider """
+        """ :NewBrowserDialog: Provide the specified executable icon """
         if text.lower().endswith(".exe"):
             if os.path.exists(text):
                 self.icon.setIcon(QIcon(smartGetFileIcon(text)))
@@ -598,11 +598,11 @@ class EditBrowserDialog(MessageBoxBase):
         self.yesButton.setText("Confirm edition")
 
     def browseDialog(self):
-        """ :EditBrowserDialog: Browser executable provider through file picker dialog """
+        """ :EditBrowserDialog: Provide a browser executable through file picker dialog """
         self.pathEdit.setText(smartBrowseFileDialog(self, "Select a browser executable", "", "Executables (*.exe)"))
 
     def pathChangeListener(self, text):
-        """ :EditBrowserDialog: Listener for the path entry provided text """
+        """ :EditBrowserDialog: Make actions whenever the path entry content is changed """
         myBrowsList = smartLoadBrowsers()
         for browser in myBrowsList["MyBrowsers"]:
             if browser["path"] == text:
@@ -615,7 +615,7 @@ class EditBrowserDialog(MessageBoxBase):
         self.updateBrowserName(text)
     
     def nameChangeListener(self, text):
-        """ :EditBrowserDialog: Listener for the name entry provided text """
+        """ :EditBrowserDialog: Make actions whenever the name entry content is changed """
         myBrowsList = smartLoadBrowsers()
         for browser in myBrowsList["MyBrowsers"]:
             if browser["name"] == text:
@@ -626,7 +626,7 @@ class EditBrowserDialog(MessageBoxBase):
                 self.nameWarningLabel.setHidden(True)
 
     def updateIcon(self, text):
-        """ :EditBrowserDialog: Specified executable icon provider """
+        """ :EditBrowserDialog: Provide the specified executable icon """
         if text.lower().endswith(".exe"):
             if os.path.exists(text):
                 self.icon.setIcon(QIcon(smartGetFileIcon(text)))
@@ -782,6 +782,7 @@ class LoadLinkDialog(MessageBoxBase):
         self.linkEdit.textChanged.connect(lambda: self.warningLabel.setHidden(True))
 
     def comboChangeListener(self, text):
+        """ :LoadLink: Make actions whenever the current text of the combo is changed """
         if self.browserCombo.count() > 0:
             if not text == "Other browser":
                 self.otherBrowsEdit.setHidden(True)
@@ -802,12 +803,12 @@ class LoadLinkDialog(MessageBoxBase):
             self.warningLabel.setHidden(False)
     
     def otherPathChangeListener(self, text):
+        """ :LoadLink: Make actions whenever the path entry content is changed """
         if self.browserCombo.currentIndex() == self.browserCombo.count() - 1:
             if text and os.path.exists(text): self.browsIcon.setIcon(smartGetFileIcon(text))
             else: self.browsIcon.setIcon(FICO.APPLICATION)
 
     def validate(self):
-        # Envoyer le lien aux arguments de lancement du navig. sélectionné
         if self.linkEdit.text():
             if not self.browserCombo.currentIndex() == self.browserCombo.count() - 1:
                 self.warningLabel.setHidden(True)

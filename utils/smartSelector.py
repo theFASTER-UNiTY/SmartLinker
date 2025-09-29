@@ -39,6 +39,8 @@ class CustomTitleBar(TitleBar):
         ) """
 
 class SmartSelectorGUI(FramelessWindow):
+    """ Class for the Smart Selector window """
+
     def __init__(self, requestArgs: list[str], parent=None):
         super().__init__(parent=parent)
         print(smartConsoleScript())
@@ -58,7 +60,7 @@ class SmartSelectorGUI(FramelessWindow):
         self.setMinimumSize(750, 550)
         self.bottomLightSheet: str = "background-color: #F3F3F3; border: 1px solid #E5E5E5"
         self.bottomDarkSheet: str = "background-color: #161616; border: 1px solid #000000" # original: #202020, #1D1D1D
-        self.requestURL = requestArgs[1]
+        self.requestURL = requestArgs[0]
 
         mainLayout = QVBoxLayout(self)
         mainLayout.setContentsMargins(0, self.titleHeight, 0, 0)
@@ -125,7 +127,6 @@ class SmartSelectorGUI(FramelessWindow):
                     self.requestURL,
                     self
                 )
-                # browsCard.clicked.connect(lambda checked, name=browser["name"], reqURL=self.requestURL: self.cardSelect(name, reqURL))
                 self.myBrowsLayout.addWidget(browsCard)
         if (cfg.get(cfg.mainBrowserPath) and cfg.get(cfg.mainBrowserIsManual)):
             print(f"Browser in queue: {os.path.basename(cfg.get(cfg.mainBrowserPath))}\n" \
@@ -142,7 +143,6 @@ class SmartSelectorGUI(FramelessWindow):
                 self.requestURL,
                 self
             )
-            # browsCard.clicked.connect(lambda checked, name=browser["name"], reqURL=requestURL: self.cardSelect(name, reqURL))
             self.myBrowsLayout.addWidget(browsCard)
         if not myBrowsList["MyBrowsers"] and not cfg.get(cfg.mainBrowserPath): self.myBrowsLayout.addWidget(self.myBrowsEmptyMsg, 0, Qt.AlignmentFlag.AlignCenter)
         print("-----------------------------------------------------\n" \
@@ -179,9 +179,7 @@ class SmartSelectorGUI(FramelessWindow):
         self.closeOnLoadCheck.setChecked(cfg.get(cfg.closeOnBrowserSelect))
         self.closeOnLoadCheck.setOffText("Do not close window on browser select")
         self.closeOnLoadCheck.setOnText("Close window on browser select")
-        self.closeOnLoadCheck.checkedChanged.connect(lambda checked: (
-            cfg.set(cfg.closeOnBrowserSelect, checked)
-        ))
+        self.closeOnLoadCheck.checkedChanged.connect(lambda checked: cfg.set(cfg.closeOnBrowserSelect, checked))
 
         layout.addStretch(1)
 
@@ -215,30 +213,8 @@ class SmartSelectorGUI(FramelessWindow):
             sys.exit()
         else: self.show()
 
-    def cardSelect(self, name, link):
-        if myBrowsList["MyBrowsers"]:
-            for browser in myBrowsList["MyBrowsers"]:
-                if browser["name"] == name:
-                    if browser["path"]:
-                        try:
-                            subprocess.Popen([browser["path"], link])
-                            print(f"{Fore.GREEN}'{self.requestURL}' has been successfully loaded into {browser["name"]}.{Style.RESET_ALL}")
-                        except Exception as e:
-                            smartErrorNotify(self, "Oops! Something went wrong...", f"An error occured while attempting to load your link into {browser["name"]}: {e}")
-                            print(f"{Fore.RED}An error occured while attempting to load your link into {browser["name"]}: {e}{Style.RESET_ALL}")
-                        break
-                    else:
-                        smartWarningNotify(self, "Warning, be careful!", f"The path to {browser["name"]} as registered in your SmartList is empty...")
-                        print(f"{Fore.YELLOW}The path to {browser["name"]} as registered in your SmartList is empty...{Style.RESET_ALL}")
-                        break
-                elif cfg.get(cfg.mainBrowserPath) and cfg.get(cfg.mainBrowserIsManual):
-                    if os.path.basename(cfg.get(cfg.mainBrowserPath)) == name:
-                        try: subprocess.Popen([cfg.get(cfg.mainBrowserPath), link])
-                        except Exception as e: smartErrorNotify(self, "Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(cfg.get(cfg.mainBrowserPath))}: {e}")
-                        break
-                else: smartWarningNotify(self, "Warning, be careful!", f"The name '{name}' is not registered into your SmartList, or {name} cannot be found in your SmartList...")
-
     def loadToOtherBrowser(self):
+        """ Load the forwarded link to another browser selected from storage """
         otherPath = self.otherBrowsPathEdit.text()
         if otherPath:
             if os.path.exists(otherPath):
@@ -246,21 +222,33 @@ class SmartSelectorGUI(FramelessWindow):
                     subprocess.Popen([otherPath, self.requestURL])
                     print(f"{Fore.BLUE}Selected external browser at path: '{otherPath}'{Style.RESET_ALL}")
                     smartSelectorLog(f"Selected external browser at path: '{otherPath}'")
-                except Exception as e: smartErrorNotify(self, "Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(otherPath)}: {e}")
-            else: smartWarningNotify(self, "Warning, be careful!", "The given path to the external browser does not exist...")
-        else: smartWarningNotify(self, "Warning, be careful!", "The external path entry is empty...")
+                except Exception as e:
+                    smartErrorNotify(self, "Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(otherPath)}: {e}")
+                    print(f"{Fore.RED}An error occured while attempting to load link into '{otherPath}': {e}{Style.RESET_ALL}")
+                    smartSelectorLog(f"ERROR: Failed to load link into '{otherPath}': {e}")
+            else:
+                smartWarningNotify(self, "Warning, be careful!", "The given path to the external browser does not exist...")
+                print(f"{Fore.YELLOW}The given path to the external browser does not exist...{Style.RESET_ALL}")
+                smartSelectorLog("WARNING: The given path to the external browser does not exist...")
+        else:
+            smartWarningNotify(self, "Warning, be careful!", "The external path entry is empty...")
+            print(f"{Fore.YELLOW}The external path entry is empty...{Style.RESET_ALL}")
+            smartSelectorLog("WARNING: The external path entry is empty...")
 
     def copyLinkToClip(self):
+        """ Copy the forwarded link to the system's clipboard """
         app = QApplication.instance()
         if app is None: app = QApplication(sys.argv)
         if type(app) == QApplication: clipboard = app.clipboard()
         if clipboard:
             clipboard.setText(self.requestLinkEdit.text())
             print(f"Copied to clipboard: {Fore.BLUE}'{clipboard.text()}'{Style.RESET_ALL}")
+            smartSelectorLog(f"INFO: Copied link to clipboard: {clipboard.text()}")
             smartSuccessNotify(self, "Copying complete!", "The forwarded link has been successfully copied to the clipboard!")
-        else: self.copyLinkToClip
+        else: self.copyLinkToClip()
 
     def confirmRestart(self):
+        """ Open a confirmation dialog to restart the Smart Selector """
         restartDlg = MessageBox(
             "Restart confirmation",
             "Are you sure you really want to restart the Smart Selector?",
@@ -280,6 +268,8 @@ class SmartSelectorGUI(FramelessWindow):
                 smartSelectorLog(f"ERROR: Failed to restart the Smart Selector: {e}")
 
 class BrowserCard(ElevatedCardWidget):
+    """ Class for listed browser(s) card"""
+
     def __init__(self, icon: QIcon | str, name: str, status: str, reqURL: str, parent=None):
         super().__init__(parent)
         self.statusLabel = CaptionLabel(status)

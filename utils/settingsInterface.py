@@ -72,25 +72,25 @@ class SettingsInterface(QWidget):
         layout.addWidget(selectorLabel)
         layout.addWidget(self.widgetDef.optionCloseOnSelect)
 
-        # Debugging
-        debuggingLabel = SubtitleLabel("Debugging")
-        debuggingLabel.setContentsMargins(0, 40, 0, 0)
-        debuggingLabel.setAlignment(Qt.AlignmentFlag.AlignTop)
-        layout.addWidget(debuggingLabel)
-        self.debugRestart = PushSettingCard(
+        # Advanced
+        advancedLabel = SubtitleLabel("Advanced")
+        advancedLabel.setContentsMargins(0, 40, 0, 0)
+        advancedLabel.setAlignment(Qt.AlignmentFlag.AlignTop)
+        layout.addWidget(advancedLabel)
+        self.advancedRestart = PushSettingCard(
             "Restart",
             FICO.SYNC,
             f"Restart {SmartLinkerName}",
             "If you need for some reason to restart the software, this is the easiest way to proceed."
         )
-        layout.addWidget(self.debugRestart)
-        self.debugStop = PushSettingCard(
+        layout.addWidget(self.advancedRestart)
+        self.advancedStop = PushSettingCard(
             "Stop process",
             FICO.POWER_BUTTON,
             f"Stop {SmartLinkerName}",
             "If you need for some reason to stop the software process, this is the safest way to proceed."
         )
-        layout.addWidget(self.debugStop)
+        layout.addWidget(self.advancedStop)
 
         layout.addStretch(1)
         
@@ -113,6 +113,7 @@ class SettingsInterface(QWidget):
         self.updateSnackLayout.addWidget(self.updateSnackButton)
 
     def cardManualSelect(self, parent):
+        """ :SettingsInterface: Open a dialog to select main browser from your storage """
         self.cardManualPath = smartBrowseFileDialog(parent, "Select your main browser from storage", "", "Executables (*.exe)")
         if self.cardManualPath:
             cfg.set(cfg.mainBrowser, "")
@@ -133,6 +134,7 @@ class SettingsInterface(QWidget):
             smartLog(f"SUCCESS: Main browser set from storage at path: '{self.cardManualPath}'")
 
     def cardSetFromList(self, parent):
+        """ :SettingsInterface: Open a dialog to select main browser from your SmartList """
         if not self.mainFromListDlg:
             self.mainFromListDlg = SelectFromListDialog(parent)
         if self.mainFromListDlg.exec():
@@ -158,6 +160,7 @@ class SettingsInterface(QWidget):
             smartLog(f"SUCCESS: Main browser set from SmartList: {self.mainFromListDlg.browsCombo.currentText()}")
 
     def cardRemove(self, parent):
+        """ :SettingsInterface: Open a confirmation dialog to remove the main browser """
         if not self.mainRemoveDlg:
             self.mainRemoveDlg = MessageBox(
                 "Confirm main browser removal",
@@ -187,7 +190,7 @@ class SettingsInterface(QWidget):
             smartLog("SUCCESS: Main browser reverted to 'None'")
 
     def openColorDialog(self, parent):
-        """ Open a dialog to change the accent color of SmartLinker. """
+        """ :SettingsInterface: Open a dialog to change the accent color of SmartLinker. """
         if not self.optionCustomAccentColorDlg:
             self.optionCustomAccentColorDlg = ColorDialog(
                 themeColor(),
@@ -196,12 +199,12 @@ class SettingsInterface(QWidget):
                 enableAlpha=False
             )
             self.optionCustomAccentColorDlg.editLabel.setText("Edit HEX color")
-            # self.optionCustomAccentColorDlg.colorChanged.connect(lambda color: setThemeColor(color))
         if self.optionCustomAccentColorDlg.exec():
             setThemeColor(self.optionCustomAccentColorDlg.color, save=True)           
             cfg.set(cfg.accentColor, self.optionCustomAccentColorDlg.color.name())
 
     def toggleSoundsAvailability(self, checked):
+        """ :SettingsInterface: Adjust the sounds options according to the sound effect toggle and individual sound paths """
         self.optionSoundConfig.startupPlayBtn.setEnabled(checked and bool(cfg.get(cfg.startupSFXPath)))
         self.optionSoundConfig.startupPickBtn.setEnabled(checked)
         self.optionSoundConfig.startupRemoveBtn.setEnabled(checked and bool(cfg.get(cfg.startupSFXPath)))
@@ -222,7 +225,7 @@ class SettingsInterface(QWidget):
         self.optionSoundConfig.questionRemoveBtn.setEnabled(checked and bool(cfg.get(cfg.questionSFXPath)))
 
 class SettingWidgetDefinition():
-    """ Declaration class of SettingsInterface main widgets """
+    """ Declaration class for some of SettingsInterface widgets """
 
     def __init__(self, parent=None):
         super().__init__()
@@ -316,7 +319,7 @@ class ThemeColorSelectGroup(ExpandGroupSettingCard):
         self.add_group(self.selectLabel, self.selectButton)
 
     def add_group(self, label, widget):
-        """ Add accent mode and color elements to the group. """
+        """ :ThemeColorSelect: Add accent mode and color elements to the group. """
         wid = QWidget()
         wid.setFixedHeight(60)
         widLayout = QHBoxLayout(wid)
@@ -329,7 +332,7 @@ class ThemeColorSelectGroup(ExpandGroupSettingCard):
         self.addGroupWidget(wid)
 
     def changeAccentMode(self, text):
-        """ Change the current accent mode and color according to the selection. """
+        """ :ThemeColorSelect: Change the current accent mode and color according to the selection. """
         if text == "Custom accent color":
             cfg.set(cfg.accentMode, "Custom")
             setThemeColor(QColor(cfg.get(cfg.accentColor)) if cfg.get(cfg.accentColor) else QColor(cfg.get(cfg.qAccentColor)), save=True)
@@ -395,6 +398,7 @@ class FlagsSettingGroup(ExpandGroupSettingCard):
         self.add(self.updateBannerSwitchLabel, self.updateBannerSwitchButton)
 
     def add(self, label, widget):
+        """ :FlagsSetting: Add appearance flag elements to the group. """
         w = QWidget()
         w.setFixedHeight(60)
 
@@ -487,6 +491,7 @@ class SelectFromListDialog(MessageBoxBase):
         self.widget.setMinimumWidth(350)
 
     def comboTextChangeListener(self, text: str):
+        """ :SelectFromList: Make actions whenever the current text of the combo is changed """
         self.infoLabel.setText(f"{text} will be set as your main browser.")
         for browser in myBrowsList["MyBrowsers"]:
             if browser["name"] == text:
@@ -514,7 +519,7 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
         self.startupLabel = BodyLabel(f"At {SmartLinkerName} startup")
         self.startupPlayBtn = PushButton(FICO.PLAY, "Play sound")
         self.startupPlayBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.startupSFXPath)))
-        self.startupPlayBtn.clicked.connect(lambda: self.soundPlay(self.soundSample, cfg.get(cfg.startupSFXPath)))
+        self.startupPlayBtn.clicked.connect(smartPlaySound(soundStreamer, cfg.get(cfg.startupSFXPath), "startup"))
         self.startupPickBtn = ToolButton(FICO.FOLDER)
         self.startupPickBtn.setToolTip("Select a custom sound")
         self.startupPickBtn.installEventFilter(ToolTipFilter(self.startupPickBtn))
@@ -538,7 +543,7 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
         self.successLabel = BodyLabel("Notification - success")
         self.successPlayBtn = PushButton(FICO.PLAY, "Play sound")
         self.successPlayBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.successSFXPath)))
-        self.successPlayBtn.clicked.connect(lambda: self.soundPlay(self.soundSample, cfg.get(cfg.successSFXPath)))
+        self.successPlayBtn.clicked.connect(smartPlaySound(soundStreamer, cfg.get(cfg.successSFXPath), "success"))
         self.successPickBtn = ToolButton(FICO.FOLDER)
         self.successPickBtn.setToolTip("Select a custom sound")
         self.successPickBtn.installEventFilter(ToolTipFilter(self.successPickBtn))
@@ -562,7 +567,7 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
         self.infoLabel = BodyLabel(f"Notification - information")
         self.infoPlayBtn = PushButton(FICO.PLAY, "Play sound")
         self.infoPlayBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.infoSFXPath)))
-        self.infoPlayBtn.clicked.connect(lambda: self.soundPlay(self.soundSample, cfg.get(cfg.infoSFXPath)))
+        self.infoPlayBtn.clicked.connect(smartPlaySound(soundStreamer, cfg.get(cfg.infoSFXPath), "information"))
         self.infoPickBtn = ToolButton(FICO.FOLDER)
         self.infoPickBtn.setToolTip("Select a custom sound")
         self.infoPickBtn.installEventFilter(ToolTipFilter(self.infoPickBtn))
@@ -586,7 +591,7 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
         self.warningLabel = BodyLabel("Notification - warning")
         self.warningPlayBtn = PushButton(FICO.PLAY, "Play sound")
         self.warningPlayBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.warningSFXPath)))
-        self.warningPlayBtn.clicked.connect(lambda: self.soundPlay(self.soundSample, cfg.get(cfg.warningSFXPath)))
+        self.warningPlayBtn.clicked.connect(smartPlaySound(soundStreamer, cfg.get(cfg.warningSFXPath), "warning"))
         self.warningPickBtn = ToolButton(FICO.FOLDER)
         self.warningPickBtn.setToolTip("Select a custom sound")
         self.warningPickBtn.installEventFilter(ToolTipFilter(self.warningPickBtn))
@@ -610,7 +615,7 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
         self.errorLabel = BodyLabel(f"Notification - error")
         self.errorPlayBtn = PushButton(FICO.PLAY, "Play sound")
         self.errorPlayBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.errorSFXPath)))
-        self.errorPlayBtn.clicked.connect(lambda: self.soundPlay(self.soundSample, cfg.get(cfg.errorSFXPath)))
+        self.errorPlayBtn.clicked.connect(smartPlaySound(soundStreamer, cfg.get(cfg.errorSFXPath), "error"))
         self.errorPickBtn = ToolButton(FICO.FOLDER)
         self.errorPickBtn.setToolTip("Select a custom sound")
         self.errorPickBtn.installEventFilter(ToolTipFilter(self.errorPickBtn))
@@ -630,11 +635,11 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
             self.errorRemoveBtn.setEnabled(False)
         ))
 
-        # Second group - Success notification
+        # Sixth group - Confirmation dialog
         self.questionLabel = BodyLabel("At confirmation dialog popup")
         self.questionPlayBtn = PushButton(FICO.PLAY, "Play sound")
         self.questionPlayBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)))
-        self.questionPlayBtn.clicked.connect(lambda: self.soundPlay(self.soundSample, cfg.get(cfg.questionSFXPath)))
+        self.questionPlayBtn.clicked.connect(smartPlaySound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog"))
         self.questionPickBtn = ToolButton(FICO.FOLDER)
         self.questionPickBtn.setToolTip("Select a custom sound")
         self.questionPickBtn.installEventFilter(ToolTipFilter(self.questionPickBtn))
@@ -665,6 +670,7 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
         self.add(self.questionLabel, self.questionPlayBtn, self.questionPickBtn, self.questionRemoveBtn)
 
     def add(self, label, play, pick, remove):
+        """ :SoundFXConfig: Add sound management-related elements to the group """
         w = QWidget()
         w.setFixedHeight(60)
 
@@ -679,23 +685,12 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
         self.addGroupWidget(w)
 
     def soundConfigure(self, config, dialogTitle, successMsg, parent):
+        """ :SoundFXConfig: Configure a sound effect and save it into the configuration file """
         cfg.set(config, smartBrowseFileDialog(parent, dialogTitle, smartResourcePath("resources/sounds"), "Audio files (*.mp3; *.ogg; *.wav)"))
         if cfg.get(config): smartSuccessNotify(parent, "Sound set!", successMsg)
 
-    def soundPlay(self, sound, config):
-        sound = None
-        try:
-            sound = pygame.mixer.Sound(config)
-            if sound: sound.play()
-            else:
-                print(f"{Fore.YELLOW}Unable to play the startup sound, because it has not been loaded...{Style.RESET_ALL}")
-                smartLog("WARNING: Unable to play the startup sound, because it has not been loaded...")
-        except Exception as e:
-            sound = None
-            print(f"{Fore.RED}An error occured while attempting to play the startup sound: {e}{Style.RESET_ALL}")
-            smartLog(f"ERROR: Failed to play the startup sound: {e}")
-
     def soundRemove(self, soundType: str, config, parent):
+        """ :SoundFXConfig: Open a confirmation dialog to remove a configured sound effect """
         if not self.soundRemoveDlg:
             self.soundRemoveDlg = MessageBox(
                 "Remove sound effect",

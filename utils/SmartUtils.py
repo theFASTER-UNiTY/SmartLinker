@@ -118,7 +118,7 @@ class Config(QConfig):
     updateVersion = ConfigItem("About", "UpdateVersion", "")
     qAccentColor = ColorConfigItem("QFluentWidgets", "ThemeColor", "#ff25d9e6")
 
-def smartResourcePath(relativePath: str):
+def smartResourcePath(relativePath: str) -> str:
     """ SmartUtils
     ==========
     Dynamic provider of internal resources and files
@@ -127,6 +127,10 @@ def smartResourcePath(relativePath: str):
     ----------
     relativePath: string
         The path to the internal resource you want to access
+    
+    Returns
+    -------
+    :string: The dynamically-provided path to resource
     """
     if hasattr(sys, "_MEIPASS"):
         basePath = getattr(sys, "_MEIPASS", os.path.abspath("."))
@@ -246,10 +250,10 @@ def isDarkModeEnabled() -> bool:
             r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
         ) as key:
             value, _ = winreg.QueryValueEx(key, "AppsUseLightTheme")
-            isDarkMode = value == 0  # 0 = dark, 1 = light
-            return isDarkMode
+            isDarkMode = bool(value == 0)  # 0 = dark, 1 = light
     except Exception:
-        return False  # défaut = clair
+        isDarkMode = False  # default = light
+    finally: return isDarkMode
 
 def smartPlaySound(sound, path: str, label: str):
     """ SmartUtils
@@ -296,25 +300,22 @@ def smartCheckConnectivity(hostname = "8.8.8.8", port = 53, timeout = 5.0):
     isConnected: boolean
         Whether an internet connection has been established
     """
+    isConnected = False
     try:
         socket.create_connection((hostname, port), timeout)
         isConnected = True
     except socket.gaierror:
         print(f"{Fore.RED}Failed to establish connection: the DNS address cannot be resolved...{Style.RESET_ALL}")
         smartLog("ERROR: Failed to establish connection: could not resolve DNS address...")
-        isConnected = False
     except TimeoutError:
         print(f"{Fore.RED}Failed to establish connection: the timeout has been exceeded...{Style.RESET_ALL}")
         smartLog("ERROR: Failed to establish connection: timeout exceeded...")
-        isConnected = False
     except OSError as ose:
         print(f"{Fore.RED}Failed to establish connection: an OS-related error occured: {ose}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to establish connection because of an OS-related error: {ose}")
-        isConnected = False
     except Exception as e:
         print(f"{Fore.RED}Something went wrong while attempting to establish connection: {e}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to establish connection: {e}")
-        isConnected = False
     finally: return isConnected
 
 def smartIsDarkMode() -> bool:
@@ -324,11 +325,9 @@ def smartIsDarkMode() -> bool:
 
     Returns
     -------
-    isDarkMode: boolean
-        whether the system is in dark mode
+    :boolean: whether the system is in dark mode
     """
-    isDarkMode = bool(darkdetect.isDark())
-    return isDarkMode
+    return bool(darkdetect.isDark())
 
 def smartOpenURL(requestURL: str):
     """ SmartUtils
@@ -450,11 +449,10 @@ def smartGetFileIcon(filePath: str) -> QIcon:
 
     Returns
     -------
-    fileIcon: QIcon
-        The icon of the provided executable (whose path must be valid)
+    :QIcon: The icon of the provided executable (whose path must be valid)
     """
     if filePath: return QFileIconProvider().icon(QFileInfo(filePath))
-    return QIcon(smartResourcePath("resources/images/icons/icon.ico"))
+    return QIcon()
 
 def smartBrowseFileDialog(parent: typing.Optional[QWidget], dialogTitle: typing.Optional[str], mainDir: typing.Optional[str], typeFilter: typing.Optional[str]) -> str:
     """ SmartUtils
@@ -474,8 +472,8 @@ def smartBrowseFileDialog(parent: typing.Optional[QWidget], dialogTitle: typing.
     
     Returns
     -------
-    isFileExists: boolean
-        Whether the selected file path returned by the dialog is valid
+    filePath: string
+        The selected file path returned by the dialog
     """
     filePath, _ = QFileDialog.getOpenFileName(
         parent,
@@ -501,6 +499,7 @@ def smartIsSystemDefault(self, appID: str) -> bool:
     isSystemDefault: boolean
         Whether SmartLinker is system's default browser
     """
+    isSystemDefault = False
     httpKeyPath = r"Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice"
     httpsKeyPath = r"Software\Microsoft\Windows\Shell\Associations\UrlAssociations\https\UserChoice"
     try:
@@ -514,16 +513,14 @@ def smartIsSystemDefault(self, appID: str) -> bool:
                 httpsProgID, _ = winreg.QueryValueEx(httpsKey, 'Progid')
                 isHttpsDefault = bool(httpsProgID == appID)
                 isSystemDefault = isHttpDefault and isHttpsDefault
-                return isSystemDefault
     except FileNotFoundError as fe:
         # The key doesn't exist, so no default browser has been set
         print(f"Registry information: {fe}")
         # smartInfoNotify(self, "Did you know?", "Until now, no browser has been set by default in your system.")
-        return False
     except Exception as e:
         print(f"An error occured while checking registry : {e}")
         smartErrorNotify(self, "Something went wrong...", f"An error occured while checking registry : {e}")
-        return False
+    finally: return isSystemDefault
 
 def smartIsBrowserOpen(exePath: str) -> bool:
     """ SmartUtils
@@ -551,10 +548,6 @@ def smartIsBrowserOpen(exePath: str) -> bool:
     print(f"\n'{browsName}' is running: {Fore.GREEN if isProcessOpen else Fore.RED}{isProcessOpen}{Style.RESET_ALL}\n")
     return isProcessOpen
 
-"""
-SmartLinker
-"""
-
 def smartConsoleScript() -> str:
     """ SmartUtils
     ==========
@@ -562,8 +555,7 @@ def smartConsoleScript() -> str:
 
     Returns
     -------
-    consName: string
-        The rendered SmartLinker name
+    :string: The rendered SmartLinker name
     """
     return f"{PURPLE}============================{Style.RESET_ALL} {SmartLinkerAuthor} presents {Fore.BLUE}============================{Style.RESET_ALL}\n\n" \
            f"{PURPLE}███████╗███╗   ███╗ █████╗ ██████╗ ████████╗{Fore.BLUE}██╗     ██╗███╗   ██╗██╗  ██╗███████╗██████╗ {Style.RESET_ALL}\n" \
@@ -670,14 +662,14 @@ def smartShowLayoutWidgets(layout):
         elif item.layout():
             smartShowLayoutWidgets(item.layout())
 
-def smartGetLatestVersionTagLocal():
+def smartGetLatestVersionTagLocal() -> str:
     """ SmartUtils
     ==========
     SmartLinker's latest version tag checker (local Git repository)
 
     Returns
     -------
-    versionTag: str
+    versionTag: string
         The latest version tag detected
     """
     try:
@@ -692,59 +684,54 @@ def smartGetLatestVersionTagLocal():
         versionTag = version.stdout.strip()
         print(f"{Fore.BLUE}Latest version: {versionTag}{Style.RESET_ALL}")
         smartLog(f"Latest version: {versionTag}")
-        return versionTag
     except Exception as e:
         print(f"{Fore.RED}Something went wrong while checking the latest version: {e}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to check latest version: {e}")
-        return ""
+        versionTag = ""
+    finally: return versionTag
 
-def smartGetLatestVersionTag():
+def smartGetLatestVersionTag() -> str:
     """ SmartUtils
     ==========
     SmartLinker's latest version tag checker
 
     Returns
     -------
-    versionTag: str
+    versionTag: string
         The latest version tag detected
     """
     tagUrl = f"{SmartLinkerGitRepoAPI}/tags"
     params = {'per_page': 1}
     versionTag: str = ""
-
     try:
         print("Checking for latest version...")
         smartLog("Checking for latest version...")
         response = requests.get(tagUrl, params, timeout=5)
         response.raise_for_status()
-
         tagsList = response.json()
         if tagsList:
             versionTag = tagsList[0].get("name")
             print(f"{Fore.BLUE}Latest version: {versionTag}{Style.RESET_ALL}")
             smartLog(f"Latest version: {versionTag}")
         else:
-            versionTag = ""
             print(f"{Fore.RED}Failed to get latest version tag from GitHub repository: there are no tags to be found...{Style.RESET_ALL}")
             smartLog("ERROR: Failed to get latest version tag from GitHub repository: could not find any tags...")
     except requests.exceptions.RequestException as re:
-        versionTag = ""
         print(f"{Fore.RED}Failed to communicate with GitHub repository: {re}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to communicate with GitHub repository: {re}")
     except Exception as e:
-        versionTag = ""
         print(f"{Fore.RED}Something went wrong while attempting to get the latest version tag from GitHub: {e}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to get latest version tag from GitHub repository: {e}")
     finally: return versionTag
 
-def smartGetLatestReleaseTag():
+def smartGetLatestReleaseTag() -> str:
     """ SmartUtils
     ==========
     SmartLinker's latest release tag checker
 
     Returns
     -------
-    releaseTag: str
+    releaseTag: string
         The latest release tag detected
     """
     releaseUrl = f"{SmartLinkerGitRepoAPI}/releases/latest"
@@ -761,26 +748,24 @@ def smartGetLatestReleaseTag():
     except requests.exceptions.RequestException as re:
         print(f"{Fore.RED}Failed to communicate with GitHub repository: {re}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to communicate with GitHub repository: {re}")
-        releaseTag = ""
     except Exception as e:
         print(f"{Fore.RED}Something went wrong while attempting to get the latest release tag from GitHub: {e}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to get latest release tag from GitHub repository: {e}")
-        releaseTag = ""
     finally: return releaseTag
 
-def smartCovertToNoAlphaHEX(color: str | QColor):
+def smartCovertToNoAlphaHEX(color: str | QColor) -> str:
     """ SmartUtils
     ==========
     HEX w/ alpha (#AARRGGBB) to HEX w/o alpha (#RRGGBB) color format converter
 
     Parameters
     ----------
-    color: str | QColor
+    color: string | QColor
         The color whose format must be converted.
     
     Returns
     -------
-    newColor: str
+    newColor: string
         The re-formatted color string.
     """
     try:
@@ -798,19 +783,19 @@ def smartCovertToNoAlphaHEX(color: str | QColor):
         newColor = ""
     finally: return newColor
 
-def smartConvertToRGBA(color: str | QColor):
+def smartConvertToRGBA(color: str | QColor) -> str:
     """ SmartUtils
     ==========
     RGBA color format converter
 
     Parameters
     ----------
-    color: str | QColor
+    color: string | QColor
         The color whose format must be converted.
     
     Returns
     -------
-    newColor: str
+    newColor: string
         The re-formatted color string.
     """
     try:
@@ -829,21 +814,22 @@ def smartConvertToRGBA(color: str | QColor):
         newColor = ""
     finally: return newColor
 
-def smartConvertToRGB(color: str | QColor):
+def smartConvertToRGB(color: str | QColor) -> str:
     """ SmartUtils
     ==========
     RGB color format converter
 
     Parameters
     ----------
-    color: str | QColor
+    color: string | QColor
         The color whose format must be converted.
     
     Returns
     -------
-    newColor: str
+    newColor: string
         The re-formatted color string.
     """
+    newColor = ""
     try:
         oldColor = QColor(color)
         if not isValid(oldColor): raise ValueError("Invalid color format")
@@ -852,14 +838,12 @@ def smartConvertToRGB(color: str | QColor):
         green = oldColor.green()
         blue = oldColor.blue()
         newColor = f"{red}, {green}, {blue}"
-        return newColor
     except Exception as e:
         print(f"{Fore.RED}Something went wrong during color conversion: {e}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to convert color format: {e}")
-        newColor = ""
     finally: return newColor
 
-def smartCustomAlphaToRGB(color: str | QColor, alpha):
+def smartCustomAlphaToRGB(color: str | QColor, alpha) -> QColor:
     """ SmartUtils
     ==========
     Custom alpha value to color applying tool
@@ -876,6 +860,7 @@ def smartCustomAlphaToRGB(color: str | QColor, alpha):
     newColor: QColor
         The modified version of the color.
     """
+    newColor = QColor()
     try:
         oldColor = QColor(color)
         if not isValid(oldColor): raise ValueError("Invalid color format entered")
@@ -886,7 +871,6 @@ def smartCustomAlphaToRGB(color: str | QColor, alpha):
     except Exception as e:
         print(f"{Fore.RED}Something went wrong during color conversion: {e}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to convert color format: {e}")
-        newColor = QColor()
     finally: return newColor
 
 def smartGetRed(color):

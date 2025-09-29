@@ -143,7 +143,8 @@ soundStreamer = None
 def smartLoadBrowsersJSON():
     """ SmartUtils
     ==========
-    Loader of all the saved browsers """
+    Loader of all the saved browsers
+    """
     try:
         with open(browsersCfgFilePath, "r") as browserReader:
             return json.load(browserReader)
@@ -154,7 +155,8 @@ def smartLoadBrowsersJSON():
 def smartLoadBrowsers():
     """ SmartUtils
     ==========
-    Loader of all the saved browsers """
+    Loader of all the saved browsers
+    """
     try:
         with open(browsersCfgFilePath, "rb") as browserReader:
             return pickle.load(browserReader)
@@ -196,19 +198,22 @@ def smartWriteBrowsers(browsers: dict[str, list[str]]):
 def restartApp():
     """ SmartUtils
     ==========
-    Global function to restart the app """
+    Global function to restart the app (script purpose)
+    """
     os.execl(sys.executable, sys.executable, *sys.argv)
 
 def stopApp():
     """ SmartUtils
     ==========
-    Global function to stop the app process """
+    Global function to stop the app process
+    """
     sys.exit()
 
 def smartRestartApp():
     """ SmartUtils
     ==========
-    Global function to restart the app """
+    Global function to restart the app (executable purpose)
+    """
     execPath = sys.executable
     execArgs = sys.argv
     
@@ -247,6 +252,19 @@ def isDarkModeEnabled() -> bool:
         return False  # défaut = clair
 
 def smartPlaySound(sound, path: str, label: str):
+    """ SmartUtils
+    ==========
+    Sound effects player
+
+    Parameters
+    ----------
+    sound: Unknown
+        The component responsible for playing sound effect
+    path: string
+        The path to the sound effect file
+    label: string
+        The name you want to give the sound effect (for notification purposes)
+    """
     sound = None
     try:
         sound = pygame.mixer.Sound(path)
@@ -652,36 +670,10 @@ def smartShowLayoutWidgets(layout):
         elif item.layout():
             smartShowLayoutWidgets(item.layout())
 
-def smartSegoeTitle() -> QFont:
-    font = QFont()
-    font.setFamily("Segoe UI Variable")
-    font.setPixelSize(28)
-    font.setWeight(QFont.Weight.DemiBold)
-    return font
-
-def smartSegoeSubtitle() -> QFont:
-    font = QFont()
-    font.setFamily("Segoe UI Variable")
-    font.setPixelSize(20)
-    font.setWeight(QFont.Weight.DemiBold)
-    return font
-
-def smartSegoeBody() -> QFont:
-    font = QFont()
-    font.setFamily("Segoe UI Variable")
-    font.setPixelSize(14)
-    return font
-
-def smartSegoeCaption() -> QFont:
-    font = QFont()
-    font.setFamily("Segoe UI Variable")
-    font.setPixelSize(12)
-    return font
-
 def smartGetLatestVersionTagLocal():
     """ SmartUtils
     ==========
-    SmartLinker's latest version tag checker
+    SmartLinker's latest version tag checker (local Git repository)
 
     Returns
     -------
@@ -707,9 +699,18 @@ def smartGetLatestVersionTagLocal():
         return ""
 
 def smartGetLatestVersionTag():
+    """ SmartUtils
+    ==========
+    SmartLinker's latest version tag checker
+
+    Returns
+    -------
+    versionTag: str
+        The latest version tag detected
+    """
     tagUrl = f"{SmartLinkerGitRepoAPI}/tags"
     params = {'per_page': 1}
-    latestTag: str = ""
+    versionTag: str = ""
 
     try:
         print("Checking for latest version...")
@@ -719,46 +720,55 @@ def smartGetLatestVersionTag():
 
         tagsList = response.json()
         if tagsList:
-            latestTag = tagsList[0].get("name")
-            print(f"{Fore.BLUE}Latest version: {latestTag}{Style.RESET_ALL}")
-            smartLog(f"Latest version: {latestTag}")
+            versionTag = tagsList[0].get("name")
+            print(f"{Fore.BLUE}Latest version: {versionTag}{Style.RESET_ALL}")
+            smartLog(f"Latest version: {versionTag}")
         else:
-            latestTag = ""
+            versionTag = ""
             print(f"{Fore.RED}Failed to get latest version tag from GitHub repository: there are no tags to be found...{Style.RESET_ALL}")
             smartLog("ERROR: Failed to get latest version tag from GitHub repository: could not find any tags...")
     except requests.exceptions.RequestException as re:
-        latestTag = ""
+        versionTag = ""
         print(f"{Fore.RED}Failed to communicate with GitHub repository: {re}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to communicate with GitHub repository: {re}")
     except Exception as e:
-        latestTag = ""
+        versionTag = ""
         print(f"{Fore.RED}Something went wrong while attempting to get the latest version tag from GitHub: {e}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to get latest version tag from GitHub repository: {e}")
-    finally: return latestTag
+    finally: return versionTag
 
 def smartGetLatestReleaseTag():
+    """ SmartUtils
+    ==========
+    SmartLinker's latest release tag checker
+
+    Returns
+    -------
+    releaseTag: str
+        The latest release tag detected
+    """
     releaseUrl = f"{SmartLinkerGitRepoAPI}/releases/latest"
-    latestTag: str = ""
+    releaseTag: str = ""
     try:
         print("Checking for latest release version...")
         smartLog("Checking for latest release version...")
         response = requests.get(releaseUrl, timeout=5)
         response.raise_for_status()
         data = response.json()
-        print(f"Latest release version: {latestTag}")
-        smartLog(f"Latest release version: {latestTag}")
-        latestTag = data.get("tag_name")
+        print(f"Latest release version: {releaseTag}")
+        smartLog(f"Latest release version: {releaseTag}")
+        releaseTag = data.get("tag_name")
     except requests.exceptions.RequestException as re:
         print(f"{Fore.RED}Failed to communicate with GitHub repository: {re}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to communicate with GitHub repository: {re}")
-        latestTag = ""
+        releaseTag = ""
     except Exception as e:
         print(f"{Fore.RED}Something went wrong while attempting to get the latest release tag from GitHub: {e}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to get latest release tag from GitHub repository: {e}")
-        latestTag = ""
-    finally: return latestTag
+        releaseTag = ""
+    finally: return releaseTag
 
-def smartConvertToHEX(color: str | QColor):
+def smartCovertToNoAlphaHEX(color: str | QColor):
     """ SmartUtils
     ==========
     HEX w/ alpha (#AARRGGBB) to HEX w/o alpha (#RRGGBB) color format converter
@@ -785,6 +795,8 @@ def smartConvertToHEX(color: str | QColor):
     except Exception as e:
         print(f"{Fore.RED}Something went wrong during color conversion: {e}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to convert color format: {e}")
+        newColor = ""
+    finally: return newColor
 
 def smartConvertToRGBA(color: str | QColor):
     """ SmartUtils
@@ -814,6 +826,8 @@ def smartConvertToRGBA(color: str | QColor):
     except Exception as e:
         print(f"{Fore.RED}Something went wrong during color conversion: {e}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to convert color format: {e}")
+        newColor = ""
+    finally: return newColor
 
 def smartConvertToRGB(color: str | QColor):
     """ SmartUtils
@@ -842,8 +856,10 @@ def smartConvertToRGB(color: str | QColor):
     except Exception as e:
         print(f"{Fore.RED}Something went wrong during color conversion: {e}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to convert color format: {e}")
+        newColor = ""
+    finally: return newColor
 
-def smartCustomAlphaToRGB(color, alpha):
+def smartCustomAlphaToRGB(color: str | QColor, alpha):
     """ SmartUtils
     ==========
     Custom alpha value to color applying tool
@@ -852,12 +868,12 @@ def smartCustomAlphaToRGB(color, alpha):
     ----------
     color: Unknown
         The color you want to modify.
-    alpha: num
+    alpha: number
         The alpha value you want to apply.
 
     Returns
     -------
-    newColor: Unknown
+    newColor: QColor
         The modified version of the color.
     """
     try:
@@ -865,11 +881,13 @@ def smartCustomAlphaToRGB(color, alpha):
         if not isValid(oldColor): raise ValueError("Invalid color format entered")
 
         r, g, b, a = oldColor.getRgb()
-        if r and g and b: newColor = oldColor.setRgb(r, g, b, alpha)
-        return newColor
+        if r and g and b: oldColor.setRgb(r, g, b, alpha)
+        newColor = oldColor
     except Exception as e:
         print(f"{Fore.RED}Something went wrong during color conversion: {e}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to convert color format: {e}")
+        newColor = QColor()
+    finally: return newColor
 
 def smartGetRed(color):
     """ SmartUtils
@@ -890,11 +908,12 @@ def smartGetRed(color):
         rColor = QColor(color)
         if rColor.isValid():
             red, g, b, a = rColor.getRgb()
-            return red
-        else: return 0
+        else: red = 0
     except Exception as e:
         print(f"{Fore.RED}Something went wrong during red value pick: {e}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to pick red value from color: {e}")
+        red = 0
+    finally: return red
 
 def smartGetGreen(color):
     """ SmartUtils
@@ -915,11 +934,12 @@ def smartGetGreen(color):
         gColor = QColor(color)
         if gColor.isValid():
             r, green, b, a = gColor.getRgb()
-            return green
-        else: return 0
+        else: green = 0
     except Exception as e:
         print(f"{Fore.RED}Something went wrong during green value pick: {e}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to pick green value from color: {e}")
+        green = 0
+    finally: return green
 
 def smartGetBlue(color):
     """ SmartUtils
@@ -940,11 +960,12 @@ def smartGetBlue(color):
         bColor = QColor(color)
         if bColor.isValid():
             r, g, blue, a = bColor.getRgb()
-            return blue
-        else: return 0
+        else: blue = 0
     except Exception as e:
         print(f"{Fore.RED}Something went wrong during blue value pick: {e}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to pick blue value from color: {e}")
+        blue = 0
+    finally: return blue
 
 def smartGetAlpha(color):
     """ SmartUtils
@@ -965,11 +986,12 @@ def smartGetAlpha(color):
         aColor = QColor(color)
         if aColor.isValid():
             r, g, b, alpha = aColor.getRgb()
-            return alpha
-        else: return 0
+        else: alpha = 0
     except Exception as e:
         print(f"{Fore.RED}Something went wrong during alpha value pick: {e}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to pick alpha value from color: {e}")
+        alpha = 0
+    finally: return alpha
 
 def smartGetAlphaFloat(color):
     """ SmartUtils
@@ -990,8 +1012,9 @@ def smartGetAlphaFloat(color):
         aColor = QColor(color)
         if aColor.isValid():
             r, g, b, alpha = aColor.getRgbF()
-            return alpha
-        else: return 0.0
+        else: alpha = 0.0
     except Exception as e:
         print(f"{Fore.RED}Something went wrong during alpha value pick: {e}{Style.RESET_ALL}")
         smartLog(f"ERROR: Failed to pick alpha value from color: {e}")
+        alpha = 0.0
+    finally: return alpha

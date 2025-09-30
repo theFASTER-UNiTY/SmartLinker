@@ -1062,7 +1062,7 @@ class SmartLogic():
         """
         isCompatible = False
         try:
-            if not platform.system() is "Windows": isCompatible = False
+            if not platform.system() == "Windows": isCompatible = False
             else: isCompatible = sys.getwindowsversion().build >= minBuild 
         except Exception as e:
             print(f"{Fore.RED}An error occured while attempting to check system compatibility: {e}{Style.RESET_ALL}")

@@ -1,6 +1,6 @@
 from utils.SmartUtils import *
 
-myBrowsList = smartLoadBrowsers()
+myBrowsList = smart.loadBrowsers()
 
 class MyBrowsersInterface(QWidget):
     """ Main class for the 'My Browsers' interface """
@@ -141,7 +141,7 @@ class MyBrowsersInterface(QWidget):
         
         self.updateSnack = QWidget()
         self.updateSnack.setObjectName("BSnackBase")
-        self.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smartConvertToRGB(themeColor().name())}, 0.25)}}")
+        self.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smart.convertToRGB(themeColor().name())}, 0.25)}}")
         mainBrowLayout.addWidget(self.updateSnack)
         self.updateSnack.setVisible(bool(cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners))) 
         self.updateSnack.setEnabled(bool(cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners))) 
@@ -160,25 +160,25 @@ class MyBrowsersInterface(QWidget):
 
     def loadBrowsers(self, parent):
         """ :MyBrowsersInterface: Saved browsers loader in the SmartList"""
-        myBrowsList = smartLoadBrowsers()
+        myBrowsList = smart.loadBrowsers()
         if myBrowsList["MyBrowsers"]:
             print("Loading browsers from database...")
-            smartLog("Loading browsers from database...")
+            smart.managerLog("Loading browsers from database...")
             for browser in myBrowsList["MyBrowsers"]:
                 bName = browser["name"]
                 bPath = browser["path"]
-                bCard = MyBrowsersCard(QIcon(smartGetFileIcon(bPath)), bName, bPath)
+                bCard = MyBrowsersCard(QIcon(smart.getFileIcon(bPath)), bName, bPath)
                 bCard.editButton.setToolTip(f"Edit {bName}")
                 bCard.editButton.installEventFilter(ToolTipFilter(bCard.editButton, showDelay=300, position=ToolTipPosition.TOP))
                 bCard.deleteButton.setToolTip(f"Delete {bName} from my SmartList")
                 bCard.deleteButton.installEventFilter(ToolTipFilter(bCard.deleteButton, showDelay=300, position=ToolTipPosition.TOP))
                 bCard.editButton.clicked.connect(lambda checked, path=bPath, name=bName, parent=parent: self.openEditBrowserDialog(path, name, parent))
                 bCard.deleteButton.clicked.connect(lambda checked, name=bName: self.confirmDeleteDialog(name, parent))
-                bCard.openButton.clicked.connect(lambda checked, path=bPath, name=bName: self.launchBrowser(path, name))
+                bCard.openButton.clicked.connect(lambda checked, path=bPath, name=bName: self.launchBrowser(path, name, parent))
                 self.mybrowsLayout.addWidget(bCard)
                 self.myBrowsCards.append(bCard)
             print(f"{Fore.GREEN}Your browsers database has been successfully loaded!{Style.RESET_ALL}")
-            smartLog("SUCCESS: The browsers database has been succesfully loaded into the SmartList.")
+            smart.managerLog("SUCCESS: The browsers database has been succesfully loaded into the SmartList.")
             self.mybrowsEmptyMsg.setHidden(True)
             self.mybrowsSub.setHidden(False)
             if cfg.get(cfg.showCommandBar): self.loadLinkCommand.setEnabled(True)
@@ -187,7 +187,7 @@ class MyBrowsersInterface(QWidget):
             else: self.myBrowsClearCard.setHidden(False)
         else:
             print(f"{Fore.YELLOW}Your browsers database is currently empty...{Style.RESET_ALL}")
-            smartLog("WARNING: The browsers database is currently empty...")
+            smart.managerLog("WARNING: The browsers database is currently empty...")
             self.mybrowsLayout.addWidget(self.mybrowsEmptyMsg, 0, Qt.AlignmentFlag.AlignCenter)
             self.mybrowsEmptyMsg.setHidden(False)
             self.mybrowsSub.setHidden(True)
@@ -199,7 +199,7 @@ class MyBrowsersInterface(QWidget):
     def refreshBrowsers(self, parent):
         """ :MyBrowsersInterface: Refresh the SmartList without need to restart """
         print("Refreshing the SmartList...")
-        smartLog("Refreshing the SmartList...")
+        smart.managerLog("Refreshing the SmartList...")
         while self.mybrowsLayout.count():
             item = self.mybrowsLayout.takeAt(0)
             if item is not None:
@@ -208,12 +208,12 @@ class MyBrowsersInterface(QWidget):
                     widget.setParent(None)
                     self.mybrowsLayout.removeWidget(widget)
         print(f"{Fore.GREEN}All the browsers have been successfully removed!{Style.RESET_ALL}")
-        smartLog("SUCCESS: All the browsers have been successfully removed!")
+        smart.managerLog("SUCCESS: All the browsers have been successfully removed!")
         self.loadBrowsers(parent)
     
     def refreshWrapper(self, parent):
         self.refreshBrowsers(parent)
-        smartInfoNotify(self, "SmartList refreshed!", "Your SmartList has been successfully refreshed!")
+        smart.infoNotify("SmartList refreshed!", "Your SmartList has been successfully refreshed!", parent)
 
     def openNewBrowserDialog(self, parent):
         """ :MyBrowsersInterface: 'Add a new browser' dialog loader """
@@ -233,7 +233,7 @@ class MyBrowsersInterface(QWidget):
             print(f"{Fore.GREEN}The changes have been successfully applied!{Style.RESET_ALL}\n" \
                   f"Browser name: {Fore.RED}{name}{Style.RESET_ALL} -> {Fore.GREEN}{self.browsEditDlg.nameEdit.text()}{Style.RESET_ALL}\n" \
                   f"Browser path: {Fore.RED}{path}{Style.RESET_ALL} -> {Fore.GREEN}{self.browsEditDlg.pathEdit.text()}{Style.RESET_ALL}")
-            smartLog("SUCCESS: Browser entry successfully updated\n" \
+            smart.managerLog("SUCCESS: Browser entry successfully updated\n" \
                      f"Browser name: {name} -> {self.browsEditDlg.nameEdit.text()}\n" \
                      f"Browser executable path: {path} -> {self.browsEditDlg.pathEdit.text()}")
             self.updateBrowserOfList(name, path, parent)
@@ -246,26 +246,26 @@ class MyBrowsersInterface(QWidget):
             parent
         )
         self.deleteDlg.yesButton.setText("Delete")
-        if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smartPlaySound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
+        if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smart.playSound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
         if self.deleteDlg.exec():
             print(f"Prnding operation: Removing {name} from the SmartList...")
-            smartLog(f"Removing {name} from the SmartList...")
-            myBrowsList = smartLoadBrowsers()
+            smart.managerLog(f"Removing {name} from the SmartList...")
+            myBrowsList = smart.loadBrowsers()
             baseCount = len(myBrowsList["MyBrowsers"])
             updatedList = {"MyBrowsers": [browser for browser in myBrowsList["MyBrowsers"] if browser["name"] != name]}
             # print(updatedList)
             if len(updatedList) == baseCount:
                 print(f"{Fore.YELLOW}WARNING!! {name} cannot be found, failed to remove from your SmartList...{Style.RESET_ALL}")
-                smartLog(f"WARNING: {name} cannot be found, unable to proceed to its removal from the SmartList...")
-                smartWarningNotify(self, "Warning, be careful!", f"{name} cannot be found, failed to remove from your SmartList...")
+                smart.managerLog(f"WARNING: {name} cannot be found, unable to proceed to its removal from the SmartList...")
+                smart.warningNotify("Warning, be careful!", f"{name} cannot be found, failed to remove from your SmartList...", parent)
                 return
             print("Saving the updated browsers database...")
-            smartLog(f"{name} has been removed. Updating the browsers database...")
-            smartWriteBrowsers(updatedList)
+            smart.managerLog(f"{name} has been removed. Updating the browsers database...")
+            smart.writeBrowsers(updatedList)
             self.refreshBrowsers(parent)
             print(f"{Fore.GREEN}{name} has been successfully removed from your SmartList!{Style.RESET_ALL}")
-            smartLog(f"SUCCESS: {name} has been successfully removed from the SmartList.")
-            smartSuccessNotify(self, "Removal complete!", f"{name} has been successfully removed from your SmartList!")
+            smart.managerLog(f"SUCCESS: {name} has been successfully removed from the SmartList.")
+            smart.successNotify("Removal complete!", f"{name} has been successfully removed from your SmartList!", parent)
 
     def confirmClearDialog(self, parent):
         self.clearDlg = MessageBox(
@@ -277,10 +277,10 @@ class MyBrowsersInterface(QWidget):
             parent
         )
         self.clearDlg.yesButton.setText("Clear my SmartList")
-        if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smartPlaySound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
+        if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smart.playSound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
         if self.clearDlg.exec():
             print(f"{Fore.YELLOW}Waiting for the final confirmation to empty the SmartList...{Style.RESET_ALL}")
-            smartLog("WARNING: An attempt of clearing the SmartList has been initiated. Waiting for confirmation...")
+            smart.managerLog("WARNING: An attempt of clearing the SmartList has been initiated. Waiting for confirmation...")
             confirmClearDlg = MessageBox(
                 "Confirm complete removal",
                 "Before proceeding, please note that removing all your browsers from your SmartList " \
@@ -290,91 +290,91 @@ class MyBrowsersInterface(QWidget):
             )
             confirmClearDlg.yesButton.setText("I'm 100% sure!")
             confirmClearDlg.cancelButton.setText("Nevermind...")
-            if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smartPlaySound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
+            if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smart.playSound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
             if confirmClearDlg.exec():
                 print(f"{Fore.GREEN}Confirmation granted!{Style.RESET_ALL}\nPending operation: Proceeding with complete removal...")
-                smartLog("WARNING: The confirmation has been granted. Proceeding with complete removal...")
+                smart.managerLog("WARNING: The confirmation has been granted. Proceeding with complete removal...")
                 myBrowsList["MyBrowsers"] = []
-                smartWriteBrowsers(myBrowsList)
-                smartSuccessNotify(self, "Clearing complete!", "Your SmartList has been successfully cleared!")
+                smart.writeBrowsers(myBrowsList)
+                smart.successNotify("Clearing complete!", "Your SmartList has been successfully cleared!", parent)
                 self.refreshBrowsers(parent)
                 print(f"{Fore.GREEN}Your SmartList has been successfully cleared!{Style.RESET_ALL}")
-                smartLog("SUCCESS: The SmartList has been successfully cleared.")
+                smart.managerLog("SUCCESS: The SmartList has been successfully cleared.")
             else:
                 print(f"{Fore.BLUE}Confirmation denied! The operation has been cancelled.{Style.RESET_ALL}")
-                smartLog("INFO: The confirmation has been denied. The removal operation has been cancelled by the user.")
+                smart.managerLog("INFO: The confirmation has been denied. The removal operation has been cancelled by the user.")
 
     def loadLinkDialog(self, parent):
         """ :MyBrowsersInterface: 'Load link' dialog loader """
-        myBrowsList = smartLoadBrowsers()
+        myBrowsList = smart.loadBrowsers()
         if not self.loadLinkDlg:
             self.loadLinkDlg = LoadLinkDialog(parent)
         if self.loadLinkDlg.exec():
             failedAttempts = 0
             if not self.loadLinkDlg.browserCombo.currentText() == "Other browser":
                 print(f"Loading '{self.loadLinkDlg.linkEdit.text()}' into {self.loadLinkDlg.browserCombo.currentText()}...")
-                smartLog(f"Loading '{self.loadLinkDlg.linkEdit.text()}' into {self.loadLinkDlg.browserCombo.currentText()}...")
+                smart.managerLog(f"Loading '{self.loadLinkDlg.linkEdit.text()}' into {self.loadLinkDlg.browserCombo.currentText()}...")
                 for browser in myBrowsList["MyBrowsers"]:
                     if browser["name"] == self.loadLinkDlg.browserCombo.currentText():
                         if browser["path"]:
                             try:
                                 subprocess.Popen([browser["path"], self.loadLinkDlg.linkEdit.text()])
                                 print(f"{Fore.GREEN}'{self.loadLinkDlg.linkEdit.text()}' has been successfully loaded into {browser["name"]}!{Style.RESET_ALL}")
-                                smartLog(f"SUCCESS: '{self.loadLinkDlg.linkEdit.text()}' has been successfully loaded into {browser["name"]}.")
+                                smart.managerLog(f"SUCCESS: '{self.loadLinkDlg.linkEdit.text()}' has been successfully loaded into {browser["name"]}.")
                             except Exception as e:
-                                smartErrorNotify(self, "Oops! Something went wrong...", f"An error occured while attempting to load your link into {browser["name"]}: {e}")
+                                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to load your link into {browser["name"]}: {e}", parent)
                                 print(f"{Fore.RED}An error occured while attempting to load {self.loadLinkDlg.linkEdit.text()} into {browser["name"]}: {e}{Style.RESET_ALL}")
-                                smartLog(f"ERROR: Failed while loading '{self.loadLinkDlg.linkEdit.text()}' into {browser["name"]}: {e}")
+                                smart.managerLog(f"ERROR: Failed while loading '{self.loadLinkDlg.linkEdit.text()}' into {browser["name"]}: {e}")
                             break
                         else:
-                            smartWarningNotify(self, "Warning, be careful!", f"The path to {browser["name"]} as registered in your SmartList is empty...")
+                            smart.warningNotify("Warning, be careful!", f"The path to {browser["name"]} as registered in your SmartList is empty...", parent)
                             print(f"{Fore.YELLOW}WARNING!! The path to {browser["name"]} as registered in your SmartList is empty...{Style.RESET_ALL}")
-                            smartLog(f"WARNING: The path to {browser["name"]} as registered in the SmartList is empty...")
+                            smart.managerLog(f"WARNING: The path to {browser["name"]} as registered in the SmartList is empty...")
                             break
                     elif cfg.get(cfg.mainBrowserPath) and cfg.get(cfg.mainBrowserIsManual):
                         if os.path.basename(cfg.get(cfg.mainBrowserPath)) == self.loadLinkDlg.browserCombo.currentText():
                             try:
                                 subprocess.Popen([cfg.get(cfg.mainBrowserPath), self.loadLinkDlg.linkEdit.text()])
                                 print(f"{Fore.GREEN}'{self.loadLinkDlg.linkEdit.text()}' has been successfully loaded into {cfg.get(cfg.mainBrowserPath)}!{Style.RESET_ALL}")
-                                smartLog(f"SUCCESS: '{self.loadLinkDlg.linkEdit.text()}' has been successfully loaded into {cfg.get(cfg.mainBrowserPath)}.")
+                                smart.managerLog(f"SUCCESS: '{self.loadLinkDlg.linkEdit.text()}' has been successfully loaded into {cfg.get(cfg.mainBrowserPath)}.")
                             except Exception as e:
-                                smartErrorNotify(self, "Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(cfg.get(cfg.mainBrowserPath))}: {e}")
+                                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(cfg.get(cfg.mainBrowserPath))}: {e}", parent)
                                 print(f"{Fore.RED}An error occured while attempting to load {self.loadLinkDlg.linkEdit.text()} into {cfg.get(cfg.mainBrowserPath)}: {e}{Style.RESET_ALL}")
-                                smartLog(f"ERROR: Failed while loading '{self.loadLinkDlg.linkEdit.text()}' into {cfg.get(cfg.mainBrowserPath)}: {e}")
+                                smart.managerLog(f"ERROR: Failed while loading '{self.loadLinkDlg.linkEdit.text()}' into {cfg.get(cfg.mainBrowserPath)}: {e}")
                             break
                     else:
                         failedAttempts += 1
                         if failedAttempts == self.loadLinkDlg.browserCombo.count():
-                            smartWarningNotify(self, "Warning, be careful!", f"The name '{self.loadLinkDlg.browserCombo.currentText()}' is not registered into your SmartList, or {self.loadLinkDlg.browserCombo.currentText()} cannot be found in your SmartList...")
+                            smart.warningNotify("Warning, be careful!", f"The name '{self.loadLinkDlg.browserCombo.currentText()}' is not registered into your SmartList, or {self.loadLinkDlg.browserCombo.currentText()} cannot be found in your SmartList...", parent)
                             print(f"{Fore.YELLOW}WARNING!! The name '{self.loadLinkDlg.browserCombo.currentText()}' is not registered into your SmartList, or {self.loadLinkDlg.browserCombo.currentText()} cannot be found in your SmartList...{Style.RESET_ALL}")
-                            smartLog(f"WARNING: The name '{self.loadLinkDlg.browserCombo.currentText()}' is not registered into the SmartList, or {self.loadLinkDlg.browserCombo.currentText()} cannot be found in the SmartList...")
+                            smart.managerLog(f"WARNING: The name '{self.loadLinkDlg.browserCombo.currentText()}' is not registered into the SmartList, or {self.loadLinkDlg.browserCombo.currentText()} cannot be found in the SmartList...")
             else:
                 print(f"Loading '{self.loadLinkDlg.linkEdit.text()}' into {os.path.basename(self.loadLinkDlg.otherBrowsEdit.text())}...")
-                smartLog(f"Loading '{self.loadLinkDlg.linkEdit.text()}' into {os.path.basename(self.loadLinkDlg.otherBrowsEdit.text())}...")
+                smart.managerLog(f"Loading '{self.loadLinkDlg.linkEdit.text()}' into {os.path.basename(self.loadLinkDlg.otherBrowsEdit.text())}...")
                 try:
                     subprocess.Popen([self.loadLinkDlg.otherBrowsEdit.text(), self.loadLinkDlg.linkEdit.text()])
                     print(f"{Fore.GREEN}'{self.loadLinkDlg.linkEdit.text()}' has been successfully loaded into another browser: '{self.loadLinkDlg.otherBrowsEdit.text()}'{Style.RESET_ALL}")
-                    smartLog(f"SUCCESS: '{self.loadLinkDlg.linkEdit.text()}' has been successfully loaded into other browser '{self.loadLinkDlg.otherBrowsEdit.text()}'")
+                    smart.managerLog(f"SUCCESS: '{self.loadLinkDlg.linkEdit.text()}' has been successfully loaded into other browser '{self.loadLinkDlg.otherBrowsEdit.text()}'")
                 except Exception as e:
-                    smartErrorNotify(self, "Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(self.loadLinkDlg.otherBrowsEdit.text())}: {e}")
+                    smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(self.loadLinkDlg.otherBrowsEdit.text())}: {e}", parent)
                     print(f"{Fore.RED}An error occured while attempting to load {self.loadLinkDlg.linkEdit.text()} into '{os.path.basename(self.loadLinkDlg.otherBrowsEdit.text())}': {e}{Style.RESET_ALL}")
-                    smartLog(f"ERROR: Failed to load '{self.loadLinkDlg.linkEdit.text()}' into browser at path '{self.loadLinkDlg.otherBrowsEdit.text()}': {e}")
+                    smart.managerLog(f"ERROR: Failed to load '{self.loadLinkDlg.linkEdit.text()}' into browser at path '{self.loadLinkDlg.otherBrowsEdit.text()}': {e}")
 
-    def launchBrowser(self, path: str, name: str):
+    def launchBrowser(self, path: str, name: str, parent):
         """ :MyBrowsersInterface: Specified browser execution handler """
         if os.path.exists(path):
             try:
                 subprocess.Popen(path)
                 print(f"{Fore.GREEN}Successfully launched {name} at path: '{path}'{Style.RESET_ALL}")
-                smartLog(f'SUCCESS: Launched {name} from path: "{path}"')
+                smart.managerLog(f'SUCCESS: Launched {name} from path: "{path}"')
             except Exception as e:
-                smartErrorNotify(self, "Oops! Something went wrong...", f"An error occured while launching {name}:\n{e}")
+                smart.errorNotify("Oops! Something went wrong...", f"An error occured while launching {name}:\n{e}", parent)
                 print(f"{Fore.RED}An error occured while launching {name}: {e}{Style.RESET_ALL}")
-                smartLog(f"ERROR: Failed to launch {name}: {e}")
+                smart.managerLog(f"ERROR: Failed to launch {name}: {e}")
         else:
-            smartWarningNotify(self, "Warning, be careful!", f"The executable for {name} does not seem to exist at the known location anymore...")
+            smart.warningNotify("Warning, be careful!", f"The executable for {name} does not seem to exist at the known location anymore...", parent)
             print(f"{Fore.YELLOW}WARNING!! The executable for {name} cannot be found at the specified location... ({path}){Style.RESET_ALL}")
-            smartLog(f'WARNING: The executable for {name} cannot be found at the specified location: "{path}"')
+            smart.managerLog(f'WARNING: The executable for {name} cannot be found at the specified location: "{path}"')
 
     def addNewBrowserToList(self, name: str, path: str, parent):
         """ :MyBrowsersInterface: New browser adding function from 'Add a new browser' dialog
@@ -387,19 +387,19 @@ class MyBrowsersInterface(QWidget):
         """
         print("Pending operation: Adding a new browser to the SmartList...\n" \
               f"Browser name: {name}\nBrowser complete path: {path}")
-        smartLog(f"Adding a new browser to the SmartList...\nBrowser name: {name}\nBrowser path: {path}")
+        smart.managerLog(f"Adding a new browser to the SmartList...\nBrowser name: {name}\nBrowser path: {path}")
         for browser in myBrowsList["MyBrowsers"]:
-            if browser["exec"] == os.path.basename(path): smartWarningNotify(parent, "Warning, be careful!", f"The new browser has the same executable name as {browser["name"]}.\nIt is not really an issue, but it might be confusing for {SmartLinkerName}...")
+            if browser["exec"] == os.path.basename(path): smart.warningNotify(parent, "Warning, be careful!", f"The new browser has the same executable name as {browser["name"]}.\nIt is not really an issue, but it might be confusing for {SmartLinkerName}...")
         myBrowsList["MyBrowsers"].append({
             "name": name,
             "path": path,
             "exec": os.path.basename(path)
         })
-        smartWriteBrowsers(myBrowsList)
+        smart.writeBrowsers(myBrowsList)
         self.refreshBrowsers(parent)
-        smartSuccessNotify(self, "Adding complete!", f"{name} has been succesfully added to your SmartList!")
+        smart.successNotify("Adding complete!", f"{name} has been succesfully added to your SmartList!", parent)
         print(f"{Fore.GREEN}'{name}' has been successfully added to your SmartList!{Style.RESET_ALL}")
-        smartLog(f'SUCCESS: "{name}" has been successfully added to the SmartList.')
+        smart.managerLog(f'SUCCESS: "{name}" has been successfully added to the SmartList.')
 
     def updateBrowserOfList(self, name: str, path: str, parent):
         """ :MyBrowsersInterface: Browser modifying function from 'Edit a browser' dialog
@@ -411,15 +411,15 @@ class MyBrowsersInterface(QWidget):
             The complete path of the provided browser executable
         """
         if self.browsEditDlg:
-            myBrowsList = smartLoadBrowsers()
+            myBrowsList = smart.loadBrowsers()
             for browser in myBrowsList["MyBrowsers"]:
                 if browser["name"] == name and browser["path"] == path:
                     browser["name"] = self.browsEditDlg.nameEdit.text()
                     browser["path"] = self.browsEditDlg.pathEdit.text()
                     browser["exec"] = os.path.basename(self.browsEditDlg.pathEdit.text())
                     break
-            smartWriteBrowsers(myBrowsList)
-            smartSuccessNotify(self, "Update complete!", f"{name} has been successfully updated to {self.browsEditDlg.nameEdit.text()}!")
+            smart.writeBrowsers(myBrowsList)
+            smart.successNotify("Update complete!", f"{name} has been successfully updated to {self.browsEditDlg.nameEdit.text()}!", parent)
             self.refreshBrowsers(parent)
 
 class NewBrowserDialog(MessageBoxBase):
@@ -474,11 +474,11 @@ class NewBrowserDialog(MessageBoxBase):
 
     def browseDialog(self):
         """ :NewBrowserDialog: Provide a browser executable through file picker dialog """
-        self.pathEdit.setText(smartBrowseFileDialog(self, "Select a browser executable", "", "Executables (*.exe)").replace("/", "\\"))
+        self.pathEdit.setText(smart.browseFileDialog(self, "Select a browser executable", "", "Executables (*.exe)").replace("/", "\\"))
 
     def pathChangeListener(self, text: str):
         """ :NewBrowserDialog: Make actions whenever the path entry content is changed """
-        myBrowsList = smartLoadBrowsers()
+        myBrowsList = smart.loadBrowsers()
         for browser in myBrowsList["MyBrowsers"]:
             if browser["path"] == text:
                 self.addBlock = True
@@ -517,7 +517,7 @@ class NewBrowserDialog(MessageBoxBase):
         """ :NewBrowserDialog: Provide the specified executable icon """
         if text.lower().endswith(".exe"):
             if os.path.exists(text):
-                self.icon.setIcon(QIcon(smartGetFileIcon(text)))
+                self.icon.setIcon(QIcon(smart.getFileIcon(text)))
             else: self.icon.setIcon(FICO.ADD_TO)
         else: self.icon.setIcon(FICO.ADD_TO)
         
@@ -554,7 +554,7 @@ class EditBrowserDialog(MessageBoxBase):
         self.iconLine = QHBoxLayout()
         self.iconLine.setContentsMargins(0, 10, 0, 10)
         self.iconLine.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.icon = IconWidget(smartGetFileIcon(path))
+        self.icon = IconWidget(smart.getFileIcon(path))
         self.icon.setFixedSize(64, 64)
         self.addBlock = False
         self.addNBlock = False
@@ -599,11 +599,11 @@ class EditBrowserDialog(MessageBoxBase):
 
     def browseDialog(self):
         """ :EditBrowserDialog: Provide a browser executable through file picker dialog """
-        self.pathEdit.setText(smartBrowseFileDialog(self, "Select a browser executable", "", "Executables (*.exe)"))
+        self.pathEdit.setText(smart.browseFileDialog(self, "Select a browser executable", "", "Executables (*.exe)"))
 
     def pathChangeListener(self, text):
         """ :EditBrowserDialog: Make actions whenever the path entry content is changed """
-        myBrowsList = smartLoadBrowsers()
+        myBrowsList = smart.loadBrowsers()
         for browser in myBrowsList["MyBrowsers"]:
             if browser["path"] == text:
                 self.addBlock = True
@@ -616,7 +616,7 @@ class EditBrowserDialog(MessageBoxBase):
     
     def nameChangeListener(self, text):
         """ :EditBrowserDialog: Make actions whenever the name entry content is changed """
-        myBrowsList = smartLoadBrowsers()
+        myBrowsList = smart.loadBrowsers()
         for browser in myBrowsList["MyBrowsers"]:
             if browser["name"] == text:
                 self.addNBlock = True
@@ -629,7 +629,7 @@ class EditBrowserDialog(MessageBoxBase):
         """ :EditBrowserDialog: Provide the specified executable icon """
         if text.lower().endswith(".exe"):
             if os.path.exists(text):
-                self.icon.setIcon(QIcon(smartGetFileIcon(text)))
+                self.icon.setIcon(QIcon(smart.getFileIcon(text)))
             else: self.icon.setIcon(FICO.EDIT)
         else: self.icon.setIcon(FICO.EDIT)
     
@@ -738,14 +738,14 @@ class LoadLinkDialog(MessageBoxBase):
         self.browserCombo = ComboBox()
         self.browserCombo.setPlaceholderText("Select a SmartList browser")
         for browser in myBrowsList["MyBrowsers"]:
-            self.browserCombo.addItem(browser["name"], smartGetFileIcon(browser["path"]))
+            self.browserCombo.addItem(browser["name"], smart.getFileIcon(browser["path"]))
         if cfg.get(cfg.mainBrowserPath) and cfg.get(cfg.mainBrowserIsManual):
-            self.browserCombo.addItem(os.path.basename(cfg.get(cfg.mainBrowserPath)), smartGetFileIcon(cfg.get(cfg.mainBrowserPath)))
+            self.browserCombo.addItem(os.path.basename(cfg.get(cfg.mainBrowserPath)), smart.getFileIcon(cfg.get(cfg.mainBrowserPath)))
         self.browserCombo.addItem("Other browser", FICO.APPLICATION)
         if not self.browserCombo.currentText() == "Other browser":
             for browser in myBrowsList["MyBrowsers"]:
                 if browser["name"] == self.browserCombo.currentText():
-                    self.browsIcon.setIcon(smartGetFileIcon(browser["path"]))
+                    self.browsIcon.setIcon(smart.getFileIcon(browser["path"]))
                     break
                 else: self.browsIcon.setIcon(FICO.LINK)
         else: self.browsIcon.setIcon(FICO.APPLICATION)
@@ -778,7 +778,7 @@ class LoadLinkDialog(MessageBoxBase):
         self.yesButton.setText("Load link")
         self.browserCombo.currentTextChanged.connect(lambda text: self.comboChangeListener(text))
         self.otherBrowsEdit.textChanged.connect(lambda text: self.otherPathChangeListener(text))
-        self.otherBrowsBrowse.clicked.connect(lambda: self.otherBrowsEdit.setText(smartBrowseFileDialog(parent, "Select another browser to load the link", "", "Executables (*.exe)")))
+        self.otherBrowsBrowse.clicked.connect(lambda: self.otherBrowsEdit.setText(smart.browseFileDialog(parent, "Select another browser to load the link", "", "Executables (*.exe)")))
         self.linkEdit.textChanged.connect(lambda: self.warningLabel.setHidden(True))
 
     def comboChangeListener(self, text):
@@ -789,14 +789,14 @@ class LoadLinkDialog(MessageBoxBase):
                 self.otherBrowsBrowse.setHidden(True)
                 for browser in myBrowsList["MyBrowsers"]:
                     if browser["name"] == text:
-                        self.browsIcon.setIcon(smartGetFileIcon(browser["path"]))
+                        self.browsIcon.setIcon(smart.getFileIcon(browser["path"]))
                         break
                     else: self.browsIcon.setIcon(FICO.LINK)
             else:
                 self.otherBrowsEdit.setHidden(False)
                 self.otherBrowsBrowse.setHidden(False)
                 if self.otherBrowsEdit.text() and os.path.exists(self.otherBrowsEdit.text()):
-                    self.browsIcon.setIcon(smartGetFileIcon(self.otherBrowsEdit.text()))        
+                    self.browsIcon.setIcon(smart.getFileIcon(self.otherBrowsEdit.text()))        
                 else: self.browsIcon.setIcon(FICO.APPLICATION)
         else:
             self.warningLabel.setText("No browser is currently available...")
@@ -805,7 +805,7 @@ class LoadLinkDialog(MessageBoxBase):
     def otherPathChangeListener(self, text):
         """ :LoadLink: Make actions whenever the path entry content is changed """
         if self.browserCombo.currentIndex() == self.browserCombo.count() - 1:
-            if text and os.path.exists(text): self.browsIcon.setIcon(smartGetFileIcon(text))
+            if text and os.path.exists(text): self.browsIcon.setIcon(smart.getFileIcon(text))
             else: self.browsIcon.setIcon(FICO.APPLICATION)
 
     def validate(self):

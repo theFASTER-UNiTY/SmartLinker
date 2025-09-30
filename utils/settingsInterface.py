@@ -1,6 +1,6 @@
 from utils.SmartUtils import *
 
-myBrowsList = smartLoadBrowsers()
+myBrowsList = smart.loadBrowsers()
 
 class SettingsInterface(QWidget):
     """ Main class for the "Settings" interface """
@@ -96,7 +96,7 @@ class SettingsInterface(QWidget):
         
         self.updateSnack = QWidget()
         self.updateSnack.setObjectName("SSnackBase")
-        self.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smartConvertToRGB(themeColor().name())}, 0.25)}}")
+        self.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smart.convertToRGB(themeColor().name())}, 0.25)}}")
         mainSetLayout.addWidget(self.updateSnack)
         self.updateSnack.setVisible(bool(cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners)))
         self.updateSnack.setEnabled(bool(cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners)))
@@ -114,13 +114,13 @@ class SettingsInterface(QWidget):
 
     def cardManualSelect(self, parent):
         """ :SettingsInterface: Open a dialog to select main browser from your storage """
-        self.cardManualPath = smartBrowseFileDialog(parent, "Select your main browser from storage", "", "Executables (*.exe)")
+        self.cardManualPath = smart.browseFileDialog(parent, "Select your main browser from storage", "", "Executables (*.exe)")
         if self.cardManualPath:
             cfg.set(cfg.mainBrowser, "")
             cfg.set(cfg.mainBrowserPath, self.cardManualPath)
             cfg.set(cfg.mainBrowserIsManual, True)
             self.widgetDef.optionMainBrowserCard.removeMainButton.setEnabled(True)
-            self.widgetDef.optionMainBrowserCard.iconWidget.setIcon(smartGetFileIcon(self.cardManualPath))
+            self.widgetDef.optionMainBrowserCard.iconWidget.setIcon(smart.getFileIcon(self.cardManualPath))
             self.widgetDef.optionMainBrowserCard.titleLabel.setText("Your main browser has been set manually")
             self.widgetDef.optionMainBrowserCard.contentLabel.setText(f"{SmartLinkerName} will redirect your web requests to {os.path.basename(self.cardManualPath)} if no browser is running.")
             self.widgetDef.optionMainBrowserCard.fromStorageButton.removeEventFilter(self.widgetDef.optionMainBrowserCard.fromStorageToolTip)
@@ -129,16 +129,16 @@ class SettingsInterface(QWidget):
             self.widgetDef.optionMainBrowserCard.fromListButton.removeEventFilter(self.widgetDef.optionMainBrowserCard.fromListToolTip)
             self.widgetDef.optionMainBrowserCard.fromListButton.setToolTip("Select from your SmartList")
             self.widgetDef.optionMainBrowserCard.fromListButton.installEventFilter(self.widgetDef.optionMainBrowserCard.fromListToolTip)
-            smartSuccessNotify(self, "Manual selection complete!", f"Your main browser has been successfully set to '{os.path.basename(self.cardManualPath)}'.")
+            smart.successNotify("Manual selection complete!", f"Your main browser has been successfully set to '{os.path.basename(self.cardManualPath)}'.", parent)
             print(f"{Fore.GREEN}Your main browser has been successfully set from storage at path: '{self.cardManualPath}'{Style.RESET_ALL}")
-            smartLog(f"SUCCESS: Main browser set from storage at path: '{self.cardManualPath}'")
+            smart.managerLog(f"SUCCESS: Main browser set from storage at path: '{self.cardManualPath}'")
 
     def cardSetFromList(self, parent):
         """ :SettingsInterface: Open a dialog to select main browser from your SmartList """
         if not self.mainFromListDlg:
             self.mainFromListDlg = SelectFromListDialog(parent)
         if self.mainFromListDlg.exec():
-            self.myBrowsers = smartLoadBrowsers()
+            self.myBrowsers = smart.loadBrowsers()
             for browser in self.myBrowsers["MyBrowsers"]:
                 if browser["name"] == self.mainFromListDlg.browsCombo.currentText():
                     cfg.set(cfg.mainBrowser, self.mainFromListDlg.browsCombo.currentText())
@@ -146,7 +146,7 @@ class SettingsInterface(QWidget):
                     cfg.set(cfg.mainBrowserIsManual, False)
                     break
             self.widgetDef.optionMainBrowserCard.removeMainButton.setEnabled(True)
-            self.widgetDef.optionMainBrowserCard.iconWidget.setIcon(smartGetFileIcon(cfg.get(cfg.mainBrowserPath)))
+            self.widgetDef.optionMainBrowserCard.iconWidget.setIcon(smart.getFileIcon(cfg.get(cfg.mainBrowserPath)))
             self.widgetDef.optionMainBrowserCard.titleLabel.setText("Your main browser has been set from your SmartList")
             self.widgetDef.optionMainBrowserCard.contentLabel.setText(f"{SmartLinkerName} will redirect your web requests to {self.mainFromListDlg.browsCombo.currentText()} if no browser is running.")
             self.widgetDef.optionMainBrowserCard.fromStorageButton.removeEventFilter(self.widgetDef.optionMainBrowserCard.fromStorageToolTip)
@@ -155,9 +155,9 @@ class SettingsInterface(QWidget):
             self.widgetDef.optionMainBrowserCard.fromListButton.removeEventFilter(self.widgetDef.optionMainBrowserCard.fromListToolTip)
             self.widgetDef.optionMainBrowserCard.fromListButton.setToolTip("Reselect from your SmartList")
             self.widgetDef.optionMainBrowserCard.fromListButton.installEventFilter(self.widgetDef.optionMainBrowserCard.fromListToolTip)
-            smartSuccessNotify(self, "SmartList selection complete!", f"{self.mainFromListDlg.browsCombo.currentText()} has been successfully set as your main browser.")
+            smart.successNotify("SmartList selection complete!", f"{self.mainFromListDlg.browsCombo.currentText()} has been successfully set as your main browser.", parent)
             print(f"{Fore.GREEN}Your main browser has been successfully set from your SmartList: {self.mainFromListDlg.browsCombo.currentText()}{Style.RESET_ALL}")
-            smartLog(f"SUCCESS: Main browser set from SmartList: {self.mainFromListDlg.browsCombo.currentText()}")
+            smart.managerLog(f"SUCCESS: Main browser set from SmartList: {self.mainFromListDlg.browsCombo.currentText()}")
 
     def cardRemove(self, parent):
         """ :SettingsInterface: Open a confirmation dialog to remove the main browser """
@@ -170,13 +170,13 @@ class SettingsInterface(QWidget):
                 parent
             )
             self.mainRemoveDlg.yesButton.setText("Remove")
-        if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smartPlaySound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
+        if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smart.playSound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
         if self.mainRemoveDlg.exec():
             cfg.set(cfg.mainBrowser, "")
             cfg.set(cfg.mainBrowserPath, "")
             cfg.set(cfg.mainBrowserIsManual, False)
             self.widgetDef.optionMainBrowserCard.removeMainButton.setEnabled(False)
-            self.widgetDef.optionMainBrowserCard.iconWidget.setIcon(QIcon(smartResourcePath(f"resources/images/icons/icon_outline{"" if theme() == Theme.DARK else "_black"}.ico")))
+            self.widgetDef.optionMainBrowserCard.iconWidget.setIcon(QIcon(smart.resourcePath(f"resources/images/icons/icon_outline{"" if theme() == Theme.DARK else "_black"}.ico")))
             self.widgetDef.optionMainBrowserCard.titleLabel.setText("Configure your main browser")
             self.widgetDef.optionMainBrowserCard.contentLabel.setText("You can either set a browser from your storage or SmartList as your main browser if no one is running.")
             self.widgetDef.optionMainBrowserCard.fromStorageButton.removeEventFilter(self.widgetDef.optionMainBrowserCard.fromStorageToolTip)
@@ -185,9 +185,9 @@ class SettingsInterface(QWidget):
             self.widgetDef.optionMainBrowserCard.fromListButton.removeEventFilter(self.widgetDef.optionMainBrowserCard.fromListToolTip)
             self.widgetDef.optionMainBrowserCard.fromListButton.setToolTip("Select from your SmartList")
             self.widgetDef.optionMainBrowserCard.fromListButton.installEventFilter(self.widgetDef.optionMainBrowserCard.fromListToolTip)
-            smartSuccessNotify(self, "Removal complete!", "Your main browser configuration has been reverted to 'None'.")
+            smart.successNotify("Removal complete!", "Your main browser configuration has been reverted to 'None'.", parent)
             print(f"{Fore.GREEN}Your main browser configuration has been successfully reverted to 'None'{Style.RESET_ALL}")
-            smartLog("SUCCESS: Main browser reverted to 'None'")
+            smart.managerLog("SUCCESS: Main browser reverted to 'None'")
 
     def openColorDialog(self, parent):
         """ :SettingsInterface: Open a dialog to change the accent color of SmartLinker. """
@@ -242,8 +242,8 @@ class SettingWidgetDefinition():
 
         # General
         self.optionMainBrowserCard = MainBrowsersCard(
-            smartGetFileIcon(cfg.get(cfg.mainBrowserPath)) if cfg.get(cfg.mainBrowserPath) else \
-                QIcon(smartResourcePath(f"resources/images/icons/icon_outline{"" if theme() == Theme.DARK else "_black"}.ico")),
+            smart.getFileIcon(cfg.get(cfg.mainBrowserPath)) if cfg.get(cfg.mainBrowserPath) else \
+                QIcon(smart.resourcePath(f"resources/images/icons/icon_outline{"" if theme() == Theme.DARK else "_black"}.ico")),
             f"Your main browser has been set {"manually" if cfg.get(cfg.mainBrowserIsManual) else "from your SmartList"}" if cfg.get(cfg.mainBrowserPath) else \
             "Configure your main browser",
             f"{SmartLinkerName} will redirect your web requests to {os.path.basename(cfg.get(cfg.mainBrowserPath)) if cfg.get(cfg.mainBrowserIsManual) else cfg.get(cfg.mainBrowser)} if no browser is running." if cfg.get(cfg.mainBrowserPath) else \
@@ -375,7 +375,7 @@ class FlagsSettingGroup(ExpandGroupSettingCard):
         self.sidebarAcrylicSwitch.setChecked(cfg.get(cfg.enableAcrylicOnSidebar))
         self.sidebarAcrylicSwitch.checkedChanged.connect(lambda checked: (
             cfg.set(cfg.enableAcrylicOnSidebar, checked),
-            smartInfoNotify(parent, "Restart required", f"You need to relaunch {SmartLinkerName} for the changes to take effect.")
+            smart.infoNotify("Restart required", f"You need to relaunch {SmartLinkerName} for the changes to take effect.", parent)
         ))
         
         # Fourth group - Update banners
@@ -384,7 +384,7 @@ class FlagsSettingGroup(ExpandGroupSettingCard):
         self.updateBannerSwitchButton.setChecked(cfg.get(cfg.showUpdateBanners))
         self.updateBannerSwitchButton.checkedChanged.connect(lambda checked: (
             cfg.set(cfg.showUpdateBanners, checked),
-            smartInfoNotify(parent, "Restart required", f"You need to relaunch {SmartLinkerName} for the changes to take effect.")
+            smart.infoNotify("Restart required", f"You need to relaunch {SmartLinkerName} for the changes to take effect.", parent)
         ))
 
         # Adjust the internal layout
@@ -420,7 +420,7 @@ class MainBrowsersCard(CardWidget):
         self.titleLabel = SubtitleLabel(title, self)
         self.contentLabel = BodyLabel(content, self)
         self.fromStorageButton = ToolButton(FICO.FOLDER, self)
-        self.fromListButton = ToolButton(smartResourcePath("resources/images/icons/icon-0.ico"), self)
+        self.fromListButton = ToolButton(smart.resourcePath("resources/images/icons/icon-0.ico"), self)
         self.removeMainButton = ToolButton(FICO.REMOVE_FROM, self)
         self.fromStorageToolTip = ToolTipFilter(self.fromStorageButton)
         self.fromListToolTip = ToolTipFilter(self.fromListButton)
@@ -467,15 +467,15 @@ class SelectFromListDialog(MessageBoxBase):
 
         self.icon.setFixedSize(64, 64)
         self.browsCombo.setPlaceholderText("Select a SmartList browser")
-        myBrowsList = smartLoadBrowsers()
+        myBrowsList = smart.loadBrowsers()
         for browser in myBrowsList["MyBrowsers"]:
-            self.browsCombo.addItem(browser["name"], smartGetFileIcon(browser["path"]))
+            self.browsCombo.addItem(browser["name"], smart.getFileIcon(browser["path"]))
         if cfg.get(cfg.mainBrowserPath) and cfg.get(cfg.mainBrowserIsManual):
-            self.browsCombo.addItem(os.path.basename(cfg.get(cfg.mainBrowserPath)), smartGetFileIcon(cfg.get(cfg.mainBrowserPath)))
+            self.browsCombo.addItem(os.path.basename(cfg.get(cfg.mainBrowserPath)), smart.getFileIcon(cfg.get(cfg.mainBrowserPath)))
 
         for browser in myBrowsList["MyBrowsers"]:
             if browser["name"] == self.browsCombo.currentText():
-                self.icon.setIcon(smartGetFileIcon(browser["path"]))
+                self.icon.setIcon(smart.getFileIcon(browser["path"]))
                 break
         self.infoLabel.setText(f"{self.browsCombo.currentText()} will be set as your main browser.")
         self.infoLabel.setTextColor(QColor("blue"), QColor("#2196F3"))
@@ -495,7 +495,7 @@ class SelectFromListDialog(MessageBoxBase):
         self.infoLabel.setText(f"{text} will be set as your main browser.")
         for browser in myBrowsList["MyBrowsers"]:
             if browser["name"] == text:
-                self.icon.setIcon(smartGetFileIcon(browser["path"]))
+                self.icon.setIcon(smart.getFileIcon(browser["path"]))
                 break
 
     def validate(self):
@@ -519,7 +519,7 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
         self.startupLabel = BodyLabel(f"At {SmartLinkerName} startup")
         self.startupPlayBtn = PushButton(FICO.PLAY, "Play sound")
         self.startupPlayBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.startupSFXPath)))
-        self.startupPlayBtn.clicked.connect(smartPlaySound(soundStreamer, cfg.get(cfg.startupSFXPath), "startup"))
+        self.startupPlayBtn.clicked.connect(smart.playSound(soundStreamer, cfg.get(cfg.startupSFXPath), "startup"))
         self.startupPickBtn = ToolButton(FICO.FOLDER)
         self.startupPickBtn.setToolTip("Select a custom sound")
         self.startupPickBtn.installEventFilter(ToolTipFilter(self.startupPickBtn))
@@ -543,7 +543,7 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
         self.successLabel = BodyLabel("Notification - success")
         self.successPlayBtn = PushButton(FICO.PLAY, "Play sound")
         self.successPlayBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.successSFXPath)))
-        self.successPlayBtn.clicked.connect(smartPlaySound(soundStreamer, cfg.get(cfg.successSFXPath), "success"))
+        self.successPlayBtn.clicked.connect(smart.playSound(soundStreamer, cfg.get(cfg.successSFXPath), "success"))
         self.successPickBtn = ToolButton(FICO.FOLDER)
         self.successPickBtn.setToolTip("Select a custom sound")
         self.successPickBtn.installEventFilter(ToolTipFilter(self.successPickBtn))
@@ -567,7 +567,7 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
         self.infoLabel = BodyLabel(f"Notification - information")
         self.infoPlayBtn = PushButton(FICO.PLAY, "Play sound")
         self.infoPlayBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.infoSFXPath)))
-        self.infoPlayBtn.clicked.connect(smartPlaySound(soundStreamer, cfg.get(cfg.infoSFXPath), "information"))
+        self.infoPlayBtn.clicked.connect(smart.playSound(soundStreamer, cfg.get(cfg.infoSFXPath), "information"))
         self.infoPickBtn = ToolButton(FICO.FOLDER)
         self.infoPickBtn.setToolTip("Select a custom sound")
         self.infoPickBtn.installEventFilter(ToolTipFilter(self.infoPickBtn))
@@ -591,7 +591,7 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
         self.warningLabel = BodyLabel("Notification - warning")
         self.warningPlayBtn = PushButton(FICO.PLAY, "Play sound")
         self.warningPlayBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.warningSFXPath)))
-        self.warningPlayBtn.clicked.connect(smartPlaySound(soundStreamer, cfg.get(cfg.warningSFXPath), "warning"))
+        self.warningPlayBtn.clicked.connect(smart.playSound(soundStreamer, cfg.get(cfg.warningSFXPath), "warning"))
         self.warningPickBtn = ToolButton(FICO.FOLDER)
         self.warningPickBtn.setToolTip("Select a custom sound")
         self.warningPickBtn.installEventFilter(ToolTipFilter(self.warningPickBtn))
@@ -615,7 +615,7 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
         self.errorLabel = BodyLabel(f"Notification - error")
         self.errorPlayBtn = PushButton(FICO.PLAY, "Play sound")
         self.errorPlayBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.errorSFXPath)))
-        self.errorPlayBtn.clicked.connect(smartPlaySound(soundStreamer, cfg.get(cfg.errorSFXPath), "error"))
+        self.errorPlayBtn.clicked.connect(smart.playSound(soundStreamer, cfg.get(cfg.errorSFXPath), "error"))
         self.errorPickBtn = ToolButton(FICO.FOLDER)
         self.errorPickBtn.setToolTip("Select a custom sound")
         self.errorPickBtn.installEventFilter(ToolTipFilter(self.errorPickBtn))
@@ -639,7 +639,7 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
         self.questionLabel = BodyLabel("At confirmation dialog popup")
         self.questionPlayBtn = PushButton(FICO.PLAY, "Play sound")
         self.questionPlayBtn.setEnabled(bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)))
-        self.questionPlayBtn.clicked.connect(smartPlaySound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog"))
+        self.questionPlayBtn.clicked.connect(smart.playSound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog"))
         self.questionPickBtn = ToolButton(FICO.FOLDER)
         self.questionPickBtn.setToolTip("Select a custom sound")
         self.questionPickBtn.installEventFilter(ToolTipFilter(self.questionPickBtn))
@@ -686,8 +686,8 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
 
     def soundConfigure(self, config, dialogTitle, successMsg, parent):
         """ :SoundFXConfig: Configure a sound effect and save it into the configuration file """
-        cfg.set(config, smartBrowseFileDialog(parent, dialogTitle, smartResourcePath("resources/sounds"), "Audio files (*.mp3; *.ogg; *.wav)"))
-        if cfg.get(config): smartSuccessNotify(parent, "Sound set!", successMsg)
+        cfg.set(config, smart.browseFileDialog(parent, dialogTitle, smart.resourcePath("resources/sounds"), "Audio files (*.mp3; *.ogg; *.wav)"))
+        if cfg.get(config): smart.successNotify("Sound set!", successMsg, parent)
 
     def soundRemove(self, soundType: str, config, parent):
         """ :SoundFXConfig: Open a confirmation dialog to remove a configured sound effect """
@@ -698,9 +698,9 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
                 parent
             )
             self.soundRemoveDlg.yesButton.setText("Remove")
-        if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smartPlaySound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
+        if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smart.playSound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
         if self.soundRemoveDlg.exec():
             cfg.set(config, "")
             print(f"{Fore.GREEN}The {soundType} sound effect has been successfully removed!{Style.RESET_ALL}")
-            smartLog(f"SUCCESS: The {soundType} sound effect has been successfully removed!")
-            smartSuccessNotify(parent, "Removal complete!", f"The {soundType} sound has been successfully removed!")
+            smart.managerLog(f"SUCCESS: The {soundType} sound effect has been successfully removed!")
+            smart.successNotify("Removal complete!", f"The {soundType} sound has been successfully removed!", parent)

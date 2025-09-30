@@ -2,7 +2,7 @@ from utils.SmartUtils import *
 
 # ===========================================================================================================
 
-myBrowsList = smartLoadBrowsers()
+myBrowsList = smart.loadBrowsers()
 setThemeColor(QColor(cfg.get(cfg.accentColor)) if cfg.get(cfg.accentMode) == "Custom" else QColor(cfg.get(cfg.qAccentColor)))
 
 class CustomTitleBar(TitleBar):
@@ -18,9 +18,9 @@ class CustomTitleBar(TitleBar):
         self._isDoubleClickEnabled = False
 
         # customize the style of title bar button
-        self.minBtn.setNormalColor((QColor("white" if smartIsDarkMode() else "black")) if cfg.get(cfg.appTheme) == "Auto" else
+        self.minBtn.setNormalColor((QColor("white" if smart.isDarkMode() else "black")) if cfg.get(cfg.appTheme) == "Auto" else
                                    QColor("white") if cfg.get(cfg.appTheme) == "Dark" else QColor("black"))
-        self.closeBtn.setNormalColor((QColor("white" if smartIsDarkMode() else "black")) if cfg.get(cfg.appTheme) == "Auto" else
+        self.closeBtn.setNormalColor((QColor("white" if smart.isDarkMode() else "black")) if cfg.get(cfg.appTheme) == "Auto" else
                                    QColor("white") if cfg.get(cfg.appTheme) == "Dark" else QColor("black"))
         # self.minBtn.setHoverColor()
         self.minBtn.setHoverBackgroundColor(QColor(cfg.get(cfg.accentColor)) if cfg.get(cfg.accentMode) == "Custom" else QColor(cfg.get(cfg.qAccentColor)))
@@ -43,18 +43,18 @@ class SmartSelectorGUI(FramelessWindow):
 
     def __init__(self, requestArgs: list[str], parent=None):
         super().__init__(parent=parent)
-        print(smartConsoleScript())
+        print(smart.consoleScript())
         self.lightSheetOnDark: str = "SingleDirectionScrollArea {background-color: rgba(242, 242, 242, 0.05); border: 1px solid rgba(242, 242, 242, 0.25)}"
         self.darkSheetOnLight: str = "SingleDirectionScrollArea {background-color: rgba(32, 32, 32, 0.05); border: 1px solid rgba(32, 32, 32, 0.25)}"
         self.runningBrowsers = 0
-        smartEmptySelectorLog()
+        smart.emptySelectorLog()
         if cfg.get(cfg.appTheme) == "Dark": setTheme(Theme.DARK)
         elif cfg.get(cfg.appTheme) == "Light": setTheme(Theme.LIGHT)
         else: setTheme(Theme.AUTO)
         self.setTitleBar(CustomTitleBar(self))
-        self.setWindowIcon(QIcon(smartResourcePath("resources/images/icons/icon.ico")))
+        self.setWindowIcon(QIcon(smart.resourcePath("resources/images/icons/icon.ico")))
         self.setWindowTitle(f"Smart Selector | {SmartLinkerName}")
-        self.setStyleSheet(("background: white" if not smartIsDarkMode() else "") if cfg.get(cfg.appTheme) == "Auto" else
+        self.setStyleSheet(("background: white" if not smart.isDarkMode() else "") if cfg.get(cfg.appTheme) == "Auto" else
                            "" if cfg.get(cfg.appTheme) == "Dark" else "background: white")
         self.titleHeight = self.titleBar.height()
         self.setMinimumSize(750, 550)
@@ -68,7 +68,7 @@ class SmartSelectorGUI(FramelessWindow):
         mainTitleLine.setContentsMargins(80, 0, 80, 0)
         mainTitleLine.setAlignment(Qt.AlignmentFlag.AlignCenter)
         mainLayout.addLayout(mainTitleLine)
-        mainIcon = IconWidget(QIcon(smartResourcePath("resources/images/icons/icon.ico")))
+        mainIcon = IconWidget(QIcon(smart.resourcePath("resources/images/icons/icon.ico")))
         mainIcon.setFixedSize(56, 56)
         mainTitleLine.addWidget(mainIcon, 0, Qt.AlignmentFlag.AlignCenter)
         mainTitleBox = QVBoxLayout()
@@ -107,21 +107,21 @@ class SmartSelectorGUI(FramelessWindow):
         print("\n=============================\n" \
               "Scanning running processes...\n" \
               "=============================\n")
-        smartSelectorLog("Scanning running browsers...")
+        smart.selectorLog("Scanning running browsers...")
         if myBrowsList["MyBrowsers"]:
             for browser in myBrowsList["MyBrowsers"]:
                 print(f"Browser in queue: {os.path.basename(browser["path"])}\n" \
                        "------------------------------------")
-                smartSelectorLog(f"Browser in queue: {os.path.basename(browser["path"])}")
-                if smartIsBrowserOpen(browser["path"]):
+                smart.selectorLog(f"Browser in queue: {os.path.basename(browser["path"])}")
+                if smart.isBrowserOpen(browser["path"]):
                     self.isRunning = True
                     self.runningBrowsers += 1
-                    smartSelectorLog(f"'{os.path.basename(browser["path"])}' is running.")
+                    smart.selectorLog(f"'{os.path.basename(browser["path"])}' is running.")
                 else:
                     self.isRunning = False
-                    smartSelectorLog(f"'{os.path.basename(browser["path"])}' is not running.")
+                    smart.selectorLog(f"'{os.path.basename(browser["path"])}' is not running.")
                 browsCard = BrowserCard(
-                    smartGetFileIcon(browser["path"]),
+                    smart.getFileIcon(browser["path"]),
                     browser["name"],
                     "Running" if self.isRunning else "",
                     self.requestURL,
@@ -131,13 +131,13 @@ class SmartSelectorGUI(FramelessWindow):
         if (cfg.get(cfg.mainBrowserPath) and cfg.get(cfg.mainBrowserIsManual)):
             print(f"Browser in queue: {os.path.basename(cfg.get(cfg.mainBrowserPath))}\n" \
                    "------------------------------------")
-            smartSelectorLog(f"Browser in queue: {os.path.basename(cfg.get(cfg.mainBrowserPath))}")
-            if smartIsBrowserOpen(cfg.get(cfg.mainBrowserPath)):
+            smart.selectorLog(f"Browser in queue: {os.path.basename(cfg.get(cfg.mainBrowserPath))}")
+            if smart.isBrowserOpen(cfg.get(cfg.mainBrowserPath)):
                 self.isRunning = True
                 self.runningBrowsers += 1
             else: self.isRunning = False
             browsCard = BrowserCard(
-                smartGetFileIcon(cfg.get(cfg.mainBrowserPath)),
+                smart.getFileIcon(cfg.get(cfg.mainBrowserPath)),
                 os.path.basename(cfg.get(cfg.mainBrowserPath)),
                 "Manual - Running" if self.isRunning else "Manual",
                 self.requestURL,
@@ -149,7 +149,7 @@ class SmartSelectorGUI(FramelessWindow):
              f"{self.runningBrowsers} browser{"s are" if self.runningBrowsers != 1 else " is"} actually running.\n" \
              f"{"NOTE: They may be the same browser.\n" if self.runningBrowsers > 1 else ""}" \
               "-----------------------------------------------------\n")
-        smartSelectorLog(f"Scanning running browsers terminated. {self.runningBrowsers} browser{"s are" if self.runningBrowsers != 1 else " is"} actually running{" (they may be the same browser)" if self.runningBrowsers > 1 else ""}.")
+        smart.selectorLog(f"Scanning running browsers terminated. {self.runningBrowsers} browser{"s are" if self.runningBrowsers != 1 else " is"} actually running{" (they may be the same browser)" if self.runningBrowsers > 1 else ""}.")
         
         layout.addStretch(1)
 
@@ -167,7 +167,7 @@ class SmartSelectorGUI(FramelessWindow):
         self.otherBrowsPathBrowse = ToolButton(FICO.FOLDER)
         self.otherBrowsPathBrowse.setToolTip("Browse...")
         self.otherBrowsPathBrowse.installEventFilter(ToolTipFilter(self.otherBrowsPathBrowse))
-        self.otherBrowsPathBrowse.clicked.connect(lambda: self.otherBrowsPathEdit.setText(smartBrowseFileDialog(self, "Select a browser to load the link into", "", "Executables (*.exe)")))
+        self.otherBrowsPathBrowse.clicked.connect(lambda: self.otherBrowsPathEdit.setText(smart.browseFileDialog(self, "Select a browser to load the link into", "", "Executables (*.exe)")))
         otherBrowserLine.addWidget(self.otherBrowsPathBrowse)
         self.otherBrowsLoad = PushButton(FICO.LINK, "Load link")
         self.otherBrowsLoad.setEnabled(bool(self.otherBrowsPathEdit.text()))
@@ -186,7 +186,7 @@ class SmartSelectorGUI(FramelessWindow):
         # Bottom bar
         bottomContainer = QWidget()
         mainLayout.addWidget(bottomContainer)
-        bottomContainer.setStyleSheet((self.bottomDarkSheet if smartIsDarkMode() else self.bottomLightSheet) if cfg.get(cfg.appTheme) == "Auto" else
+        bottomContainer.setStyleSheet((self.bottomDarkSheet if smart.isDarkMode() else self.bottomLightSheet) if cfg.get(cfg.appTheme) == "Auto" else
                                       self.bottomDarkSheet if cfg.get(cfg.appTheme) == "Dark" else self.bottomLightSheet)
         bottomLayout = QHBoxLayout(bottomContainer)
         bottomLayout.setContentsMargins(40, 30, 40, 30)
@@ -206,7 +206,7 @@ class SmartSelectorGUI(FramelessWindow):
         
         self.titleBar.raise_()
         print(f"Loading '{self.requestURL}'...\n")
-        smartSelectorLog(f"Loading '{self.requestURL}'...")
+        smart.selectorLog(f"Loading '{self.requestURL}'...")
         if self.runningBrowsers: self.show()
         elif cfg.get(cfg.mainBrowserPath):
             subprocess.Popen([cfg.get(cfg.mainBrowserPath), self.requestURL])
@@ -221,19 +221,19 @@ class SmartSelectorGUI(FramelessWindow):
                 try:
                     subprocess.Popen([otherPath, self.requestURL])
                     print(f"{Fore.BLUE}Selected external browser at path: '{otherPath}'{Style.RESET_ALL}")
-                    smartSelectorLog(f"Selected external browser at path: '{otherPath}'")
+                    smart.selectorLog(f"Selected external browser at path: '{otherPath}'")
                 except Exception as e:
-                    smartErrorNotify(self, "Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(otherPath)}: {e}")
+                    smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(otherPath)}: {e}", self)
                     print(f"{Fore.RED}An error occured while attempting to load link into '{otherPath}': {e}{Style.RESET_ALL}")
-                    smartSelectorLog(f"ERROR: Failed to load link into '{otherPath}': {e}")
+                    smart.selectorLog(f"ERROR: Failed to load link into '{otherPath}': {e}")
             else:
-                smartWarningNotify(self, "Warning, be careful!", "The given path to the external browser does not exist...")
+                smart.warningNotify("Warning, be careful!", "The given path to the external browser does not exist...", self)
                 print(f"{Fore.YELLOW}The given path to the external browser does not exist...{Style.RESET_ALL}")
-                smartSelectorLog("WARNING: The given path to the external browser does not exist...")
+                smart.selectorLog("WARNING: The given path to the external browser does not exist...")
         else:
-            smartWarningNotify(self, "Warning, be careful!", "The external path entry is empty...")
+            smart.warningNotify("Warning, be careful!", "The external path entry is empty...", self)
             print(f"{Fore.YELLOW}The external path entry is empty...{Style.RESET_ALL}")
-            smartSelectorLog("WARNING: The external path entry is empty...")
+            smart.selectorLog("WARNING: The external path entry is empty...")
 
     def copyLinkToClip(self):
         """ Copy the forwarded link to the system's clipboard """
@@ -243,8 +243,8 @@ class SmartSelectorGUI(FramelessWindow):
         if clipboard:
             clipboard.setText(self.requestLinkEdit.text())
             print(f"Copied to clipboard: {Fore.BLUE}'{clipboard.text()}'{Style.RESET_ALL}")
-            smartSelectorLog(f"INFO: Copied link to clipboard: {clipboard.text()}")
-            smartSuccessNotify(self, "Copying complete!", "The forwarded link has been successfully copied to the clipboard!")
+            smart.selectorLog(f"INFO: Copied link to clipboard: {clipboard.text()}")
+            smart.successNotify("Copying complete!", "The forwarded link has been successfully copied to the clipboard!", self)
         else: self.copyLinkToClip()
 
     def confirmRestart(self):
@@ -256,16 +256,16 @@ class SmartSelectorGUI(FramelessWindow):
         )
         restartDlg.yesButton.setText("Restart")
         restartDlg.cancelButton.setText("Cancel")
-        if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smartPlaySound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
+        if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smart.playSound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
         if restartDlg.exec():
             try:
-                smartRestartApp()
+                smart.restartAppPlus()
                 print("Restarting the Smart Selector...")
-                smartSelectorLog("Restarting the Smart Selector...")
+                smart.selectorLog("Restarting the Smart Selector...")
             except Exception as e:
-                smartErrorNotify(self, "Oops! Something went wrong...", f"An error occured while attempting to restart SmartLinker: {e}")
+                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to restart SmartLinker: {e}", self)
                 print(f"{Fore.RED}An error occured while attempting to restart the Smart Selector: {e}{Style.RESET_ALL}")
-                smartSelectorLog(f"ERROR: Failed to restart the Smart Selector: {e}")
+                smart.selectorLog(f"ERROR: Failed to restart the Smart Selector: {e}")
 
 class BrowserCard(ElevatedCardWidget):
     """ Class for listed browser(s) card"""
@@ -302,33 +302,33 @@ class BrowserCard(ElevatedCardWidget):
                         try:
                             subprocess.Popen([browser["path"], link])
                             print(f"{Fore.GREEN}Successfully loaded '{link}' into: {name}{Style.RESET_ALL}")
-                            smartSelectorLog(f"SUCCESS: '{link}' has been successfully loaded into {name}.")
+                            smart.selectorLog(f"SUCCESS: '{link}' has been successfully loaded into {name}.")
                             if bool(cfg.get(cfg.closeOnBrowserSelect)): sys.exit()
                         except Exception as e:
-                            smartErrorNotify(parent, "Oops! Something went wrong...", f"An error occured while attempting to load your link into {name}:\n{e}")
+                            smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to load your link into {name}:\n{e}", parent)
                             print(f"{Fore.RED}Something went wrong when attempting to load your link into {name}:\n{e}{Style.RESET_ALL}")
-                            smartSelectorLog(f"ERROR: Failed loading {link} into {name}: {e}")
+                            smart.selectorLog(f"ERROR: Failed loading {link} into {name}: {e}")
                         break
                     else:
-                        smartWarningNotify(parent, "Warning, be careful!", f"The path to {name} as registered in your SmartList is empty...")
+                        smart.warningNotify("Warning, be careful!", f"The path to {name} as registered in your SmartList is empty...", parent)
                         print(f"{Fore.YELLOW}WARNING!!! The path to {name} as registered in your SmartList is empty...{Style.RESET_ALL}")
-                        smartSelectorLog(f"WARNING: The path to {name} as registered in the SmartList is empty...")
+                        smart.selectorLog(f"WARNING: The path to {name} as registered in the SmartList is empty...")
                         break
                 elif cfg.get(cfg.mainBrowserPath) and cfg.get(cfg.mainBrowserIsManual):
                     if os.path.basename(cfg.get(cfg.mainBrowserPath)) == name:
                         try:
                             subprocess.Popen([cfg.get(cfg.mainBrowserPath), link])
                             print(f"{Fore.GREEN}Successfully loaded '{link}' into: {os.path.basename(cfg.get(cfg.mainBrowserPath))}{Style.RESET_ALL}")
-                            smartSelectorLog(f"SUCCESS: '{link}' has been successfully loaded into {name}.")
+                            smart.selectorLog(f"SUCCESS: '{link}' has been successfully loaded into {name}.")
                             if bool(cfg.get(cfg.closeOnBrowserSelect)): sys.exit()
                         except Exception as e:
-                            smartErrorNotify(self, "Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(cfg.get(cfg.mainBrowserPath))}:\n{e}")
+                            smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(cfg.get(cfg.mainBrowserPath))}:\n{e}", parent)
                             print(f"{Fore.RED}Something went wrong when attempting to load {link} into {os.path.basename(cfg.get(cfg.mainBrowserPath))}:\n{e}{Style.RESET_ALL}")
-                            smartSelectorLog(f"ERROR: Failed loading {link} into {os.path.basename(cfg.get(cfg.mainBrowserPath))}: {e}")
+                            smart.selectorLog(f"ERROR: Failed loading {link} into {os.path.basename(cfg.get(cfg.mainBrowserPath))}: {e}")
                         break
                 else:
                     failedAttempts += 1
                     if failedAttempts == len(myBrowsList["MyBrowsers"]) + manualCount:
-                        smartWarningNotify(parent, "Warning, be careful!", f"The name '{name}' is not registered into your SmartList, or {name} cannot be found in your SmartList...")
+                        smart.warningNotify("Warning, be careful!", f"The name '{name}' is not registered into your SmartList, or {name} cannot be found in your SmartList...", parent)
                         print(f"{Fore.YELLOW}WARNING!!! The name '{name}' is not registered into your SmartList, or {name} cannot be found in your SmartList...{Style.RESET_ALL}")
-                        smartSelectorLog(f"WARNING: The name '{name}' is not registered into the SmartList, or cannot be found in the SmartList...")
+                        smart.selectorLog(f"WARNING: The name '{name}' is not registered into the SmartList, or cannot be found in the SmartList...")

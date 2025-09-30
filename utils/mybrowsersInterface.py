@@ -16,14 +16,11 @@ class MyBrowsersInterface(QWidget):
         self.myBrowsCards = []
 
         mainBrowLayout = QVBoxLayout(self)
-        ### mainBrowLayout.setContentsMargins(0, 60, 0, 0) # for split fluent window
-        mainBrowLayout.setContentsMargins(0, 20, 0, 0) # for fluent window
+        mainBrowLayout.setContentsMargins(0, 20, 0, 0)
         mainTitleLine = QHBoxLayout()
-        ### mainTitleLine.setContentsMargins(80, 0, 0, 0) # for split fluent window
-        mainTitleLine.setContentsMargins(40, 0, 0, 0) # for split fluent window
+        mainTitleLine.setContentsMargins(40, 0, 0, 0)
         mainBrowLayout.addLayout(mainTitleLine)
         self.title = TitleLabel("My Browsers", self)
-        # self.title.setFont(smartSegoeTitle())
         self.title.setAlignment(Qt.AlignmentFlag.AlignTop)
         mainTitleLine.addWidget(self.title)
         mainBrowScroll = SingleDirectionScrollArea(self, Qt.Orientation.Vertical)
@@ -34,13 +31,11 @@ class MyBrowsersInterface(QWidget):
         mainBrowScroll.setStyleSheet("background-color: rgba(0, 0, 0, 0); border: 0px solid #FFFFFF")
         mainBrowScrollContent = QWidget()
         mainBrowScroll.setWidget(mainBrowScrollContent)
-        ### mainBrowScrollContent.setContentsMargins(80, 0, 80, 0) # for split fluent window
-        mainBrowScrollContent.setContentsMargins(40, 0, 40, 0) # for split fluent window
+        mainBrowScrollContent.setContentsMargins(40, 0, 40, 0)
         layout = QVBoxLayout(mainBrowScrollContent)
         layout.setSpacing(10)
 
         self.mybrowsSub = BodyLabel("The list below, named 'SmartList', contains all the web browsers installed on your system that you've been adding up to now.")
-        # self.mybrowsSub.setFont(smartSegoeBody())
         self.mybrowsSub.setMaximumHeight(30)
         self.mybrowsSub.setWordWrap(True)
         layout.addWidget(self.mybrowsSub)
@@ -67,7 +62,6 @@ class MyBrowsersInterface(QWidget):
         self.mybrowsLayout = QVBoxLayout(mybrowsScrollContent)
         self.mybrowsLayout.setSpacing(10)
         self.mybrowsEmptyMsg = BodyLabel("No web browsers have been added yet... Click on the 'Add a browser' button below to begin!")
-        # self.mybrowsEmptyMsg.setFont(smartSegoeBody())
         self.mybrowsEmptyMsg.setContentsMargins(0, 30, 0, 30)
         layout.addWidget(self.myBrowsCommandBar)
         self.mybrowsAddCard = PrimaryPushSettingCard(
@@ -107,7 +101,6 @@ class MyBrowsersInterface(QWidget):
         layout.addWidget(self.myBrowsClearCard)
         self.myBrowsClearCard.setVisible(bool(myBrowsList["MyBrowsers"]) and not cfg.get(cfg.showCommandBar))
         self.actionCaption = BodyLabel("The following table gives you a descrption for every action in the bar above:")
-        # self.actionCaption.setFont(smartSegoeBody())
         self.actionCaption.setContentsMargins(0, 20, 0, 0)
         layout.addWidget(self.actionCaption)
         self.actionCaption.setVisible(cfg.get(cfg.showCommandBar))

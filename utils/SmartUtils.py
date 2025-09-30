@@ -12,6 +12,7 @@ __author__ = "#theF∆STER™ CODE&BU!LD"
 # (In case you would be wondering...)
 # =========================================================
 
+from tkinter import E
 import darkdetect, datetime, json, os, pickle, platform, psutil, pygame, requests, socket, subprocess, sys, typing, webbrowser
 import win32api, winreg
 from PyQt6.QtCore import QEventLoop, QFileInfo, Qt, QSize, QTimer
@@ -1017,6 +1018,56 @@ class SmartLogic():
         """
         if platform.system() == "Windows": return sys.getwindowsversion().build
         return 0
+    
+    def getSystemInformation(self):
+        """ SmartUtils
+        ==========
+        System hardware and software information provider
+
+        Returns
+        -------
+        systemInfo: dictionary[string, Unknown]
+            The system information dictionary
+        """
+        systemInfo = {}
+        try:
+            systemInfo = {
+                "osName": platform.system(),
+                "osVersion": platform.release(),
+                "computerName": platform.node(),
+                "osVersionInfo": platform.version(),
+                "architecture": platform.machine(),
+                "processor": platform.processor(),
+                "coreCount": os.cpu_count()
+            }
+        except Exception as e:
+            print(f"{Fore.RED}An error occured while attempting to get system information: {e}{Style.RESET_ALL}")
+            self.managerLog(f"ERROR: Failed to get system information: {e}")
+        finally: return systemInfo
+    
+    def isSoftwareCompatible(self, minBuild: int) -> bool:
+        """ SmartUtils
+        ==========
+        Compatibility checker for specified minimum build number 
+
+        Parameters
+        ----------
+        minBuild: integer
+            The minimum build number for compatibility check
+        
+        Returns
+        -------
+        isCompatible: boolean
+            Whether the system's build number is above/equivalent to the specified one
+        """
+        isCompatible = False
+        try:
+            if not platform.system() is "Windows": isCompatible = False
+            else: isCompatible = sys.getwindowsversion().build >= minBuild 
+        except Exception as e:
+            print(f"{Fore.RED}An error occured while attempting to check system compatibility: {e}{Style.RESET_ALL}")
+            self.managerLog(f"ERROR: Failed to check system compatibility: {e}")
+        finally: return isCompatible
 
 cfg = Config()
 smart = SmartLogic()

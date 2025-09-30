@@ -47,7 +47,7 @@ class SmartLinkerGUI(FluentWindow):
             self.aboutInterface = About(self)
             self.addSubInterface(self.aboutInterface, FICO.INFO, "About", NavigationItemPosition.BOTTOM)
             self.show()
-        self.setMicaEffectEnabled(self.settingInterface.widgetDef.optionMicaEffect.switchButton.isChecked())
+        self.setMicaEffectEnabled(smart.isSoftwareCompatible(22000) and self.settingInterface.widgetDef.optionMicaEffect.switchButton.isChecked())
         if bool(cfg.get(cfg.checkUpdatesOnStart)):
             autoCheckTime = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
             if not self.latestVersion:
@@ -79,13 +79,9 @@ class SmartLinkerGUI(FluentWindow):
                 InfoBadgePosition.NAVIGATION_ITEM
             )
         
-        """ self.settingInterface.widgetDef.optionSetAsDefault.button.clicked.connect(lambda: (
-            self.settingInterface.widgetDef.optionSetAsDefault.button.setEnabled(False),
-            self.settingInterface.widgetDef.optionSetAsDefault.button.setVisible(False),
-            self.settingInterface.widgetDef.optionSetAsDefault.iconLabel.setIcon(FICO.COMPLETED),
-            self.settingInterface.widgetDef.optionSetAsDefault.titleLabel.setText("Thank you for making me your personal favorite!"),
-            self.settingInterface.widgetDef.optionSetAsDefault.contentLabel.setText("SmartLinker is currently your system's default web browser.")
-        )) """
+        if self.settingInterface.widgetDef.optionMicaEffect:
+            self.settingInterface.widgetDef.optionMicaEffect.setEnabled(smart.isSoftwareCompatible(22000))
+            self.settingInterface.widgetDef.optionMicaEffect.setVisible(smart.isSoftwareCompatible(22000))
         self.settingInterface.widgetDef.optionMainBrowserCard.fromStorageButton.clicked.connect(lambda: self.settingInterface.cardManualSelect(self))
         self.settingInterface.widgetDef.optionMainBrowserCard.fromListButton.clicked.connect(lambda: self.settingInterface.cardSetFromList(self))
         self.settingInterface.widgetDef.optionMainBrowserCard.removeMainButton.clicked.connect(lambda: self.settingInterface.cardRemove(self))

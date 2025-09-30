@@ -316,6 +316,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setOrganizationName("")
     app.setApplicationVersion(SmartLinkerVersion)
+    if not smart.isSoftwareCompatible(19041): sys.exit()
     if len(sys.argv) > 1: appWindow = SmartSelectorGUI(sys.argv[1:])
     else:
         appWindow = SmartLinkerGUI()

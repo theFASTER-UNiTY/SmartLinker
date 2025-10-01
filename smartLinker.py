@@ -338,8 +338,8 @@ if __name__ == "__main__":
     app.setApplicationDisplayName(SmartLinkerName)
     app.setApplicationVersion(SmartLinkerVersion)
     if not isSystemCompatible(19041):
-        print(f"{Fore.RED}CRITICAL: {smart.getSystemInformation()["osName"]} {smart.getSystemInformation()["osVersion"]} build {smart.getSystemInformation()["osBuildNumber"]} " \
-              f"is not supported by {SmartLinkerName}...\nThe software process is stopping...{Style.RESET_ALL}")
+        print(f"{Fore.RED}CRITICAL: {smart.getSystemInformation()["osName"]} {smart.getSystemInformation()["osVersion"]} build {smart.getSystemInformation()["osBuildNumber"]}" \
+              f" is not supported by {SmartLinkerName}...\nThe software process is stopping...{Style.RESET_ALL}")
         sys.exit()
     if len(sys.argv) > 1: appWindow = SmartSelectorGUI(sys.argv[1:])
     else:

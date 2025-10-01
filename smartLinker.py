@@ -105,20 +105,29 @@ class SmartLinkerGUI(FluentWindow):
         self.aboutInterface.aboutResources.qFluentBtn.clicked.connect(lambda: smart.openURL("https://www.qfluentwidgets.com/"))
         self.aboutInterface.aboutResources.qFluentBtn2.clicked.connect(lambda: smart.openURL("https://github.com/zhiyiYo/PyQt-Fluent-Widgets"))
         self.aboutInterface.aboutResources.pyQtBtn.clicked.connect(lambda: smart.openURL("https://www.flaticon.com/"))
-        qconfig.themeChangedFinished.connect(lambda theme = theme(): (
+        cfg.appTheme.valueChanged.connect(lambda value: (
             self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smart.getRed(themeColor())}, {smart.getGreen(themeColor())}, {smart.getBlue(themeColor())}, 0.25)}}"), # type: ignore
             self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smart.getRed(themeColor())}, {smart.getGreen(themeColor())}, {smart.getBlue(themeColor())}, 0.25)}}"), # type: ignore
             self.aboutInterface.updateSnack.setStyleSheet(f"#ASnackBase {{background-color: rgba({smart.getRed(themeColor())}, {smart.getGreen(themeColor())}, {smart.getBlue(themeColor())}, 0.25); margin: 10px; margin-top: 0; border-radius: 5px}}"), # type: ignore
+            """ self.aboutInterface.aboutResources.pyQtLabel.setTextColor(themeColor(), cfg.get(cfg.accentColor) if cfg.get(cfg.accentMode) == "Custom" else getSystemAccentColor()),
+            self.aboutInterface.aboutResources.qFluentLabel.setTextColor(themeColor(), cfg.get(cfg.accentColor) if cfg.get(cfg.accentMode) == "Custom" else getSystemAccentColor()),
+            self.aboutInterface.aboutResources.flaticonLabel.setTextColor(themeColor(), cfg.get(cfg.accentColor) if cfg.get(cfg.accentMode) == "Custom" else getSystemAccentColor()) """
         ))
         cfg.accentMode.valueChanged.connect(lambda value: (
             self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smart.getRed(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, {smart.getGreen(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, {smart.getBlue(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, 0.25)}}"),
             self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smart.getRed(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, {smart.getGreen(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, {smart.getBlue(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, 0.25)}}"),
             self.aboutInterface.updateSnack.setStyleSheet(f"#ASnackBase {{background-color: rgba({smart.getRed(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, {smart.getGreen(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, {smart.getBlue(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, 0.25); margin: 10px; margin-top: 0; border-radius: 5px}}"),
+            """ self.aboutInterface.aboutResources.pyQtLabel.setTextColor(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor(), cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor()),
+            self.aboutInterface.aboutResources.qFluentLabel.setTextColor(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor(), cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor()),
+            self.aboutInterface.aboutResources.flaticonLabel.setTextColor(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor(), cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor()) """
         ))
         cfg.accentColor.valueChanged.connect(lambda value: (
             self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smart.getRed(value)}, {smart.getGreen(value)}, {smart.getBlue(value)}, 0.25)}}"),
             self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smart.getRed(value)}, {smart.getGreen(value)}, {smart.getBlue(value)}, 0.25)}}"),
             self.aboutInterface.updateSnack.setStyleSheet(f"#ASnackBase {{background-color: rgba({smart.getRed(value)}, {smart.getGreen(value)}, {smart.getBlue(value)}, 0.25); margin: 10px; margin-top: 0; border-radius: 5px}}"),
+            """ self.aboutInterface.aboutResources.pyQtLabel.setTextColor(QColor(value), QColor(value)),
+            self.aboutInterface.aboutResources.qFluentLabel.setTextColor(QColor(value), QColor(value)),
+            self.aboutInterface.aboutResources.flaticonLabel.setTextColor(QColor(value), QColor(value)) """
         ))
 
     def createSubInterfaces(self):
@@ -325,8 +334,13 @@ def isSystemCompatible(minBuild: int) -> bool:
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setOrganizationName(SmartLinkerOwner)
+    app.setApplicationName(SmartLinkerName)
+    app.setApplicationDisplayName(SmartLinkerName)
     app.setApplicationVersion(SmartLinkerVersion)
-    if not isSystemCompatible(19041): sys.exit()
+    if not isSystemCompatible(19041):
+        print(f"{Fore.RED}CRITICAL: {smart.getSystemInformation()["osName"]} {smart.getSystemInformation()["osVersion"]} build {smart.getSystemInformation()["osBuildNumber"]} " \
+              f"is not supported by {SmartLinkerName}...\nThe software process is stopping...{Style.RESET_ALL}")
+        sys.exit()
     if len(sys.argv) > 1: appWindow = SmartSelectorGUI(sys.argv[1:])
     else:
         appWindow = SmartLinkerGUI()

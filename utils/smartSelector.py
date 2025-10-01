@@ -198,7 +198,7 @@ class SmartSelectorGUI(FramelessWindow):
         self.requestLinkCopy = PrimaryPushButton(FICO.COPY, "Copy link")
         self.requestLinkCopy.clicked.connect(self.copyLinkToClip)
         bottomLayout.addWidget(self.requestLinkCopy)
-        self.restartBtn = ToolButton(FICO.SYNC)
+        self.restartBtn = ToolButton(SegoeFontIcon.fromName("reboot"))
         self.restartBtn.setToolTip("Restart the Smart Selector")
         self.restartBtn.installEventFilter(ToolTipFilter(self.restartBtn))
         self.restartBtn.clicked.connect(self.confirmRestart)
@@ -275,7 +275,7 @@ class BrowserCard(ElevatedCardWidget):
         self.statusLabel = CaptionLabel(status)
         self.iconWidget = IconWidget(icon, self)
         self.label = CaptionLabel(name, self)
-        self.selectButton = PrimaryPushButton("Load here")
+        self.selectButton = HyperlinkButton(SegoeFontIcon.fromName("link"), "", "Load here")
 
         self.iconWidget.setFixedSize(56, 56)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)

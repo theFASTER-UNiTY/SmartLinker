@@ -12,7 +12,6 @@ __author__ = "#theF∆STER™ CODE&BU!LD"
 # (In case you would be wondering...)
 # =========================================================
 
-from tkinter import E
 import darkdetect, datetime, json, os, pickle, platform, psutil, pygame, requests, socket, subprocess, sys, typing, webbrowser
 import win32api, winreg
 from PyQt6.QtCore import QEventLoop, QFileInfo, Qt, QSize, QTimer
@@ -22,10 +21,10 @@ from PyQt6.QtWidgets import (
 )
 from qfluentwidgets import (
     Action, BodyLabel, BoolValidator, CaptionLabel, CardWidget, ColorConfigItem, ColorDialog, ComboBox, CommandBar, ConfigItem,
-    ElevatedCardWidget, ExpandGroupSettingCard, FluentFontIconBase, FluentIcon as FICO, FluentWindow, HyperlinkCard, IconInfoBadge,
-    IconWidget, IndicatorPosition, InfoBadgePosition, InfoBar, InfoBarPosition, LineEdit, MessageBox, MessageBoxBase, NavigationItemPosition,
-    OptionsConfigItem, OptionsSettingCard, OptionsValidator, PrimaryPushButton, PrimaryPushSettingCard, PushButton, PushSettingCard,
-    QConfig, qconfig, RangeConfigItem, RangeValidator, setTheme, setThemeColor, SimpleExpandGroupSettingCard,
+    ElevatedCardWidget, ExpandGroupSettingCard, FluentFontIconBase, FluentIcon as FICO, FluentWindow, HyperlinkButton, HyperlinkCard,
+    IconInfoBadge, IconWidget, IndicatorPosition, InfoBadgePosition, InfoBar, InfoBarPosition, LineEdit, MessageBox, MessageBoxBase,
+    NavigationItemPosition, OptionsConfigItem, OptionsSettingCard, OptionsValidator, PrimaryPushButton, PrimaryPushSettingCard,
+    PushButton, PushSettingCard, QConfig, qconfig, RangeConfigItem, RangeValidator, setTheme, setThemeColor, SimpleExpandGroupSettingCard,
     SingleDirectionScrollArea, SpinBox, SplashScreen, StrongBodyLabel, SubtitleLabel, SwitchButton, SwitchSettingCard, TableWidget,
     Theme, theme, themeColor, TitleLabel, ToolButton, ToolTipFilter, ToolTipPosition
 )
@@ -119,7 +118,7 @@ class Config(QConfig):
     lastCheckedDate = ConfigItem("About", "LastCheckedDate", "")
     updateAvailable = ConfigItem("About", "UpdateAvailable", False)
     updateVersion = ConfigItem("About", "UpdateVersion", "")
-    qAccentColor = ColorConfigItem("QFluentWidgets", "ThemeColor", "#ff25d9e6")
+    qAccentColor = ColorConfigItem("QFluentWidgets", "ThemeColor", "#ff25d9e6") #ff25d9e6
 
 class SegoeFontIcon(FluentFontIconBase):
     """ Class for SmartLinker's custom font-based icons """
@@ -1044,6 +1043,7 @@ class SmartLogic():
             systemInfo = {
                 "osName": platform.system(),
                 "osVersion": platform.release(),
+                "osBuildNumber": sys.getwindowsversion().build,
                 "computerName": platform.node(),
                 "osVersionInfo": platform.version(),
                 "architecture": platform.machine(),

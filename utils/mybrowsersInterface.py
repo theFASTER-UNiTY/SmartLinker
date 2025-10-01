@@ -75,7 +75,7 @@ class MyBrowsersInterface(QWidget):
         self.mybrowsAddCard.setVisible(not cfg.get(cfg.showCommandBar))
         self.mybrowsRefreshCard = PushSettingCard(
             "Refresh",
-            FICO.SYNC,
+            SegoeFontIcon.fromName("refresh"),
             "Refresh my SmartList",
             "If for any reason, you need to refresh the list of browsers above, this is the quickest way to proceed."
         )
@@ -84,7 +84,7 @@ class MyBrowsersInterface(QWidget):
         self.mybrowsRefreshCard.setVisible(not cfg.get(cfg.showCommandBar))
         self.mybrowsLoadLinkCard = PushSettingCard(
             "Load a link",
-            FICO.SHARE,
+            SegoeFontIcon.fromName("link"),
             "Load a link into a browser",
             "For ease of access, you can directly load a URL into any browser of your choice from your SmartList."
         )

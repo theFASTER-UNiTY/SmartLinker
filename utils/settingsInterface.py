@@ -79,7 +79,7 @@ class SettingsInterface(QWidget):
         layout.addWidget(advancedLabel)
         self.advancedRestart = PushSettingCard(
             "Restart",
-            FICO.SYNC,
+            SegoeFontIcon.fromName("reboot"),
             f"Restart {SmartLinkerName}",
             "If you need for some reason to restart the software, this is the easiest way to proceed."
         )

@@ -144,8 +144,8 @@ class ResourcesGroup(ExpandGroupSettingCard):
     
     def __init__(self, parent=None):
         super().__init__(
-            FICO.LIBRARY,
-            "Resources"
+            SegoeFontIcon.fromName("plugin"), # type: ignore
+            "Resources",
         )
         self.creditsLabel = BodyLabel("For this software to work correctly, the following resources have been used:")
         self.creditsLabel.setContentsMargins(0, 0, 0, 10)

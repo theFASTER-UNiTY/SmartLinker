@@ -22,8 +22,8 @@ from PyQt6.QtWidgets import (
 )
 from qfluentwidgets import (
     Action, BodyLabel, BoolValidator, CaptionLabel, CardWidget, ColorConfigItem, ColorDialog, ComboBox, CommandBar, ConfigItem,
-    ElevatedCardWidget, ExpandGroupSettingCard, FluentIcon as FICO, FluentWindow, HyperlinkCard, IconInfoBadge, IconWidget,
-    IndicatorPosition, InfoBadgePosition, InfoBar, InfoBarPosition, LineEdit, MessageBox, MessageBoxBase, NavigationItemPosition,
+    ElevatedCardWidget, ExpandGroupSettingCard, FluentFontIconBase, FluentIcon as FICO, FluentWindow, HyperlinkCard, IconInfoBadge,
+    IconWidget, IndicatorPosition, InfoBadgePosition, InfoBar, InfoBarPosition, LineEdit, MessageBox, MessageBoxBase, NavigationItemPosition,
     OptionsConfigItem, OptionsSettingCard, OptionsValidator, PrimaryPushButton, PrimaryPushSettingCard, PushButton, PushSettingCard,
     QConfig, qconfig, RangeConfigItem, RangeValidator, setTheme, setThemeColor, SimpleExpandGroupSettingCard,
     SingleDirectionScrollArea, SpinBox, SplashScreen, StrongBodyLabel, SubtitleLabel, SwitchButton, SwitchSettingCard, TableWidget,
@@ -120,6 +120,16 @@ class Config(QConfig):
     updateAvailable = ConfigItem("About", "UpdateAvailable", False)
     updateVersion = ConfigItem("About", "UpdateVersion", "")
     qAccentColor = ColorConfigItem("QFluentWidgets", "ThemeColor", "#ff25d9e6")
+
+class SegoeFontIcon(FluentFontIconBase):
+    """ Class for SmartLinker's custom font-based icons """
+
+    def path(self, theme=Theme.AUTO):
+        return smart.resourcePath("resources/fonts/SegoeIcons.ttf")
+
+    def iconNameMapPath(self):
+        """ Override this method if you want to use `fromName` to create icons """
+        return smart.resourcePath("resources/fonts/SegoeIconsMapLib.json")
 
 class SmartLogic():
     """ SmartUtils

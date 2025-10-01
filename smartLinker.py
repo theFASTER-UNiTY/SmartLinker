@@ -15,7 +15,7 @@ class SmartLinkerGUI(FluentWindow):
         self.setWindowTitle("SmartLinker - Mastering URL Handling")
         self.setWindowIcon(QIcon(smart.resourcePath("resources/images/icons/icon.ico")))
         self.resize(1100, 700)
-        self.setMinimumWidth(950)
+        self.setMinimumWidth(1050)
         self.move(40, 25)
         self.setStyleSheet('font-family: "Segoe UI Variable", "Segoe UI", sans-serif;')
         self.navigationInterface.setAcrylicEnabled(cfg.get(cfg.enableAcrylicOnSidebar))
@@ -310,13 +310,23 @@ class SmartLinkerGUI(FluentWindow):
                 print(f"{Fore.RED}An error occured while attempting to stop process: {e}{Style.RESET_ALL}")
                 smart.managerLog(f"ERROR: Failed to stop process: {e}")
 
+def isSystemCompatible(minBuild: int) -> bool:
+    isCompatible = False
+    try:
+        if not platform.system() == "Windows": isCompatible = False
+        else: isCompatible = sys.getwindowsversion().build >= minBuild 
+    except Exception as e:
+        print(f"{Fore.RED}An error occured while attempting to check system compatibility: {e}{Style.RESET_ALL}")
+        smart.managerLog(f"ERROR: Failed to check system compatibility: {e}")
+    finally: return isCompatible
+
 # =============================================================================
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    app.setOrganizationName("")
+    app.setOrganizationName(SmartLinkerOwner)
     app.setApplicationVersion(SmartLinkerVersion)
-    if not smart.isSoftwareCompatible(19041): sys.exit()
+    if not isSystemCompatible(19041): sys.exit()
     if len(sys.argv) > 1: appWindow = SmartSelectorGUI(sys.argv[1:])
     else:
         appWindow = SmartLinkerGUI()

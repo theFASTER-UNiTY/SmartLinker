@@ -50,6 +50,8 @@ body:
     attributes:
       label: "System"
       description: "Provide details about your operating system (OS, version, build number, etc.)"
+    validations:
+      required: true
   - type: textarea
     id: additional-context
     attributes:

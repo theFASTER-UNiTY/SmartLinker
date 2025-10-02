@@ -23,11 +23,11 @@
 
 SmartLinker - Mastering URL Handling (shortly SmartLinker) is a Windows desktop application that allows you to simply, yet intelligently manage and redirect URLs. Entirely based on PyQt6, currently the latest version of the Qt library for Python, it also provides a Fluent-inspired user interface for better visual immersion with the latest Windows system's UI language.
 
-SmartLinker provides users flexibility and easy-to-use features to quickly open links with a target browser, manage a persistent "SmartList" of browsers, and even customize appearance and sound effects.
+SmartLinker provides users with flexibility and easy-to-use features to quickly open links with a target browser, manage a persistent "SmartList" of browsers, and even customize appearance and sound effects.
 
 ***These are some of the software's main features:***
 - Automatic URL redirection to the software for a full user-controlled management through a well-designed "Smart Selector"
-- Intelligent browser selection for loading web links of local files.
+- Intelligent browser selection for loading web links or local files.
 - Persistent browser list (SmartList) for easier accessibility.
 - Personalization: from visual theme to sound effects.
 - Modern Fluent-style user interface (based on [QFluentWidgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets)).

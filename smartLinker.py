@@ -340,7 +340,7 @@ if __name__ == "__main__":
     if not platform.system() == "Windows":
         print(f"{Fore.RED}CRITICAL: Only Windows systems are supported by {SmartLinkerName}...\nThe software process is stopping...{Style.RESET_ALL}")
         sys.exit()
-    if not isSystemCompatible(19041):
+    if not isSystemCompatible(19042):
         print(f"{Fore.RED}CRITICAL: {smart.getSystemInformation()["osName"]} {smart.getSystemInformation()["osVersion"]} build {smart.getSystemInformation()["osBuildNumber"]}" \
             f" is not supported by {SmartLinkerName}...\nThe software process is stopping...{Style.RESET_ALL}")
         sys.exit()

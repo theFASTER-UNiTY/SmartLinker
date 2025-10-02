@@ -1,7 +1,7 @@
 <p align="center">
   <img width="25%" align="center" src="https://github.com/theFASTER-UNiTY/SmartLinker/blob/master/resources/images/icons/png/icon_shadow_1.png?raw=true" alt="logo">
 </p>
-<h1 align="center">
+<h1 align="center" style="font-size: 32px">
   SmartLinker
 </h1>
 <p align="center">
@@ -18,7 +18,6 @@
 </div>
 
 <br>
-<hr>
 
 ## ❓ What is SmartLinker?
 
@@ -40,7 +39,7 @@ SmartLinker provides users flexibility and easy-to-use features to quickly open 
 We'll guide you through the whole process to install it on your own computer.
 
 ### Prerequisites
-- Windows 10 version 2009 (build 19041) x64 or later
+- Windows 10 version 20H2 (build 19042) x64 or later
 - Python 3.10 or later
 - A fresh virtual environment (venv)
 - The required Python packages listed in <a href="requirements.txt">requirements.txt</a>
@@ -57,9 +56,9 @@ git clone https://github.com/theFASTER-UNiTY/SmartLinker.git
 ```
 - If not, click on the green **Code** button, then on **Download ZIP**. Then, extract it into a folder of your choice. Just be sure that the target location does have full write access.
 
-Once the required files ready, follow these instructions step-by-step:
+Once the required files are ready, follow these instructions step-by-step:
 
-1. In the SmartLinker directory, create a virtual environment ny tapping this command:
+1. In the SmartLinker directory, create a virtual environment by tapping this command:
 ```shell
 python -m venv .venv
 ```
@@ -67,7 +66,7 @@ python -m venv .venv
 ```shell
 .venv\Scripts\activate
 ```
-3. Install all the needed dependencies with pip:
+3. Install all the needed dependencies with `pip`:
 ```shell
 pip install -r requirements.txt
 ```
@@ -78,10 +77,24 @@ python smartLinker.py
 ```
 * **NOTE**: If you want to load a link to a webpage or a local file into the Smart Selector, run this command instead:
 ```shell
-python smartLinker.py <complete_file_path_or_website_url>
+python smartLinker.py "complete_file_path_or_website_url"
 ```
 
 And you're all set! SmartLinker is installed into your system!
 
 > [!Warning]
-> You should keep in mind that if you choose the manual Python installation, the software will not do its job as meant to, since it'll need to be registered in the Windows registry. That can only be achieved with the installer.
+> You should keep in mind that if you choose the manual Python installation, the software will not do its job as meant to, since it will need to be registered in the Windows registry. That can only be achieved with the installer.
+
+## 🤝 Want to contribute?
+**You might have already guessed, but this software is still in its first stages. So there are many aspects that might not be handled correctly.
+So contributions in any form are greatly welcome and appreciated.**
+
+Feel free to either create an issue from the [Issues](https://github.com/theFASTER-UNiTY/SmartLinker) section of the repository, or fork this project and create a pull request. For more details, please read the provided [CONTRIBUTING](CONTRIBUTING) document.
+
+## 📜 License
+This software is licensed under the **GPL**. See the [LICENSE](LICENSE) file for more information.
+
+## 📬 Contact me
+**Maintainer:** #theF∆STER™ CODE&BU!LD (software development section of the UN!TY group) (in case you would be wondering 😁)
+
+**Email:** unity.thefaster@protonmail.com

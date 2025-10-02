@@ -45,7 +45,8 @@ We'll guide you through the whole process to install it on your own computer.
 - The required Python packages listed in [requirements.txt](requirements.txt)
 
 ### Standalone installation
-If you'd rather prefer getting the installer, check out the [Releases](https://github.com/theFASTER-UNiTY/SmartLinker/releases) page of the repository (you can skip the Quick start section).
+If you'd rather prefer getting the installer, check out the [Releases](https://github.com/theFASTER-UNiTY/SmartLinker/releases) page of the repository (you can skip the Quick start section).<br>
+After installation, you will just have to set SmartLinker as your system's default web browser.
 
 ### Quick start
 To get all the files required for SmartLinker right in your computer:

@@ -90,7 +90,7 @@ class MyBrowsersInterface(QWidget):
         )
         self.mybrowsLoadLinkCard.button.clicked.connect(lambda: self.loadLinkDialog(parent))
         layout.addWidget(self.mybrowsLoadLinkCard)
-        self.mybrowsLoadLinkCard.setVisible(bool(myBrowsList["MyBrowsers"] or (cfg.get(cfg.mainBrowserPath) and cfg.get(cfg.mainBrowserIsManual))) and not cfg.get(cfg.showCommandBar))
+        self.mybrowsLoadLinkCard.setVisible(not cfg.get(cfg.showCommandBar))
         self.myBrowsClearCard = PushSettingCard(
             "Clear",
             FICO.DELETE.colored(QColor("red"), QColor("#F44336")),

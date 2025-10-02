@@ -1,0 +1,34 @@
+name: "General Feedback"
+description: "Share thoughts, suggestions, or comments about SmartLinker."
+title: "[Feedback] "
+labels: ["feedback"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **We welcome your feedback! Please tell us what you think.**
+  - type: dropdown
+    id: feedback-type
+    attributes:
+      label: "Feedback Type"
+      options:
+        - Positive
+        - Negative
+        - Suggestion
+        - Other
+      description: "Select the type of feedback."
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: "Feedback Details"
+      description: "Share your thoughts, suggestions, or concerns."
+    validations:
+      required: true
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: "Additional Context"
+      description: "Anything else we should know?"

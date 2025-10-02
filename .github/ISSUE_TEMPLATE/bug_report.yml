@@ -1,45 +1,47 @@
-name: Bug Report
-description: File a bug report.
-title: "[BUG REPORT]: "
-labels: ["bug", "triage"]
-projects: ["octo-org/1", "octo-org/44"]
-assignees:
-  - octocat
+name: "Bug Report"
+description: "Report a problem or unexpected behavior in SmartLinker."
+title: "[BUG] "
+labels: ["bug"]
+assignees: []
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this bug report!
-  - type: input
-    id: contact
-    attributes:
-      label: Contact Details
-      description: How can we get in touch with you if we need more info?
-      placeholder: ex. email@example.com
-    validations:
-      required: false
+        **Thank you for reporting a bug! Please fill out the information below.**
   - type: textarea
-    id: what-happened
+    id: steps-to-reproduce
     attributes:
-      label: What happened?
-      description: Also tell us, what did you expect to happen?
-      placeholder: Tell us what you see!
-      value: "A bug happened!"
+      label: "Steps to Reproduce"
+      description: "List the steps to reproduce the issue."
+      placeholder: "1. Go to...\n2. Click on...\n3. See error..."
     validations:
       required: true
-  - type: dropdown
-    id: version
+  - type: textarea
+    id: expected-behavior
     attributes:
-      label: Version
-      description: What version of SmartLinker are you running?
-      options:
-        - 1.0.0
-      default: 0
+      label: "Expected Behavior"
+      description: "What did you expect to happen?"
+    validations:
+      required: true
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: "Actual Behavior"
+      description: "What actually happened?"
     validations:
       required: true
   - type: textarea
     id: logs
     attributes:
-      label: Relevant log output
-      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
-      render: shell
+      label: "Screenshots or Logs"
+      description: "Add screenshots, logs, or error messages if available."
+  - type: input
+    id: environment
+    attributes:
+      label: "Environment"
+      description: "Provide details about your environment (OS, Unity version, etc.)"
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: "Additional Context"
+      description: "Anything else we should know?"

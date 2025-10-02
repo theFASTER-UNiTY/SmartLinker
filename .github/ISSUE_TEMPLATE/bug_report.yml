@@ -35,11 +35,21 @@ body:
     attributes:
       label: "Screenshots or Logs"
       description: "Add screenshots, logs, or error messages if available."
+  - type: dropdown
+    id: version
+    attributes:
+      label: "Version"
+      description: What version of SmartLinker are you running?
+      options:
+        - 1.0.0 (Latest)
+      default: -1
+    validations:
+      required: true
   - type: input
     id: environment
     attributes:
-      label: "Environment"
-      description: "Provide details about your environment (OS, Unity version, etc.)"
+      label: "System"
+      description: "Provide details about your operating system (OS, version, build number, etc.)"
   - type: textarea
     id: additional-context
     attributes:

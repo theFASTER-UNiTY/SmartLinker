@@ -42,7 +42,7 @@ body:
       description: What version of SmartLinker are you running?
       options:
         - 1.0.0 (Latest)
-      default: -1
+      default: 0
     validations:
       required: true
   - type: input

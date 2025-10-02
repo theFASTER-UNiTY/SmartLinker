@@ -337,9 +337,12 @@ if __name__ == "__main__":
     app.setApplicationName(SmartLinkerName)
     app.setApplicationDisplayName(SmartLinkerName)
     app.setApplicationVersion(SmartLinkerVersion)
+    if not platform.system() == "Windows":
+        print(f"{Fore.RED}CRITICAL: Only Windows systems are supported by {SmartLinkerName}...\nThe software process is stopping...{Style.RESET_ALL}")
+        sys.exit()
     if not isSystemCompatible(19041):
         print(f"{Fore.RED}CRITICAL: {smart.getSystemInformation()["osName"]} {smart.getSystemInformation()["osVersion"]} build {smart.getSystemInformation()["osBuildNumber"]}" \
-              f" is not supported by {SmartLinkerName}...\nThe software process is stopping...{Style.RESET_ALL}")
+            f" is not supported by {SmartLinkerName}...\nThe software process is stopping...{Style.RESET_ALL}")
         sys.exit()
     if len(sys.argv) > 1: appWindow = SmartSelectorGUI(sys.argv[1:])
     else:

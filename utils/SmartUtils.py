@@ -128,7 +128,7 @@ class SegoeFontIcon(FluentFontIconBase):
 
     def iconNameMapPath(self):
         """ Override this method if you want to use `fromName` to create icons """
-        return smart.resourcePath("resources/fonts/SegoeIconsMapLib.json")
+        return smart.resourcePath("resources/fonts/SegoeIconsMap.json")
 
 class SmartLogic():
     """ SmartUtils

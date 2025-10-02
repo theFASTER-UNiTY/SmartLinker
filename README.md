@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="25%" align="center" src="https://github.com/theFASTER-UNiTY/SmartLinker/blob/master/resources/images/icons/png/icon_shadow_1.png?raw=true" alt="logo">
+  <img width="25%" align="center" src="https://raw.githubusercontent.com/theFASTER-UNiTY/SmartLinker/master/resources/images/icons/png/icon_shadow_1.png" alt="logo">
 </p>
 <h1 align="center" style="font-size: 32px">
   SmartLinker
@@ -30,7 +30,7 @@ SmartLinker provides users flexibility and easy-to-use features to quickly open 
 - Intelligent browser selection for loading web links of local files.
 - Persistent browser list (SmartList) for easier accessibility.
 - Personalization: from visual theme to sound effects.
-- Modern Fluent-style user interface (based on <a href="https://github.com/zhiyiYo/PyQt-Fluent-Widgets">QFluentWidgets</a>).
+- Modern Fluent-style user interface (based on [QFluentWidgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets)).
 
 *(Not much, you might say, but just what you need)* 😁
 
@@ -42,7 +42,7 @@ We'll guide you through the whole process to install it on your own computer.
 - Windows 10 version 20H2 (build 19042) x64 or later
 - Python 3.10 or later
 - A fresh virtual environment (venv)
-- The required Python packages listed in <a href="requirements.txt">requirements.txt</a>
+- The required Python packages listed in [requirements.txt](requirements.txt)
 
 ### Standalone installation
 If you'd rather prefer getting the installer, check out the [Releases](https://github.com/theFASTER-UNiTY/SmartLinker/releases) page of the repository (you can skip the Quick start section).
@@ -83,7 +83,20 @@ python smartLinker.py "complete_file_path_or_website_url"
 And you're all set! SmartLinker is installed into your system!
 
 > [!Warning]
-> You should keep in mind that if you choose the manual Python installation, the software will not do its job as meant to, since it will need to be registered in the Windows registry. That can only be achieved with the installer.
+> You should keep in mind that if you choose the manual Python installation, the software will not do its job as meant to, since it has to be registered in the Windows registry to work properly. That can only be achieved with the installer.
+
+## 🖼️ Here are some screenshots
+
+#### Main interface
+
+![main_interface](https://raw.githubusercontent.com/theFASTER-UNiTY/SmartLinker/master/screenshots/main_interface.png)
+
+#### About interface
+
+![about_interface](https://raw.githubusercontent.com/theFASTER-UNiTY/SmartLinker/master/screenshots/about_interface.png)
+
+#### Selector window
+![selector](https://raw.githubusercontent.com/theFASTER-UNiTY/SmartLinker/master/screenshots/selector.png)
 
 ## 🤝 Want to contribute?
 **You might have already guessed, but this software is still in its first stages. So there are many aspects that might not be handled correctly.

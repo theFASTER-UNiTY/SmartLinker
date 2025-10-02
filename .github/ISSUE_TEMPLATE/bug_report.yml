@@ -1,6 +1,6 @@
 name: Bug Report
 description: File a bug report.
-title: "[Bug]: "
+title: "[BUG REPORT]: "
 labels: ["bug", "triage"]
 projects: ["octo-org/1", "octo-org/44"]
 assignees:
@@ -31,10 +31,9 @@ body:
     id: version
     attributes:
       label: Version
-      description: What version of our software are you running?
+      description: What version of SmartLinker are you running?
       options:
-        - 1.0.2 (Default)
-        - 1.0.3 (Edge)
+        - 1.0.0
       default: 0
     validations:
       required: true

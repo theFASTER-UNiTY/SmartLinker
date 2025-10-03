@@ -316,7 +316,7 @@ class FeedbackBrowserSelectDialog(MessageBoxBase):
         self.warningLabel.setHidden(True)
 
         self.widget.setMinimumWidth(350)
-        self.yesButton.setText("Load link")
+        self.yesButton.setText("Send feedback")
         self.browserCombo.currentTextChanged.connect(lambda text: self.comboChangeListener(text))
         self.otherBrowsEdit.textChanged.connect(lambda text: (
             self.otherPathChangeListener(text),

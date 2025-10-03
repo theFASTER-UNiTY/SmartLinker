@@ -104,7 +104,7 @@ class SmartLinkerGUI(FluentWindow):
         self.aboutInterface.aboutResources.pyQtBtn2.clicked.connect(lambda: smart.openURL("https://doc.qt.io/qtforpython-6/"))
         self.aboutInterface.aboutResources.qFluentBtn.clicked.connect(lambda: smart.openURL("https://www.qfluentwidgets.com/"))
         self.aboutInterface.aboutResources.qFluentBtn2.clicked.connect(lambda: smart.openURL("https://github.com/zhiyiYo/PyQt-Fluent-Widgets"))
-        self.aboutInterface.aboutResources.pyQtBtn.clicked.connect(lambda: smart.openURL("https://www.flaticon.com/"))
+        self.aboutInterface.aboutResources.flaticonBtn.clicked.connect(lambda: smart.openURL("https://www.flaticon.com/"))
         cfg.appTheme.valueChanged.connect(lambda value: (
             self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smart.getRed(themeColor())}, {smart.getGreen(themeColor())}, {smart.getBlue(themeColor())}, 0.25)}}"), # type: ignore
             self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smart.getRed(themeColor())}, {smart.getGreen(themeColor())}, {smart.getBlue(themeColor())}, 0.25)}}"), # type: ignore

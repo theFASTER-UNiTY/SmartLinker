@@ -378,7 +378,9 @@ class MyBrowsersInterface(QWidget):
               f"Browser name: {name}\nBrowser complete path: {path}")
         smart.managerLog(f"Adding a new browser to the SmartList...\nBrowser name: {name}\nBrowser path: {path}")
         for browser in myBrowsList["MyBrowsers"]:
-            if browser["exec"] == os.path.basename(path): smart.warningNotify(parent, "Warning, be careful!", f"The new browser has the same executable name as {browser["name"]}.\nIt is not really an issue, but it might be confusing for {SmartLinkerName}...")
+            if browser["exec"] == os.path.basename(path):
+                smart.warningNotify("Warning, be careful!", f"The new browser has the same executable name as {browser["name"]}.\nIt is not really an issue, but it might be confusing for {SmartLinkerName}...", parent)
+                break
         myBrowsList["MyBrowsers"].append({
             "name": name,
             "path": path,

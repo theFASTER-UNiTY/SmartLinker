@@ -207,11 +207,15 @@ class SmartSelectorGUI(FramelessWindow):
         self.titleBar.raise_()
         print(f"Loading '{self.requestURL}'...\n")
         smart.selectorLog(f"Loading '{self.requestURL}'...")
-        if self.runningBrowsers: self.show()
+        if self.runningBrowsers:
+            self.show()
+            if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.selectorSFXPath)): smart.playSound(soundStreamer, cfg.get(cfg.selectorSFXPath), "Smart Selector launch")
         elif cfg.get(cfg.mainBrowserPath):
             subprocess.Popen([cfg.get(cfg.mainBrowserPath), self.requestURL])
             sys.exit()
-        else: self.show()
+        else:
+            self.show()
+            if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.selectorSFXPath)): smart.playSound(soundStreamer, cfg.get(cfg.selectorSFXPath), "Smart Selector launch")
 
     def loadToOtherBrowser(self):
         """ Load the forwarded link to another browser selected from storage """

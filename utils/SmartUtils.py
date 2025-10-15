@@ -113,6 +113,7 @@ class Config(QConfig):
     warningSFXPath = ConfigItem("Sound", "WarningSFXPath", "")
     errorSFXPath = ConfigItem("Sound", "ErrorSFXPath", "")
     questionSFXPath = ConfigItem("Sound", "QuestionSFXPath", "")
+    selectorSFXPath = ConfigItem("Sound", "SelectorSFXPath", "")
     closeOnBrowserSelect = ConfigItem("Selector", "CloseOnBrowserSelect", False, BoolValidator())
     checkUpdatesOnStart = ConfigItem("About", "CheckUpdatesOnStart", True, BoolValidator())
     lastCheckedDate = ConfigItem("About", "LastCheckedDate", "")
@@ -374,7 +375,7 @@ class SmartLogic():
             isClosable = True,
             position = InfoBarPosition.TOP,
             duration = 5000,
-            parent = self
+            parent = parent
         ).show()
         if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.successSFXPath)):
             self.playSound(soundStreamer, cfg.get(cfg.successSFXPath), "success notification")

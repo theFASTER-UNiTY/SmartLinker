@@ -174,8 +174,6 @@ class MyBrowsersInterface(QWidget):
             smart.managerLog("SUCCESS: The browsers database has been succesfully loaded into the SmartList.")
             self.mybrowsEmptyMsg.setHidden(True)
             self.mybrowsSub.setHidden(False)
-            if cfg.get(cfg.showCommandBar): self.loadLinkCommand.setEnabled(True)
-            else: self.mybrowsLoadLinkCard.setHidden(False)
             if cfg.get(cfg.showCommandBar): self.clearCommand.setEnabled(True)
             else: self.myBrowsClearCard.setHidden(False)
         else:
@@ -184,8 +182,6 @@ class MyBrowsersInterface(QWidget):
             self.mybrowsLayout.addWidget(self.mybrowsEmptyMsg, 0, Qt.AlignmentFlag.AlignCenter)
             self.mybrowsEmptyMsg.setHidden(False)
             self.mybrowsSub.setHidden(True)
-            if cfg.get(cfg.showCommandBar): self.loadLinkCommand.setEnabled(False)
-            else: self.mybrowsLoadLinkCard.setHidden(True)
             if cfg.get(cfg.showCommandBar): self.clearCommand.setEnabled(False)
             else: self.myBrowsClearCard.setHidden(True)
 

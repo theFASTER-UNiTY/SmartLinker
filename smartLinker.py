@@ -294,7 +294,7 @@ class SmartLinkerGUI(FluentWindow):
             "Are you sure you really want to restart SmartLinker?",
             self
         )
-        restartDlg.yesButton.setText("Restart")
+        restartDlg.yesButton.setText(f"Restart {SmartLinkerName}")
         if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smart.playSound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
         if restartDlg.exec():
             try: smart.restartAppPlus()

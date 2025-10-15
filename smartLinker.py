@@ -7,7 +7,7 @@ from utils.smartSelector import SmartSelectorGUI
 # =============================================================================
 
 class SmartLinkerGUI(FluentWindow):
-    """ Class for the SmartLinker Manager (main) window"""
+    """ Class for the SmartLinker Manager (main) window """
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -15,7 +15,7 @@ class SmartLinkerGUI(FluentWindow):
         self.setWindowTitle("SmartLinker - Mastering URL Handling")
         self.setWindowIcon(QIcon(smart.resourcePath("resources/images/icons/icon.ico")))
         self.resize(1100, 700)
-        self.setMinimumWidth(1050)
+        self.setMinimumWidth(1040)
         self.move(40, 25)
         self.setStyleSheet('font-family: "Segoe UI Variable", "Segoe UI", sans-serif;')
         self.navigationInterface.setAcrylicEnabled(cfg.get(cfg.enableAcrylicOnSidebar))

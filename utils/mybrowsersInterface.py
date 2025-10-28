@@ -273,7 +273,7 @@ class MyBrowsersInterface(QWidget):
             confirmClearDlg = MessageBox(
                 "Confirm complete removal",
                 "Before proceeding, please note that removing all your browsers from your SmartList " \
-                    "is at YOUR OWN RISK, and you will have to start all over again if it is a mistake of yours.\n\n" \
+                    "is at YOUR OWN RISK, and you will have to start all over again, even if it is a mistake of yours.\n\n" \
                     "So continue only if you're 100% SURE and you know what you're doing!!",
                 parent
             )

@@ -9,6 +9,7 @@ class AboutInterface(QWidget):
         self.lastChecked = f"Last checked: {cfg.get(cfg.lastCheckedDate)}{f" (Latest version: {cfg.get(cfg.updateVersion)})" if cfg.get(cfg.updateAvailable) else ""}" if cfg.get(cfg.lastCheckedDate) \
                         else "Click on the following button to check for the latest updates."
         self.feedbackBrowserDlg = None
+        self.linkBrowserDlg = None
         self.myBrowsList = smart.loadBrowsers()
 
         mainAboutLayout = QVBoxLayout(self)
@@ -76,6 +77,11 @@ class AboutInterface(QWidget):
         self.aboutInformation = AboutAppGroup()
         layout.addWidget(self.aboutInformation)
         self.aboutResources = ResourcesGroup()
+        self.aboutResources.pyQtBtn.clicked.connect(lambda: self.resLinkBrowserSelect("https://www.pythonguis.com/pyqt6/", "Python GUIs", "website", QIcon(smart.resourcePath("resources/images/icons/pyqt6_icon.ico")), parent))
+        self.aboutResources.pyQtBtn2.clicked.connect(lambda: self.resLinkBrowserSelect("https://doc.qt.io/qtforpython-6/", "Qt Documentation", "website", QIcon(smart.resourcePath("resources/images/icons/qtforpython_icon.ico")), parent))
+        self.aboutResources.qFluentBtn.clicked.connect(lambda: self.resLinkBrowserSelect("https://www.qfluentwidgets.com/", "QFluentWidgets", "website", QIcon(smart.resourcePath("resources/images/icons/qfluentwidgets_icon.ico")), parent))
+        self.aboutResources.qFluentBtn2.clicked.connect(lambda: self.resLinkBrowserSelect("https://github.com/zhiyiYo/PyQt-Fluent-Widgets", "QFluentWidgets", "GitHub repository", FICO.GITHUB, parent))
+        self.aboutResources.flaticonBtn.clicked.connect(lambda: self.resLinkBrowserSelect("https://www.flaticon.com/", "Flaticon", "website", QIcon(smart.resourcePath("resources/images/icons/flaticon_icon.ico")), parent))
         layout.addWidget(self.aboutResources)
 
         layout.addStretch(1)
@@ -107,7 +113,8 @@ class AboutInterface(QWidget):
 
     def feedbackBrowserSelect(self, parent):
         if not self.feedbackBrowserDlg:
-            self.feedbackBrowserDlg = FeedbackBrowserSelectDialog(parent)
+            self.feedbackBrowserDlg = BrowserSelectDialog("Send feedback with...", FICO.FEEDBACK, parent)
+            self.feedbackBrowserDlg.yesButton.setText("Send feedback")
         if self.feedbackBrowserDlg.exec():
             failedAttempts = 0
             feedbackURL = f"{SmartLinkerGitRepoURL}/issues/new?template=feedback.yml"
@@ -159,6 +166,64 @@ class AboutInterface(QWidget):
                     smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to open the feedback section of GitHub repository into {os.path.basename(self.feedbackBrowserDlg.otherBrowsEdit.text())}: {e}", parent)
                     print(f"{Fore.RED}An error occured while attempting to open the feedback section of GitHub repository into '{os.path.basename(self.feedbackBrowserDlg.otherBrowsEdit.text())}': {e}{Style.RESET_ALL}")
                     smart.managerLog(f"ERROR: Failed to open the feedback section of GitHub repository into browser at path '{self.feedbackBrowserDlg.otherBrowsEdit.text()}': {e}")
+
+    def resLinkBrowserSelect(self, url: str, title: str, linkType: str, icon: QIcon | FICO | FluentFontIconBase, parent):
+        if not self.linkBrowserDlg:
+            self.linkBrowserDlg = BrowserSelectDialog(f"Open {title} with...", icon, parent)
+        else:
+            self.linkBrowserDlg = None
+            self.linkBrowserDlg = BrowserSelectDialog(f"Open {title} with...", icon, parent)
+        self.linkBrowserDlg.yesButton.setText(f"Open {title}")
+        if self.linkBrowserDlg.exec():
+            failedAttempts = 0
+            if not self.linkBrowserDlg.browserCombo.currentText() == "Other browser":
+                print(f"Opening the {title} {linkType} into {self.linkBrowserDlg.browserCombo.currentText()}...")
+                smart.managerLog(f"Opening the {title} {linkType} into {self.linkBrowserDlg.browserCombo.currentText()}...")
+                for browser in self.myBrowsList["MyBrowsers"]:
+                    if browser["name"] == self.linkBrowserDlg.browserCombo.currentText():
+                        if browser["path"]:
+                            try:
+                                subprocess.Popen([browser["path"], url])
+                                print(f"{Fore.GREEN}The {title} {linkType} has been successfully loaded into {browser["name"]}!{Style.RESET_ALL}")
+                                smart.managerLog(f"SUCCESS: The {title} {linkType} has been successfully loaded into {browser["name"]}.")
+                            except Exception as e:
+                                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to open the {title} {linkType} into {browser["name"]}: {e}", parent)
+                                print(f"{Fore.RED}An error occured while attempting to open the {title} {linkType} into {browser["name"]}: {e}{Style.RESET_ALL}")
+                                smart.managerLog(f"ERROR: Failed while opening the {title} {linkType} into {browser["name"]}: {e}")
+                            break
+                        else:
+                            smart.warningNotify("Warning, be careful!", f"The path to {browser["name"]} as registered in your SmartList is empty...", parent)
+                            print(f"{Fore.YELLOW}WARNING!! The path to {browser["name"]} as registered in your SmartList is empty...{Style.RESET_ALL}")
+                            smart.managerLog(f"WARNING: The path to {browser["name"]} as registered in the SmartList is empty...")
+                            break
+                    elif cfg.get(cfg.mainBrowserPath) and cfg.get(cfg.mainBrowserIsManual):
+                        if os.path.basename(cfg.get(cfg.mainBrowserPath)) == self.linkBrowserDlg.browserCombo.currentText():
+                            try:
+                                subprocess.Popen([cfg.get(cfg.mainBrowserPath), url])
+                                print(f"{Fore.GREEN}The {title} {linkType} has been successfully loaded into {cfg.get(cfg.mainBrowserPath)}!{Style.RESET_ALL}")
+                                smart.managerLog(f"SUCCESS: The {title} {linkType} has been successfully loaded into {cfg.get(cfg.mainBrowserPath)}.")
+                            except Exception as e:
+                                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to open the {title} {linkType} into {os.path.basename(cfg.get(cfg.mainBrowserPath))}: {e}", parent)
+                                print(f"{Fore.RED}An error occured while attempting to open the {title} {linkType} into {cfg.get(cfg.mainBrowserPath)}: {e}{Style.RESET_ALL}")
+                                smart.managerLog(f"ERROR: Failed while opening the {title} {linkType} into {cfg.get(cfg.mainBrowserPath)}: {e}")
+                            break
+                    else:
+                        failedAttempts += 1
+                        if failedAttempts == self.linkBrowserDlg.browserCombo.count():
+                            smart.warningNotify("Warning, be careful!", f"The name '{self.linkBrowserDlg.browserCombo.currentText()}' is not registered into your SmartList, or {self.linkBrowserDlg.browserCombo.currentText()} cannot be found in your SmartList...", parent)
+                            print(f"{Fore.YELLOW}WARNING!! The name '{self.linkBrowserDlg.browserCombo.currentText()}' is not registered into your SmartList, or {self.linkBrowserDlg.browserCombo.currentText()} cannot be found in your SmartList...{Style.RESET_ALL}")
+                            smart.managerLog(f"WARNING: The name '{self.linkBrowserDlg.browserCombo.currentText()}' is not registered into the SmartList, or {self.linkBrowserDlg.browserCombo.currentText()} cannot be found in the SmartList...")
+            else:
+                print(f"Opening the {title} {linkType} into {os.path.basename(self.linkBrowserDlg.otherBrowsEdit.text())}...")
+                smart.managerLog(f"Opening the {title} {linkType} into {os.path.basename(self.linkBrowserDlg.otherBrowsEdit.text())}...")
+                try:
+                    subprocess.Popen([self.linkBrowserDlg.otherBrowsEdit.text(), url])
+                    print(f"{Fore.GREEN}The {title} {linkType} has been successfully loaded into another browser: '{self.linkBrowserDlg.otherBrowsEdit.text()}'{Style.RESET_ALL}")
+                    smart.managerLog(f"SUCCESS: The {title} {linkType} has been successfully loaded into other browser '{self.linkBrowserDlg.otherBrowsEdit.text()}'")
+                except Exception as e:
+                    smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to open the {title} {linkType} into {os.path.basename(self.linkBrowserDlg.otherBrowsEdit.text())}: {e}", parent)
+                    print(f"{Fore.RED}An error occured while attempting to open the {title} {linkType} into '{os.path.basename(self.linkBrowserDlg.otherBrowsEdit.text())}': {e}{Style.RESET_ALL}")
+                    smart.managerLog(f"ERROR: Failed to open the {title} {linkType} into browser at path '{self.linkBrowserDlg.otherBrowsEdit.text()}': {e}")
 
 class AboutAppGroup(SimpleExpandGroupSettingCard):
     """ Class for the informative text about SmartLinker in the About section """
@@ -267,14 +332,14 @@ class ResourcesGroup(ExpandGroupSettingCard):
 
         self.addGroupWidget(wid)
 
-class FeedbackBrowserSelectDialog(MessageBoxBase):
-    """ Class for the 'Send feedback with...' dialog box """
+class BrowserSelectDialog(MessageBoxBase):
+    """ Class for the browser selection dialog box """
 
-    def __init__(self, parent=None):
+    def __init__(self, title: str, icon: QIcon | FICO | FluentFontIconBase, parent=None):
         super().__init__(parent)
         self.myBrowsList = smart.loadBrowsers()
-        self.titleLabel = SubtitleLabel("Send feedback with...", self)
-        self.browsIcon = IconWidget(FICO.FEEDBACK)
+        self.titleLabel = SubtitleLabel(title, self)
+        self.browsIcon = IconWidget(icon)
         self.otherBrowsLine = QHBoxLayout()
         self.otherBrowsEdit = LineEdit()
         self.otherBrowsBrowse = ToolButton(FICO.FOLDER)
@@ -292,7 +357,7 @@ class FeedbackBrowserSelectDialog(MessageBoxBase):
                 if browser["name"] == self.browserCombo.currentText():
                     self.browsIcon.setIcon(smart.getFileIcon(browser["path"]))
                     break
-                else: self.browsIcon.setIcon(FICO.FEEDBACK)
+                else: self.browsIcon.setIcon(icon)
         else: self.browsIcon.setIcon(FICO.APPLICATION)
         self.otherBrowsLine.setSpacing(10)
         self.otherBrowsEdit.setVisible(self.browserCombo.currentText() == "Other browser")
@@ -316,7 +381,6 @@ class FeedbackBrowserSelectDialog(MessageBoxBase):
         self.warningLabel.setHidden(True)
 
         self.widget.setMinimumWidth(350)
-        self.yesButton.setText("Send feedback")
         self.browserCombo.currentTextChanged.connect(lambda text: self.comboChangeListener(text))
         self.otherBrowsEdit.textChanged.connect(lambda text: (
             self.otherPathChangeListener(text),
@@ -325,7 +389,7 @@ class FeedbackBrowserSelectDialog(MessageBoxBase):
         self.otherBrowsBrowse.clicked.connect(lambda: self.otherBrowsEdit.setText(smart.browseFileDialog(parent, "Select another browser to load the link", "", "Executables (*.exe)")))
 
     def comboChangeListener(self, text):
-        """ :FeedbackBrowserSelect: Make actions whenever the current text of the combo is changed """
+        """ :BrowserSelect: Make actions whenever the current text of the combo is changed """
         if self.browserCombo.count() > 0:
             if not text == "Other browser":
                 self.otherBrowsEdit.setHidden(True)
@@ -346,7 +410,7 @@ class FeedbackBrowserSelectDialog(MessageBoxBase):
             self.warningLabel.setHidden(False)
     
     def otherPathChangeListener(self, text):
-        """ :FeedbackBrowserSelect: Make actions whenever the path entry content is changed """
+        """ :BrowserSelect: Make actions whenever the path entry content is changed """
         if self.browserCombo.currentIndex() == self.browserCombo.count() - 1:
             if text and os.path.exists(text): self.browsIcon.setIcon(smart.getFileIcon(text))
             else: self.browsIcon.setIcon(FICO.APPLICATION)

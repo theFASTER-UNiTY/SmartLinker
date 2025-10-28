@@ -100,11 +100,6 @@ class SmartLinkerGUI(FluentWindow):
         self.settingInterface.advancedRestart.button.clicked.connect(self.confirmRestart)
         self.settingInterface.advancedStop.button.clicked.connect(self.confirmStop)
         self.aboutInterface.aboutVersion.button.clicked.connect(self.checkForUpdates)
-        self.aboutInterface.aboutResources.pyQtBtn.clicked.connect(lambda: smart.openURL("https://www.pythonguis.com/pyqt6/"))
-        self.aboutInterface.aboutResources.pyQtBtn2.clicked.connect(lambda: smart.openURL("https://doc.qt.io/qtforpython-6/"))
-        self.aboutInterface.aboutResources.qFluentBtn.clicked.connect(lambda: smart.openURL("https://www.qfluentwidgets.com/"))
-        self.aboutInterface.aboutResources.qFluentBtn2.clicked.connect(lambda: smart.openURL("https://github.com/zhiyiYo/PyQt-Fluent-Widgets"))
-        self.aboutInterface.aboutResources.flaticonBtn.clicked.connect(lambda: smart.openURL("https://www.flaticon.com/"))
         cfg.appTheme.valueChanged.connect(lambda value: (
             self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smart.getRed(themeColor())}, {smart.getGreen(themeColor())}, {smart.getBlue(themeColor())}, 0.25)}}"), # type: ignore
             self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smart.getRed(themeColor())}, {smart.getGreen(themeColor())}, {smart.getBlue(themeColor())}, 0.25)}}"), # type: ignore
@@ -335,7 +330,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setOrganizationName(SmartLinkerOwner)
     app.setApplicationName(SmartLinkerName)
-    app.setApplicationDisplayName(SmartLinkerName)
+#   app.setApplicationDisplayName(SmartLinkerName)
     app.setApplicationVersion(SmartLinkerVersion)
     if not platform.system() == "Windows":
         print(f"{Fore.RED}CRITICAL: Only Windows systems are supported by {SmartLinkerName}...\nThe software process is stopping...{Style.RESET_ALL}")

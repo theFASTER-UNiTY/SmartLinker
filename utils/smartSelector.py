@@ -22,7 +22,7 @@ class CustomTitleBar(TitleBar):
                                    QColor("white") if cfg.get(cfg.appTheme) == "Dark" else QColor("black"))
         self.closeBtn.setNormalColor((QColor("white" if smart.isDarkMode() else "black")) if cfg.get(cfg.appTheme) == "Auto" else
                                    QColor("white") if cfg.get(cfg.appTheme) == "Dark" else QColor("black"))
-        # self.minBtn.setHoverColor()
+        # self.minBtn.setHoverColor(QColor("white"))
         self.minBtn.setHoverBackgroundColor(QColor(cfg.get(cfg.accentColor)) if cfg.get(cfg.accentMode) == "Custom" else QColor(cfg.get(cfg.qAccentColor)))
         self.minBtn.setPressedColor(QColor("white"))
         # self.minBtn.setPressedBackgroundColor(QColor(54, 57, 65))
@@ -41,7 +41,7 @@ class CustomTitleBar(TitleBar):
 class SmartSelectorGUI(FramelessWindow):
     """ Class for the Smart Selector window """
 
-    def __init__(self, requestArgs: list[str], parent=None):
+    def __init__(self, requestArgs: list[str], parent = None):
         super().__init__(parent=parent)
         print(smart.consoleScript())
         self.lightSheetOnDark: str = "SingleDirectionScrollArea {background-color: rgba(242, 242, 242, 0.05); border: 1px solid rgba(242, 242, 242, 0.25)}"

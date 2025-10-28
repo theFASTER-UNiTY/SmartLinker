@@ -18,7 +18,6 @@ class SmartLinkerGUI(FluentWindow):
         self.setMinimumWidth(1040)
         self.move(40, 25)
         self.setStyleSheet('font-family: "Segoe UI Variable", "Segoe UI", sans-serif;')
-        self.navigationInterface.setAcrylicEnabled(cfg.get(cfg.enableAcrylicOnSidebar))
         if cfg.get(cfg.appTheme) == "Dark": setTheme(Theme.DARK)
         elif cfg.get(cfg.appTheme) == "Light": setTheme(Theme.LIGHT)
         else: setTheme(Theme.AUTO)

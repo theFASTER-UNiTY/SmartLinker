@@ -394,16 +394,7 @@ class FlagsSettingGroup(ExpandGroupSettingCard):
         ))
         self.splashDurationSpin.setEnabled(cfg.get(cfg.showSplash))
 
-        # Third group - Acrylic sidebar
-        self.sidebarAcrylicLabel = BodyLabel("Enable acrylic effect on sidebar (when small window)*")
-        self.sidebarAcrylicSwitch = SwitchButton(parent=self, indicatorPos=IndicatorPosition.RIGHT)
-        self.sidebarAcrylicSwitch.setChecked(cfg.get(cfg.enableAcrylicOnSidebar))
-        self.sidebarAcrylicSwitch.checkedChanged.connect(lambda checked: (
-            cfg.set(cfg.enableAcrylicOnSidebar, checked),
-            smart.infoNotify("Restart required", f"You need to relaunch {SmartLinkerName} for the changes to take effect.", parent)
-        ))
-        
-        # Fourth group - Update banners
+        # Third group - Update banners
         self.updateBannerSwitchLabel = BodyLabel("Enable update banners display (About screen excluded)*")
         self.updateBannerSwitchButton = SwitchButton(parent=self, indicatorPos=IndicatorPosition.RIGHT)
         self.updateBannerSwitchButton.setChecked(cfg.get(cfg.showUpdateBanners))
@@ -419,7 +410,6 @@ class FlagsSettingGroup(ExpandGroupSettingCard):
         # Add each group to the setting card
         self.add(self.splashSwitchLabel, self.splashSwitchButton)
         self.add(self.splashDurationLabel, self.splashDurationSpin)
-        self.add(self.sidebarAcrylicLabel, self.sidebarAcrylicSwitch)
         self.add(self.updateBannerSwitchLabel, self.updateBannerSwitchButton)
 
     def add(self, label, widget):

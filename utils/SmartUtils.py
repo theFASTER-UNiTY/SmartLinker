@@ -5,7 +5,7 @@ A complete utility module made specifically for SmartLinker basic and technical 
 
 :Copyright: © 2025 by #theF∆STER™ UN!TY.
 """
-__version__ = "v1.0.0"
+__version__ = "v1.1.0"
 __author__ = "#theF∆STER™ CODE&BU!LD"
 
 # NOTE: CODE&BU!LD is actually the software development section of the UN!TY group.
@@ -104,7 +104,6 @@ class Config(QConfig):
     showCommandBar = ConfigItem("Personalization", "ShowCommandBar", False, BoolValidator())
     showSplash = ConfigItem("Personalization", "ShowSplash", True, BoolValidator())
     splashDuration = RangeConfigItem("Personalization", "SplashDuration", 3000, RangeValidator(0, 10000))
-    enableAcrylicOnSidebar = ConfigItem("Personalization", "EnableAcrylicOnSidebar", True, BoolValidator())
     showUpdateBanners = ConfigItem("Personalization", "ShowUpdateBanners", True, BoolValidator())
     enableSoundEffects = ConfigItem("Sound", "EnableSoundEffects", False, BoolValidator())
     startupSFXPath = ConfigItem("Sound", "StartupSFXPath", "")

@@ -77,11 +77,11 @@ class AboutInterface(QWidget):
         self.aboutInformation = AboutAppGroup()
         layout.addWidget(self.aboutInformation)
         self.aboutResources = ResourcesGroup()
-        self.aboutResources.pyQtBtn.clicked.connect(lambda: self.resLinkBrowserSelect("https://www.pythonguis.com/pyqt6/", "Python GUIs", "website", QIcon(smart.resourcePath("resources/images/icons/pyqt6_icon.ico")), parent))
-        self.aboutResources.pyQtBtn2.clicked.connect(lambda: self.resLinkBrowserSelect("https://doc.qt.io/qtforpython-6/", "Qt Documentation", "website", QIcon(smart.resourcePath("resources/images/icons/qtforpython_icon.ico")), parent))
-        self.aboutResources.qFluentBtn.clicked.connect(lambda: self.resLinkBrowserSelect("https://www.qfluentwidgets.com/", "QFluentWidgets", "website", QIcon(smart.resourcePath("resources/images/icons/qfluentwidgets_icon.ico")), parent))
-        self.aboutResources.qFluentBtn2.clicked.connect(lambda: self.resLinkBrowserSelect("https://github.com/zhiyiYo/PyQt-Fluent-Widgets", "QFluentWidgets", "GitHub repository", FICO.GITHUB, parent))
-        self.aboutResources.flaticonBtn.clicked.connect(lambda: self.resLinkBrowserSelect("https://www.flaticon.com/", "Flaticon", "website", QIcon(smart.resourcePath("resources/images/icons/flaticon_icon.ico")), parent))
+        self.aboutResources.pyQtBtn.clicked.connect(lambda: self.linkBrowserSelect("https://www.pythonguis.com/pyqt6/", "Python GUIs", "website", QIcon(smart.resourcePath("resources/images/icons/pyqt6_icon.ico")), parent))
+        self.aboutResources.pyQtBtn2.clicked.connect(lambda: self.linkBrowserSelect("https://doc.qt.io/qtforpython-6/", "Qt Documentation", "website", QIcon(smart.resourcePath("resources/images/icons/qtforpython_icon.ico")), parent))
+        self.aboutResources.qFluentBtn.clicked.connect(lambda: self.linkBrowserSelect("https://www.qfluentwidgets.com/", "QFluentWidgets", "website", QIcon(smart.resourcePath("resources/images/icons/qfluentwidgets_icon.ico")), parent))
+        self.aboutResources.qFluentBtn2.clicked.connect(lambda: self.linkBrowserSelect("https://github.com/zhiyiYo/PyQt-Fluent-Widgets", "QFluentWidgets", "GitHub repository", FICO.GITHUB, parent))
+        self.aboutResources.flaticonBtn.clicked.connect(lambda: self.linkBrowserSelect("https://www.flaticon.com/", "Flaticon", "website", QIcon(smart.resourcePath("resources/images/icons/flaticon_icon.ico")), parent))
         layout.addWidget(self.aboutResources)
 
         layout.addStretch(1)
@@ -109,6 +109,7 @@ class AboutInterface(QWidget):
         self.updateSnackLayout.addLayout(self.updateSnackLabelBox)
         self.updateSnackLayout.addStretch(1)
         self.updateSnackButton = PrimaryPushButton(FICO.DOWNLOAD, "Download now")
+        self.updateSnackButton.clicked.connect(lambda: self.linkBrowserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, parent))
         self.updateSnackLayout.addWidget(self.updateSnackButton)
 
     def feedbackBrowserSelect(self, parent):
@@ -167,7 +168,7 @@ class AboutInterface(QWidget):
                     print(f"{Fore.RED}An error occured while attempting to open the feedback section of GitHub repository into '{os.path.basename(self.feedbackBrowserDlg.otherBrowsEdit.text())}': {e}{Style.RESET_ALL}")
                     smart.managerLog(f"ERROR: Failed to open the feedback section of GitHub repository into browser at path '{self.feedbackBrowserDlg.otherBrowsEdit.text()}': {e}")
 
-    def resLinkBrowserSelect(self, url: str, title: str, linkType: str, icon: QIcon | FICO | FluentFontIconBase, parent):
+    def linkBrowserSelect(self, url: str, title: str, linkType: str, icon: QIcon | FICO | FluentFontIconBase, parent):
         if not self.linkBrowserDlg:
             self.linkBrowserDlg = BrowserSelectDialog(f"Open {title} with...", icon, parent)
         else:

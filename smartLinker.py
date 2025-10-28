@@ -329,7 +329,6 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setOrganizationName(SmartLinkerOwner)
     app.setApplicationName(SmartLinkerName)
-#   app.setApplicationDisplayName(SmartLinkerName)
     app.setApplicationVersion(SmartLinkerVersion)
     if not platform.system() == "Windows":
         print(f"{Fore.RED}CRITICAL: Only Windows systems are supported by {SmartLinkerName}...\nThe software process is stopping...{Style.RESET_ALL}")

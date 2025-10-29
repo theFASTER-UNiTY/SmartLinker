@@ -1,7 +1,7 @@
 from utils.SmartUtils import *
 from utils.settingsInterface import SettingsInterface as Settings
 from utils.mybrowsersInterface import MyBrowsersInterface as MyBrowsers
-from utils.aboutInterface import AboutInterface as About
+from utils.aboutInterface import AboutInterface as About, BrowserSelectDialog
 from utils.smartSelector import SmartSelectorGUI
 
 # =============================================================================
@@ -30,6 +30,7 @@ class SmartLinkerGUI(FluentWindow):
         self.aboutIconBadge = None
         self.updateDownloadDlg = None
         self.updateCheckToolTip = None
+        self.browserDlg = None
 
         if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.startupSFXPath)): smart.playSound(soundStreamer, cfg.get(cfg.startupSFXPath), "startup")
         if bool(cfg.get(cfg.showSplash)):
@@ -78,6 +79,7 @@ class SmartLinkerGUI(FluentWindow):
                 InfoBadgePosition.NAVIGATION_ITEM
             )
         
+        self.mybrowsInterface.updateSnackButton.clicked.connect(lambda: self.browserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, parent))
         if self.settingInterface.widgetDef.optionMicaEffect:
             self.settingInterface.widgetDef.optionMicaEffect.setEnabled(smart.isSoftwareCompatible(22000))
             self.settingInterface.widgetDef.optionMicaEffect.setVisible(smart.isSoftwareCompatible(22000))
@@ -98,6 +100,7 @@ class SmartLinkerGUI(FluentWindow):
         ))
         self.settingInterface.advancedRestart.button.clicked.connect(self.confirmRestart)
         self.settingInterface.advancedStop.button.clicked.connect(self.confirmStop)
+        self.settingInterface.updateSnackButton.clicked.connect(lambda: self.browserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, parent))
         self.aboutInterface.aboutVersion.button.clicked.connect(self.checkForUpdates)
         cfg.appTheme.valueChanged.connect(lambda value: (
             self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smart.getRed(themeColor())}, {smart.getGreen(themeColor())}, {smart.getBlue(themeColor())}, 0.25)}}"), # type: ignore
@@ -280,6 +283,64 @@ class SmartLinkerGUI(FluentWindow):
             self.updateDownloadDlg.cancelButton.setText("Update later")
         self.updateDownloadDlg.show()
         smart.playSound(soundStreamer, cfg.get(cfg.infoSFXPath), "update confirmation dialog")
+
+    def browserSelect(self, url: str, title: str, linkType: str, icon: QIcon | FICO | FluentFontIconBase, parent):
+        if not self.browserDlg:
+            self.browserDlg = BrowserSelectDialog(f"Open {title} with...", icon, parent)
+        else:
+            self.browserDlg = None
+            self.browserDlg = BrowserSelectDialog(f"Open {title} with...", icon, parent)
+        self.browserDlg.yesButton.setText(f"Open {title}")
+        if self.browserDlg.exec():
+            failedAttempts = 0
+            if not self.browserDlg.browserCombo.currentText() == "Other browser":
+                print(f"Opening the {title} {linkType} into {self.browserDlg.browserCombo.currentText()}...")
+                smart.managerLog(f"Opening the {title} {linkType} into {self.browserDlg.browserCombo.currentText()}...")
+                for browser in self.myBrowsers["MyBrowsers"]:
+                    if browser["name"] == self.browserDlg.browserCombo.currentText():
+                        if browser["path"]:
+                            try:
+                                subprocess.Popen([browser["path"], url])
+                                print(f"{Fore.GREEN}The {title} {linkType} has been successfully loaded into {browser["name"]}!{Style.RESET_ALL}")
+                                smart.managerLog(f"SUCCESS: The {title} {linkType} has been successfully loaded into {browser["name"]}.")
+                            except Exception as e:
+                                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to open the {title} {linkType} into {browser["name"]}: {e}", parent)
+                                print(f"{Fore.RED}An error occured while attempting to open the {title} {linkType} into {browser["name"]}: {e}{Style.RESET_ALL}")
+                                smart.managerLog(f"ERROR: Failed while opening the {title} {linkType} into {browser["name"]}: {e}")
+                            break
+                        else:
+                            smart.warningNotify("Warning, be careful!", f"The path to {browser["name"]} as registered in your SmartList is empty...", parent)
+                            print(f"{Fore.YELLOW}WARNING!! The path to {browser["name"]} as registered in your SmartList is empty...{Style.RESET_ALL}")
+                            smart.managerLog(f"WARNING: The path to {browser["name"]} as registered in the SmartList is empty...")
+                            break
+                    elif cfg.get(cfg.mainBrowserPath) and cfg.get(cfg.mainBrowserIsManual):
+                        if os.path.basename(cfg.get(cfg.mainBrowserPath)) == self.browserDlg.browserCombo.currentText():
+                            try:
+                                subprocess.Popen([cfg.get(cfg.mainBrowserPath), url])
+                                print(f"{Fore.GREEN}The {title} {linkType} has been successfully loaded into {cfg.get(cfg.mainBrowserPath)}!{Style.RESET_ALL}")
+                                smart.managerLog(f"SUCCESS: The {title} {linkType} has been successfully loaded into {cfg.get(cfg.mainBrowserPath)}.")
+                            except Exception as e:
+                                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to open the {title} {linkType} into {os.path.basename(cfg.get(cfg.mainBrowserPath))}: {e}", parent)
+                                print(f"{Fore.RED}An error occured while attempting to open the {title} {linkType} into {cfg.get(cfg.mainBrowserPath)}: {e}{Style.RESET_ALL}")
+                                smart.managerLog(f"ERROR: Failed while opening the {title} {linkType} into {cfg.get(cfg.mainBrowserPath)}: {e}")
+                            break
+                    else:
+                        failedAttempts += 1
+                        if failedAttempts == self.browserDlg.browserCombo.count():
+                            smart.warningNotify("Warning, be careful!", f"The name '{self.browserDlg.browserCombo.currentText()}' is not registered into your SmartList, or {self.browserDlg.browserCombo.currentText()} cannot be found in your SmartList...", parent)
+                            print(f"{Fore.YELLOW}WARNING!! The name '{self.browserDlg.browserCombo.currentText()}' is not registered into your SmartList, or {self.browserDlg.browserCombo.currentText()} cannot be found in your SmartList...{Style.RESET_ALL}")
+                            smart.managerLog(f"WARNING: The name '{self.browserDlg.browserCombo.currentText()}' is not registered into the SmartList, or {self.browserDlg.browserCombo.currentText()} cannot be found in the SmartList...")
+            else:
+                print(f"Opening the {title} {linkType} into {os.path.basename(self.browserDlg.otherBrowsEdit.text())}...")
+                smart.managerLog(f"Opening the {title} {linkType} into {os.path.basename(self.browserDlg.otherBrowsEdit.text())}...")
+                try:
+                    subprocess.Popen([self.browserDlg.otherBrowsEdit.text(), url])
+                    print(f"{Fore.GREEN}The {title} {linkType} has been successfully loaded into another browser: '{self.browserDlg.otherBrowsEdit.text()}'{Style.RESET_ALL}")
+                    smart.managerLog(f"SUCCESS: The {title} {linkType} has been successfully loaded into other browser '{self.browserDlg.otherBrowsEdit.text()}'")
+                except Exception as e:
+                    smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to open the {title} {linkType} into {os.path.basename(self.browserDlg.otherBrowsEdit.text())}: {e}", parent)
+                    print(f"{Fore.RED}An error occured while attempting to open the {title} {linkType} into '{os.path.basename(self.browserDlg.otherBrowsEdit.text())}': {e}{Style.RESET_ALL}")
+                    smart.managerLog(f"ERROR: Failed to open the {title} {linkType} into browser at path '{self.browserDlg.otherBrowsEdit.text()}': {e}")
 
     def confirmRestart(self):
         """ Open a confirmation dialog to restart SmartLinker """

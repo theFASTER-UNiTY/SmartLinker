@@ -286,6 +286,7 @@ class SmartLinkerGUI(FluentWindow):
         smart.playSound(soundStreamer, cfg.get(cfg.infoSFXPath), "update confirmation dialog")
 
     def browserSelect(self, url: str, title: str, linkType: str, icon: QIcon | FICO | FluentFontIconBase, parent):
+        """ Open a dialog to select the browser you would want to load a link into """
         if not self.browserDlg:
             self.browserDlg = BrowserSelectDialog(f"Open {title} with...", icon, parent)
         else:

@@ -113,6 +113,7 @@ class AboutInterface(QWidget):
         self.updateSnackLayout.addWidget(self.updateSnackButton)
 
     def feedbackBrowserSelect(self, parent):
+        """ Open a dialog to select which browser you want to load the feedback page into """
         if not self.feedbackBrowserDlg:
             self.feedbackBrowserDlg = BrowserSelectDialog("Send feedback with...", FICO.FEEDBACK, parent)
             self.feedbackBrowserDlg.yesButton.setText("Send feedback")
@@ -169,6 +170,7 @@ class AboutInterface(QWidget):
                     smart.managerLog(f"ERROR: Failed to open the feedback section of GitHub repository into browser at path '{self.feedbackBrowserDlg.otherBrowsEdit.text()}': {e}")
 
     def linkBrowserSelect(self, url: str, title: str, linkType: str, icon: QIcon | FICO | FluentFontIconBase, parent):
+        """ Open a dialog to select which browser you want to load a link into """
         if not self.linkBrowserDlg:
             self.linkBrowserDlg = BrowserSelectDialog(f"Open {title} with...", icon, parent)
         else:

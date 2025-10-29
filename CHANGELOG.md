@@ -4,6 +4,7 @@
 
 - Added sound effect when launching the Smart Selector<br>
 - Added browser selection dialogs in the **About** section for loading the different resources links<br>
+- Added browser selection dialog when downloading updates
 - Added a quick button to refresh the main browser card in the **Settings**<br>
 - Removed acrylic sidebar feature<br>
 

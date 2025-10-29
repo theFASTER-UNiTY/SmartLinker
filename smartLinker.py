@@ -101,7 +101,7 @@ class SmartLinkerGUI(FluentWindow):
         self.settingInterface.advancedRestart.button.clicked.connect(self.confirmRestart)
         self.settingInterface.advancedStop.button.clicked.connect(self.confirmStop)
         self.settingInterface.updateSnackButton.clicked.connect(lambda: self.browserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, parent))
-        self.aboutInterface.aboutVersion.button.clicked.connect(self.checkForUpdates)
+        self.aboutInterface.aboutVersion.button.clicked.connect(lambda: self.checkForUpdates(parent))
         cfg.appTheme.valueChanged.connect(lambda value: (
             self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smart.getRed(themeColor())}, {smart.getGreen(themeColor())}, {smart.getBlue(themeColor())}, 0.25)}}"), # type: ignore
             self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smart.getRed(themeColor())}, {smart.getGreen(themeColor())}, {smart.getBlue(themeColor())}, 0.25)}}"), # type: ignore
@@ -155,7 +155,7 @@ class SmartLinkerGUI(FluentWindow):
             self.settingInterface.widgetDef.optionMainBrowserCard.iconWidget.setIcon(QIcon(smart.resourcePath("resources/images/icons/icon_outline_black.ico")))
             self.mybrowsInterface.mybrowsScroll.setStyleSheet(self.mybrowsInterface.darkSheetOnLight)
 
-    def checkForUpdates(self):
+    def checkForUpdates(self, parent):
         """ Connect to the GitHub repository to check for the latest available update """
         self.lastChecked = self.aboutInterface.aboutVersion.contentLabel.text()
         self.aboutInterface.aboutVersion.iconLabel.setIcon(FICO.SYNC)
@@ -220,9 +220,10 @@ class SmartLinkerGUI(FluentWindow):
         self.aboutInterface.aboutVersion.button.setVisible(True)
         self.aboutInterface.aboutVersion.setEnabled(True)
         if self.updateDownloadDlg and self.updateDownloadDlg.exec():
-            print(f'Opening GitHub releases page with link: "{SmartLinkerGitRepoURL}/releases"...')
-            smart.managerLog(f'Opening GitHub releases page with link: "{SmartLinkerGitRepoURL}/releases"...')
-            webbrowser.open(f"{SmartLinkerGitRepoURL}/releases")
+            # print(f'Opening GitHub releases page with link: "{SmartLinkerGitRepoURL}/releases"...')
+            # smart.managerLog(f'Opening GitHub releases page with link: "{SmartLinkerGitRepoURL}/releases"...')
+            # webbrowser.open(f"{SmartLinkerGitRepoURL}/releases")
+            self.browserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, parent)
 
     def confirmDeleteDialog(self, name: str, parent):
         """ Open a confirmation dialog to remove a browser from the SmartList """

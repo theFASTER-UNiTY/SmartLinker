@@ -12,8 +12,8 @@ __author__ = "#theF∆STER™ CODE&BU!LD"
 # (In case you would be wondering...)
 # =========================================================
 
-import darkdetect, datetime, json, os, pickle, platform, psutil, pygame, requests, shutil, socket, subprocess, sys, time, typing
-import threading, webbrowser, win32api, winreg
+import darkdetect, datetime, json, os, pathlib, pickle, platform, psutil, pygame, requests, shutil, socket, subprocess, sys, time
+import typing, threading, webbrowser, win32api, winreg
 from PyQt6.QtCore import QEventLoop, QFileInfo, QObject, QSize, Qt, QThread, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QIcon
 from PyQt6.QtWidgets import (
@@ -1187,9 +1187,11 @@ class DownloadDialog(MessageBoxBase):
         self.dialogIcon.setFixedSize(24, 24)
         self.dialogIcon.setIcon(FICO.DOWNLOAD)
         self.statusLabel.setWordWrap(True)
+        self.statusLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.progress.setContentsMargins(20, 0, 20, 0)
         self.progress.setValue(0)
         self.progress.setFixedSize(160, 160)
+        self.progress.setStrokeWidth(12)
         self.pauseButton.setEnabled(False)
         self.pauseButton.setVisible(False)
         self.yesButton.setEnabled(False)
@@ -1226,7 +1228,7 @@ class DownloadDialog(MessageBoxBase):
 
         self.downloadThread.start()
         self.titleLabel.setText("Download in progress...")
-        self.statusLabel.setText(f"The following file is currently being downloaded: {os.path.basename(urlparse(url).path)}")
+        self.statusLabel.setText(f"The following file is currently being downloaded:\n{os.path.basename(urlparse(url).path)}")
         try:
             self.pauseButton.setEnabled(True)
             self.pauseButton.setVisible(True)
@@ -1235,6 +1237,8 @@ class DownloadDialog(MessageBoxBase):
         except Exception: pass
     
     def updateProgress(self, downloaded, total, speed):
+        with open(smart.resourcePath(".temp\\.metadata"), "wb") as metaWriter:
+            pickle.dump(total, metaWriter)
         if total > 0:
             percentage = int((downloaded / total) * 100)
             self.progress.setValue(percentage)
@@ -1264,13 +1268,12 @@ class DownloadDialog(MessageBoxBase):
         self.cancelButton.setVisible(True)
         self.yesButton.setText("Install")
         self.cancelButton.setText("OK")
-        self.yesButton.clicked.connect
         self.cancelButton.clicked.connect(lambda: self.closeAndCleanup())
 
     def onError(self, message):
         self.titleLabel.setText("Oops! Something went wrong...")
         self.dialogIcon.setIcon(FICO.CLOSE)
-        self.statusLabel.setText("It looks like we are unable to connect to the Internet... Check your network connection, then try again.")
+        self.statusLabel.setText("It looks like we are unable to connect to the Internet... Please check your network connection, then try again.")
         self.statusLabel.setTextColor(QColor("red"), QColor("#F44336"))
         self.progress.setVisible(False)
         if cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.errorSFXPath): smart.playSound(soundStreamer, cfg.get(cfg.errorSFXPath), "download error")
@@ -1295,8 +1298,7 @@ class DownloadDialog(MessageBoxBase):
 
     def togglePause(self):
         """ Toggle between pause and resume. Only works if the download has been started. """
-        if not hasattr(self, 'worker') or self.worker is None:
-            return
+        if not hasattr(self, 'worker') or self.worker is None: return
 
         if getattr(self.worker, 'isPaused', False):
             try:

@@ -350,27 +350,41 @@ class SmartLinkerGUI(FluentWindow):
                     smart.managerLog(f"ERROR: Failed to open the {title} {linkType} into browser at path '{self.browserDlg.otherBrowsEdit.text()}': {e}")
 
     def downloadDialog(self, parent):
-        url = f"{SmartLinkerGitRepoURL}/releases/download/{cfg.get(cfg.updateVersion)}/SmartLinker-setup-win-{cfg.get(cfg.updateVersion)[1:]}.exe"
-        filename = smart.resourcePath(r".temp\SmartLinkerUpdate.exe")
+        filename = smart.resourcePath(".temp\\SmartLinkerUpdate.exe")
         
         downloadDlg = DownloadDialog(
             "Initializing...",
             FICO.DOWNLOAD,
-            url,
+            f"{SmartLinkerGitRepoURL}/releases/download/{cfg.get(cfg.updateVersion)}/SmartLinker-setup-win-{cfg.get(cfg.updateVersion)[1:]}.exe",
             filename,
             parent
         )
         if downloadDlg.exec():
+            downloadSize = 0
             if os.path.exists(filename):
-                print(f"{Fore.BLUE}Opening the downloaded installer at path: '{filename}'...{Style.RESET_ALL}")
-                smart.managerLog(f"INFO: Opening the downloaded installer at path: {filename}...")
-                try:
-                    subprocess.Popen([filename])
-                    smart.stopApp()
-                except Exception as e:
-                    print(f"{Fore.RED}An error occured while attempting to launch the installer at path '{filename}': {e}{Style.RESET_ALL}")
-                    smart.managerLog(f"ERROR: Failed to launch the installer at path '{filename}': {e}")
-                    smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to launch the installer: {e}", parent)
+                if os.path.exists(smart.resourcePath(".temp\\.metadata")):
+                    with open(smart.resourcePath(".temp\\.metadata"), "rb") as metaReader:
+                        downloadSize = pickle.load(metaReader)
+                    if os.path.getsize(filename) == downloadSize:
+                        print(f"{Fore.BLUE}Opening the downloaded installer at path: '{filename}'...{Style.RESET_ALL}")
+                        smart.managerLog(f"INFO: Opening the downloaded installer at path: {filename}...")
+                        try:
+                            subprocess.Popen([filename])
+                            smart.stopApp()
+                        except Exception as e:
+                            print(f"{Fore.RED}An error occured while attempting to launch the installer at path '{filename}': {e}{Style.RESET_ALL}")
+                            smart.managerLog(f"ERROR: Failed to launch the installer at path '{filename}': {e}")
+                            smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to launch the installer: {e}", parent)
+                    else:
+                        print(f"{Fore.YELLOW}The update installer has not been correctly downloaded... Please try again...{Style.RESET_ALL}")
+                        smart.managerLog("WARNING: The update installer has not been correctly downloaded...")
+                        smart.warningNotify("Warning, be careful!", "The update installer has not been correctly downloaded... Please try again...", parent)
+            else:
+                print(f"{Fore.YELLOW}The update installer does not exist... Please try again...{Style.RESET_ALL}")
+                smart.managerLog("WARNING: The update installer does not exist...")
+                smart.warningNotify("Warning, be careful!", "The update installer does not exist... Please try again...", parent)
+
+
 
     def confirmRestart(self):
         """ Open a confirmation dialog to restart SmartLinker """

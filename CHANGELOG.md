@@ -1,3 +1,17 @@
+# Release 1.2.0
+
+## ✍️ Changes
+
+- Added integrated updates downloader for an easier and quicker updating process
+    
+    > ***NOTE**: You still have the possibility to check out the GitHub repository if you want, this new feature is optional.*
+
+## 🔧 Fixes
+
+- Fixed a crash bug when clicking the "Download now" button on update banners
+
+<br>
+
 # Release 1.1.0
 
 ## ✍️ Changes

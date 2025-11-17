@@ -351,7 +351,7 @@ class SmartLinkerGUI(FluentWindow):
 
     def downloadDialog(self, parent):
         url = f"{SmartLinkerGitRepoURL}/releases/download/{cfg.get(cfg.updateVersion)}/SmartLinker-setup-win-{cfg.get(cfg.updateVersion)[1:]}.exe"
-        filename = smart.resourcePath(".temp/SmartLinkerUpdate.exe")
+        filename = smart.resourcePath(r".temp\SmartLinkerUpdate.exe")
         
         downloadDlg = DownloadDialog(
             "Initializing...",
@@ -361,16 +361,16 @@ class SmartLinkerGUI(FluentWindow):
             parent
         )
         if downloadDlg.exec():
-
-            print(f"{Fore.BLUE}Opening the downloaded installer at path: '{filename}'...{Style.RESET_ALL}")
-            smart.managerLog(f"INFO: Opening the downloaded installer at path: {filename}...")
-            try:
-                subprocess.Popen([filename])
-                smart.stopApp()
-            except Exception as e:
-                print(f"{Fore.RED}An error occured while attempting to launch the installer at path '{filename}': {e}{Style.RESET_ALL}")
-                smart.managerLog(f"ERROR: Failed to launch the installer at path '{filename}': {e}")
-                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to launch the installer: {e}", parent)
+            if os.path.exists(filename):
+                print(f"{Fore.BLUE}Opening the downloaded installer at path: '{filename}'...{Style.RESET_ALL}")
+                smart.managerLog(f"INFO: Opening the downloaded installer at path: {filename}...")
+                try:
+                    subprocess.Popen([filename])
+                    smart.stopApp()
+                except Exception as e:
+                    print(f"{Fore.RED}An error occured while attempting to launch the installer at path '{filename}': {e}{Style.RESET_ALL}")
+                    smart.managerLog(f"ERROR: Failed to launch the installer at path '{filename}': {e}")
+                    smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to launch the installer: {e}", parent)
 
     def confirmRestart(self):
         """ Open a confirmation dialog to restart SmartLinker """

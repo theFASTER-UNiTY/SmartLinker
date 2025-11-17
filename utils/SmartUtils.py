@@ -1189,7 +1189,7 @@ class DownloadDialog(MessageBoxBase):
         self.statusLabel.setWordWrap(True)
         self.progress.setContentsMargins(20, 0, 20, 0)
         self.progress.setValue(0)
-        self.progress.setFixedSize(80, 80)
+        self.progress.setFixedSize(160, 160)
         self.pauseButton.setEnabled(False)
         self.pauseButton.setVisible(False)
         self.yesButton.setEnabled(False)
@@ -1270,7 +1270,7 @@ class DownloadDialog(MessageBoxBase):
     def onError(self, message):
         self.titleLabel.setText("Oops! Something went wrong...")
         self.dialogIcon.setIcon(FICO.CLOSE)
-        self.statusLabel.setText(message)
+        self.statusLabel.setText("It looks like we are unable to connect to the Internet... Check your network connection, then try again.")
         self.statusLabel.setTextColor(QColor("red"), QColor("#F44336"))
         self.progress.setVisible(False)
         if cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.errorSFXPath): smart.playSound(soundStreamer, cfg.get(cfg.errorSFXPath), "download error")
@@ -1281,7 +1281,7 @@ class DownloadDialog(MessageBoxBase):
         self.cancelButton.setEnabled(False)
         self.cancelButton.setVisible(False)
         self.yesButton.clicked.connect(lambda: self.closeAndCleanup())
-        print(message)
+        print(f"{Fore.RED}{message}{Style.RESET_ALL}")
 
     def cancelDownload(self):
         self.titleLabel.setText("Cancelling download...")

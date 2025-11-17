@@ -100,13 +100,7 @@ class SettingsInterface(QWidget):
             "If you need for some reason to stop the software process, this is the safest way to proceed."
         )
         layout.addWidget(self.advancedStop)
-        if os.path.exists(smart.resourcePath(".temp")) and os.listdir(smart.resourcePath(".temp")):
-            self.advancedTempClean.setEnabled(True)
-            self.advancedTempClean.setVisible(True)
-            self.advancedTempClean.button.clicked.connect(lambda: self.cleanTempFiles(parent))
-        else:
-            self.advancedTempClean.setEnabled(False)
-            self.advancedTempClean.setVisible(False)
+        self.advancedTempClean.button.clicked.connect(lambda: self.cleanTempFiles(parent))
         layout.addStretch(1)
         
         self.updateSnack = QWidget()
@@ -258,17 +252,20 @@ class SettingsInterface(QWidget):
 
     def cleanTempFiles(self, parent):
         """ :SettingsInterface: Clean temporary files left over by SmartLinker """
-        try:
-            shutil.rmtree(smart.resourcePath(".temp"))
-            self.advancedTempClean.setEnabled(False)
-            self.advancedTempClean.setVisible(False)
-            print(f"{Fore.GREEN}Temporary files have been successfully cleaned!{Style.RESET_ALL}")
-            smart.managerLog("SUCCESS: Temporary files successfully cleaned!")
-            smart.successNotify("Clean complete!", "All temporary files have been successfully removed.", parent)
-        except Exception as e:
-            print(f"{Fore.RED}Error cleaning temporary files: {e}{Style.RESET_ALL}")
-            smart.managerLog(f"ERROR: Failed to clean temporary files: {e}")
-            smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to clean temporary files: {e}", parent)
+        if os.path.exists(smart.resourcePath(".temp")): # and os.listdir(smart.resourcePath(".temp")):
+            try:
+                shutil.rmtree(smart.resourcePath(".temp"))
+                print(f"{Fore.GREEN}Temporary files have been successfully cleaned!{Style.RESET_ALL}")
+                smart.managerLog("SUCCESS: Temporary files successfully cleaned!")
+                smart.successNotify("Clean complete!", "All temporary files have been successfully removed.", parent)
+            except Exception as e:
+                print(f"{Fore.RED}Error cleaning temporary files: {e}{Style.RESET_ALL}")
+                smart.managerLog(f"ERROR: Failed to clean temporary files: {e}")
+                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to clean temporary files: {e}", parent)
+        else:
+            print(f"{Fore.BLUE}There are no temporary files to be removed...{Style.RESET_ALL}")
+            smart.managerLog("INFO: No temporary files to be removed")
+            smart.infoNotify("No temporary files", "There are no temporary files to be removed...", parent)
 
 class SettingWidgetDefinition():
     """ Declaration class for some of SettingsInterface widgets """

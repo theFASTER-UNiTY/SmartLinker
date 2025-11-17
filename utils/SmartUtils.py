@@ -12,9 +12,9 @@ __author__ = "#theF∆STER™ CODE&BU!LD"
 # (In case you would be wondering...)
 # =========================================================
 
-import darkdetect, datetime, json, os, pickle, platform, psutil, pygame, requests, socket, subprocess, sys, typing, webbrowser
-import win32api, winreg
-from PyQt6.QtCore import QEventLoop, QFileInfo, Qt, QSize, QTimer
+import darkdetect, datetime, json, os, pickle, platform, psutil, pygame, requests, shutil, socket, subprocess, sys, time, typing
+import threading, webbrowser, win32api, winreg
+from PyQt6.QtCore import QEventLoop, QFileInfo, QObject, QSize, Qt, QThread, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QIcon
 from PyQt6.QtWidgets import (
     QAbstractItemView, QApplication, QFileDialog, QFileIconProvider, QHBoxLayout, QTableWidgetItem, QVBoxLayout, QWidget
@@ -22,17 +22,19 @@ from PyQt6.QtWidgets import (
 from qfluentwidgets import (
     Action, BodyLabel, BoolValidator, CaptionLabel, CardWidget, ColorConfigItem, ColorDialog, ComboBox, CommandBar, ConfigItem,
     ElevatedCardWidget, ExpandGroupSettingCard, FluentFontIconBase, FluentIcon as FICO, FluentWindow, HyperlinkButton, HyperlinkCard,
-    IconInfoBadge, IconWidget, IndicatorPosition, InfoBadgePosition, InfoBar, InfoBarPosition, LineEdit, MessageBox, MessageBoxBase,
-    NavigationItemPosition, OptionsConfigItem, OptionsSettingCard, OptionsValidator, PrimaryPushButton, PrimaryPushSettingCard,
-    PushButton, PushSettingCard, QConfig, qconfig, RangeConfigItem, RangeValidator, setTheme, setThemeColor, SimpleExpandGroupSettingCard,
-    SingleDirectionScrollArea, SpinBox, SplashScreen, StrongBodyLabel, SubtitleLabel, SwitchButton, SwitchSettingCard, TableWidget,
-    Theme, theme, themeColor, TitleLabel, ToolButton, ToolTipFilter, ToolTipPosition
+    IconInfoBadge, IconWidget, IndeterminateProgressRing, IndicatorPosition, InfoBadgePosition, InfoBar, InfoBarPosition, LineEdit,
+    MessageBox, MessageBoxBase, NavigationItemPosition, OptionsConfigItem, OptionsSettingCard, OptionsValidator, PrimaryPushButton,
+    PrimaryPushSettingCard, ProgressRing, PushButton, PushSettingCard, QConfig, qconfig, RangeConfigItem, RangeValidator, setTheme,
+    setThemeColor, SimpleExpandGroupSettingCard, SingleDirectionScrollArea, SpinBox, SplashScreen, StrongBodyLabel, SubtitleLabel,
+    SwitchButton, SwitchSettingCard, TableWidget, Theme, theme, themeColor, TitleLabel, ToolButton, ToolTipFilter, ToolTipPosition
 )
 from qframelesswindow import FramelessWindow, TitleBar
 from qframelesswindow.utils import getSystemAccentColor
 from colorama import init, Fore, Back, Style
 from shiboken6 import isValid
 from packaging.version import Version
+from pathlib import Path
+from urllib.parse import urlparse
 
 # =========================================================
 
@@ -1078,6 +1080,252 @@ class SmartLogic():
             print(f"{Fore.RED}An error occured while attempting to check system compatibility: {e}{Style.RESET_ALL}")
             self.managerLog(f"ERROR: Failed to check system compatibility: {e}")
         finally: return isCompatible
+		
+class DownloadWorker(QObject):
+    # Definition of signals that the worker can send to the interface
+    progress = pyqtSignal(int, int, str) # (bytes downloaded, total bytes, speed)
+    finished = pyqtSignal(str)           # (success message)
+    error = pyqtSignal(str)              # (error message)
+
+    def __init__(self, url, filename):
+        super().__init__()
+        self.url = url
+        self.filename = filename
+        self.isCancelled = False
+        # Event used to implement pause/resume. When set -> not paused. When clear -> paused.
+        self.pauseEvent = threading.Event()
+        self.pauseEvent.set()
+
+        # Expose a convenience flag for external checks (not strictly required)
+        self.isPaused = False
+
+    def run(self):
+        """Lance le téléchargement. C'est cette méthode qui tournera dans le thread."""
+        try:
+            reponse = requests.get(self.url, stream=True, timeout=10)
+            reponse.raise_for_status()
+
+            totalSize = int(reponse.headers.get('content-length', 0))
+            chunkSize = 1024  # 1 KB
+            downloadedSize = 0
+            
+            startTime = time.time()
+
+            with open(self.filename, 'wb') as f:
+                for chunk in reponse.iter_content(chunk_size=chunkSize):
+                    # Respect pause/resume state: if paused, wait for the event to be set
+                    try: self.pauseEvent.wait()
+                    except Exception: pass
+
+                    # Check at each chunk if the user has cancelled the download
+                    if self.isCancelled:
+                        self.error.emit("The download process has been cancelled by the user...")
+                        return
+
+                    downloadedSize += len(chunk)
+                    f.write(chunk)
+                    
+                    # Speed calculation
+                    elapsedTime = time.time() - startTime
+                    speed = downloadedSize / elapsedTime if elapsedTime > 0 else 0
+                    speedStr = f"{speed / 1024 / 1024:.2f} MB/s" if speed > 1024*1024 else f"{speed / 1024:.2f} KB/s"
+                    
+                    # Send progress signal to the interface
+                    if totalSize > 0: self.progress.emit(downloadedSize, totalSize, speedStr)
+            
+            # If we exit the loop without cancelling, it's a success
+            self.finished.emit(f"The file '{os.path.basename(urlparse(self.url).path)}' has been successfully downloaded!")
+
+        except requests.exceptions.RequestException as e:
+            self.error.emit(f"Network error: {e}")
+        except Exception as e:
+            self.error.emit(f"An unexpected error has occured: {e}")
+
+    def cancel(self):
+        """ Method to request the cancellation of the download. """
+        # Mark cancelled and ensure we unblock any wait caused by pause
+        self.isCancelled = True
+        try: self.pauseEvent.set()
+        except Exception: pass
+
+    def pause(self):
+        """ Method to request the pause of the download.
+
+        Note: the download must already be started for the pause to take effect
+        (the thread is iterating over `response.iter_content`).
+        """
+        self.isPaused = True
+        try: self.pauseEvent.clear()
+        except Exception: pass
+
+    def resume(self):
+        """ Resume a previously paused download. """
+        self.isPaused = False
+        try: self.pauseEvent.set()
+        except Exception: pass
+
+class DownloadDialog(MessageBoxBase):
+    """ SmartUtils
+    ==========
+    Dialog box for download purposes
+    """
+
+    def __init__(self, title: str, icon: QIcon | FICO | FluentFontIconBase, url: str, filename: str, parent=None):
+        super().__init__(parent)
+        self.titleBox = QHBoxLayout()
+        self.titleLabel = SubtitleLabel(title, self)
+        self.dialogIcon = IconWidget(icon)
+        self.statusLabel = BodyLabel("Please wait while we are initializing the download...", self)
+        self.progress = ProgressRing(self, True)
+        self.detailsBox = QHBoxLayout()
+        self.downloadSize = BodyLabel(self)
+        self.downloadSpeed = BodyLabel(self)
+        self.pauseButton = PushButton(self)
+        self.url = url
+        self.filename = filename
+
+        self.dialogIcon.setFixedSize(24, 24)
+        self.dialogIcon.setIcon(FICO.DOWNLOAD)
+        self.statusLabel.setWordWrap(True)
+        self.progress.setContentsMargins(20, 0, 20, 0)
+        self.progress.setValue(0)
+        self.progress.setFixedSize(80, 80)
+        self.pauseButton.setEnabled(False)
+        self.pauseButton.setVisible(False)
+        self.yesButton.setEnabled(False)
+        self.yesButton.setVisible(False)
+
+        self.pauseButton.clicked.connect(self.togglePause)
+        self.cancelButton.clicked.connect(self.cancelDownload)
+
+        self.viewLayout.addLayout(self.titleBox)
+        self.titleBox.addWidget(self.dialogIcon)
+        self.titleBox.addWidget(self.titleLabel)
+        self.viewLayout.addWidget(self.statusLabel)
+        self.viewLayout.addWidget(self.progress, 0, Qt.AlignmentFlag.AlignCenter)
+        self.viewLayout.addLayout(self.detailsBox)
+        self.detailsBox.addWidget(self.downloadSize)
+        self.detailsBox.addStretch(1)
+        self.detailsBox.addWidget(self.downloadSpeed)
+        self.viewLayout.addWidget(self.pauseButton)
+
+        tempPath = Path(smart.resourcePath(".temp"))
+        if tempPath.exists() and tempPath.is_dir(): shutil.rmtree(tempPath)
+        tempPath.mkdir(parents = True, exist_ok = True)
+        self.startDownload(url, filename)
+
+    def startDownload(self, url: str, filename: str):
+        self.downloadThread = QThread()
+        self.worker = DownloadWorker(url, filename)
+
+        self.worker.moveToThread(self.downloadThread)
+        self.worker.progress.connect(self.updateProgress)
+        self.worker.finished.connect(self.onFinished)
+        self.worker.error.connect(self.onError)
+        self.downloadThread.started.connect(self.worker.run)
+
+        self.downloadThread.start()
+        self.titleLabel.setText("Download in progress...")
+        self.statusLabel.setText(f"The following file is currently being downloaded: {os.path.basename(urlparse(url).path)}")
+        try:
+            self.pauseButton.setEnabled(True)
+            self.pauseButton.setVisible(True)
+            self.pauseButton.setIcon(FICO.PAUSE)
+            self.pauseButton.setText("Pause download")
+        except Exception: pass
+    
+    def updateProgress(self, downloaded, total, speed):
+        if total > 0:
+            percentage = int((downloaded / total) * 100)
+            self.progress.setValue(percentage)
+            self.progress.setTextVisible(True)
+
+            downloadedMB = downloaded / 1024 / 1024
+            totalMB = total / 1024 / 1024
+            self.downloadSize.setText(f"{downloadedMB:.2f} MB / {totalMB:.2f} MB")
+        else:
+            self.progress = IndeterminateProgressRing(self)
+            self.downloadSize.setText(f"{downloaded / 1024 / 1024:.2f} MB")
+        
+        self.downloadSpeed.setText(speed)
+    
+    def onFinished(self, message):
+        self.titleLabel.setText("Download complete!")
+        self.dialogIcon.setIcon(FICO.ACCEPT)
+        self.statusLabel.setText(message)
+        self.statusLabel.setTextColor(QColor("green"), QColor("#4CAF50"))
+        self.progress.setVisible(False)
+        if cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.successSFXPath): smart.playSound(soundStreamer, cfg.get(cfg.successSFXPath), "successful download")
+        self.pauseButton.setEnabled(False)
+        self.pauseButton.setVisible(False)
+        self.yesButton.setEnabled(True)
+        self.yesButton.setVisible(True)
+        self.cancelButton.setEnabled(True)
+        self.cancelButton.setVisible(True)
+        self.yesButton.setText("Install")
+        self.cancelButton.setText("OK")
+        self.yesButton.clicked.connect
+        self.cancelButton.clicked.connect(lambda: self.closeAndCleanup())
+
+    def onError(self, message):
+        self.titleLabel.setText("Oops! Something went wrong...")
+        self.dialogIcon.setIcon(FICO.CLOSE)
+        self.statusLabel.setText(message)
+        self.statusLabel.setTextColor(QColor("red"), QColor("#F44336"))
+        self.progress.setVisible(False)
+        if cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.errorSFXPath): smart.playSound(soundStreamer, cfg.get(cfg.errorSFXPath), "download error")
+        self.pauseButton.setEnabled(False)
+        self.pauseButton.setVisible(False)
+        self.yesButton.setEnabled(True)
+        self.yesButton.setVisible(True)
+        self.cancelButton.setEnabled(False)
+        self.cancelButton.setVisible(False)
+        self.yesButton.clicked.connect(lambda: self.closeAndCleanup())
+        print(message)
+
+    def cancelDownload(self):
+        self.titleLabel.setText("Cancelling download...")
+        self.dialogIcon.setIcon(FICO.REMOVE_FROM)
+        self.statusLabel.setText("Please wait for the download process to stop...")
+        self.statusLabel.setTextColor(QColor("#FCAF00"), QColor("yellow"))
+        self.cancelButton.setEnabled(False)
+        try: self.pauseButton.setEnabled(False)
+        except Exception: pass
+        if self.worker: self.worker.cancel()
+
+    def togglePause(self):
+        """ Toggle between pause and resume. Only works if the download has been started. """
+        if not hasattr(self, 'worker') or self.worker is None:
+            return
+
+        if getattr(self.worker, 'isPaused', False):
+            try:
+                self.worker.resume()
+                self.progress.resume() # type: ignore
+                self.pauseButton.setIcon(FICO.PAUSE)
+                self.pauseButton.setText("Pause download")
+                self.titleLabel.setText("Download in progress...")
+                self.dialogIcon.setIcon(FICO.DOWNLOAD)
+            except Exception as e: print(f"Failed to resume download: {e}")
+        else:
+            try:
+                self.worker.pause()
+                self.progress.pause() # type: ignore
+                self.pauseButton.setIcon(FICO.PLAY)
+                self.pauseButton.setText("Resume download")
+                self.titleLabel.setText("Download paused")
+                self.dialogIcon.setIcon(FICO.PAUSE)
+            except Exception as e: print(f"Failed to pause download: {e}")
+    
+    def closeEvent(self, event):
+        self.cancelDownload()
+        event.accept()
+
+    def closeAndCleanup(self):
+        if self.downloadThread.isRunning():
+            self.downloadThread.quit()
+            self.downloadThread.wait()
+        self.accept()
 
 cfg = Config()
 smart = SmartLogic()

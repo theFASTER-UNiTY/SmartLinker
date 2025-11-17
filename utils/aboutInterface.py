@@ -77,11 +77,11 @@ class AboutInterface(QWidget):
         self.aboutInformation = AboutAppGroup()
         layout.addWidget(self.aboutInformation)
         self.aboutResources = ResourcesGroup()
-        self.aboutResources.pyQtBtn.clicked.connect(lambda: self.linkBrowserSelect("https://www.pythonguis.com/pyqt6/", "Python GUIs", "website", QIcon(smart.resourcePath("resources/images/icons/pyqt6_icon.ico")), parent))
-        self.aboutResources.pyQtBtn2.clicked.connect(lambda: self.linkBrowserSelect("https://doc.qt.io/qtforpython-6/", "Qt Documentation", "website", QIcon(smart.resourcePath("resources/images/icons/qtforpython_icon.ico")), parent))
-        self.aboutResources.qFluentBtn.clicked.connect(lambda: self.linkBrowserSelect("https://www.qfluentwidgets.com/", "QFluentWidgets", "website", QIcon(smart.resourcePath("resources/images/icons/qfluentwidgets_icon.ico")), parent))
-        self.aboutResources.qFluentBtn2.clicked.connect(lambda: self.linkBrowserSelect("https://github.com/zhiyiYo/PyQt-Fluent-Widgets", "QFluentWidgets", "GitHub repository", FICO.GITHUB, parent))
-        self.aboutResources.flaticonBtn.clicked.connect(lambda: self.linkBrowserSelect("https://www.flaticon.com/", "Flaticon", "website", QIcon(smart.resourcePath("resources/images/icons/flaticon_icon.ico")), parent))
+        self.aboutResources.pyQtBtn.clicked.connect(lambda: self.linkBrowserSelect("https://www.pythonguis.com/pyqt6/", "Python GUIs", "website", QIcon(smart.resourcePath("resources/images/icons/pyqt6_icon.ico")), False, parent))
+        self.aboutResources.pyQtBtn2.clicked.connect(lambda: self.linkBrowserSelect("https://doc.qt.io/qtforpython-6/", "Qt Documentation", "website", QIcon(smart.resourcePath("resources/images/icons/qtforpython_icon.ico")), False, parent))
+        self.aboutResources.qFluentBtn.clicked.connect(lambda: self.linkBrowserSelect("https://www.qfluentwidgets.com/", "QFluentWidgets", "website", QIcon(smart.resourcePath("resources/images/icons/qfluentwidgets_icon.ico")), False, parent))
+        self.aboutResources.qFluentBtn2.clicked.connect(lambda: self.linkBrowserSelect("https://github.com/zhiyiYo/PyQt-Fluent-Widgets", "QFluentWidgets", "GitHub repository", FICO.GITHUB, False, parent))
+        self.aboutResources.flaticonBtn.clicked.connect(lambda: self.linkBrowserSelect("https://www.flaticon.com/", "Flaticon", "website", QIcon(smart.resourcePath("resources/images/icons/flaticon_icon.ico")), False, parent))
         layout.addWidget(self.aboutResources)
 
         layout.addStretch(1)
@@ -109,13 +109,13 @@ class AboutInterface(QWidget):
         self.updateSnackLayout.addLayout(self.updateSnackLabelBox)
         self.updateSnackLayout.addStretch(1)
         self.updateSnackButton = PrimaryPushButton(FICO.DOWNLOAD, "Download now")
-        self.updateSnackButton.clicked.connect(lambda: self.linkBrowserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, parent))
+        # self.updateSnackButton.clicked.connect(lambda: self.linkBrowserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, True, parent))
         self.updateSnackLayout.addWidget(self.updateSnackButton)
 
     def feedbackBrowserSelect(self, parent):
         """ Open a dialog to select which browser you want to load the feedback page into """
         if not self.feedbackBrowserDlg:
-            self.feedbackBrowserDlg = BrowserSelectDialog("Send feedback with...", FICO.FEEDBACK, parent)
+            self.feedbackBrowserDlg = BrowserSelectDialog("Send feedback with...", FICO.FEEDBACK, False, parent)
             self.feedbackBrowserDlg.yesButton.setText("Send feedback")
         if self.feedbackBrowserDlg.exec():
             failedAttempts = 0
@@ -169,14 +169,18 @@ class AboutInterface(QWidget):
                     print(f"{Fore.RED}An error occured while attempting to open the feedback section of GitHub repository into '{os.path.basename(self.feedbackBrowserDlg.otherBrowsEdit.text())}': {e}{Style.RESET_ALL}")
                     smart.managerLog(f"ERROR: Failed to open the feedback section of GitHub repository into browser at path '{self.feedbackBrowserDlg.otherBrowsEdit.text()}': {e}")
 
-    def linkBrowserSelect(self, url: str, title: str, linkType: str, icon: QIcon | FICO | FluentFontIconBase, parent):
+    def linkBrowserSelect(self, url: str, title: str, linkType: str, icon: QIcon | FICO | FluentFontIconBase, isDownload: bool, parent):
         """ Open a dialog to select which browser you want to load a link into """
         if not self.linkBrowserDlg:
-            self.linkBrowserDlg = BrowserSelectDialog(f"Open {title} with...", icon, parent)
+            self.linkBrowserDlg = BrowserSelectDialog(f"Open {title} with...", icon, isDownload, parent)
         else:
             self.linkBrowserDlg = None
-            self.linkBrowserDlg = BrowserSelectDialog(f"Open {title} with...", icon, parent)
+            self.linkBrowserDlg = BrowserSelectDialog(f"Open {title} with...", icon, isDownload, parent)
         self.linkBrowserDlg.yesButton.setText(f"Open {title}")
+        self.linkBrowserDlg.downloadButton.clicked.connect(lambda checked: (
+            self.linkBrowserDlg.close() if self.linkBrowserDlg else None,
+            self.downloadDialog(parent) if isDownload else None
+        ))
         if self.linkBrowserDlg.exec():
             failedAttempts = 0
             if not self.linkBrowserDlg.browserCombo.currentText() == "Other browser":
@@ -227,6 +231,20 @@ class AboutInterface(QWidget):
                     smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to open the {title} {linkType} into {os.path.basename(self.linkBrowserDlg.otherBrowsEdit.text())}: {e}", parent)
                     print(f"{Fore.RED}An error occured while attempting to open the {title} {linkType} into '{os.path.basename(self.linkBrowserDlg.otherBrowsEdit.text())}': {e}{Style.RESET_ALL}")
                     smart.managerLog(f"ERROR: Failed to open the {title} {linkType} into browser at path '{self.linkBrowserDlg.otherBrowsEdit.text()}': {e}")
+
+    def downloadDialog(self, parent):
+        #url = "https://www.python.org/ftp/python/3.14/python-3.14-amd64.exe"
+        #filename = smart.resourcePath("python_installer_3.14_amd64.exe")
+        url = "https://cvn33-1.sibnet.ru/57/08/59/5708597.mp4?st=cLDW5ptX9t1saTFyVafzQA&e=1763035000&stor=25&noip=1&cache=16"
+        filename = "G:\\My_Files\\#theHARDSTER\\+ Animates +\\Animepisodes\\Disney_Twisted_Wonderland.mp4"
+        
+        downloadDlg = DownloadDialog(
+            "Initializing...",
+            FICO.DOWNLOAD,
+            url,
+            filename,
+            parent)
+        downloadDlg.exec()
 
 class AboutAppGroup(SimpleExpandGroupSettingCard):
     """ Class for the informative text about SmartLinker in the About section """
@@ -338,7 +356,7 @@ class ResourcesGroup(ExpandGroupSettingCard):
 class BrowserSelectDialog(MessageBoxBase):
     """ Class for the browser selection dialog box """
 
-    def __init__(self, title: str, icon: QIcon | FICO | FluentFontIconBase, parent=None):
+    def __init__(self, title: str, icon: QIcon | FICO | FluentFontIconBase, isDownload: bool, parent=None):
         super().__init__(parent)
         self.myBrowsList = smart.loadBrowsers()
         self.titleLabel = SubtitleLabel(title, self)
@@ -346,6 +364,7 @@ class BrowserSelectDialog(MessageBoxBase):
         self.otherBrowsLine = QHBoxLayout()
         self.otherBrowsEdit = LineEdit()
         self.otherBrowsBrowse = ToolButton(FICO.FOLDER)
+        self.downloadButton = PushButton(FICO.DOWNLOAD, "Download directly")
 
         self.browsIcon.setFixedSize(64, 64)
         self.browserCombo = ComboBox()
@@ -382,6 +401,9 @@ class BrowserSelectDialog(MessageBoxBase):
         self.viewLayout.addLayout(self.otherBrowsLine)
         self.viewLayout.addWidget(self.warningLabel)
         self.warningLabel.setHidden(True)
+        if isDownload:
+            self.viewLayout.addWidget(SubtitleLabel("or"), 0, Qt.AlignmentFlag.AlignCenter)
+            self.viewLayout.addWidget(self.downloadButton)
 
         self.widget.setMinimumWidth(350)
         self.browserCombo.currentTextChanged.connect(lambda text: self.comboChangeListener(text))

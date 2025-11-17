@@ -79,7 +79,7 @@ class SmartLinkerGUI(FluentWindow):
                 InfoBadgePosition.NAVIGATION_ITEM
             )
         
-        self.mybrowsInterface.updateSnackButton.clicked.connect(lambda: self.browserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, self))
+        self.mybrowsInterface.updateSnackButton.clicked.connect(lambda: self.browserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, True, self))
         if self.settingInterface.widgetDef.optionMicaEffect:
             self.settingInterface.widgetDef.optionMicaEffect.setEnabled(smart.isSoftwareCompatible(22000))
             self.settingInterface.widgetDef.optionMicaEffect.setVisible(smart.isSoftwareCompatible(22000))
@@ -100,8 +100,9 @@ class SmartLinkerGUI(FluentWindow):
         ))
         self.settingInterface.advancedRestart.button.clicked.connect(self.confirmRestart)
         self.settingInterface.advancedStop.button.clicked.connect(self.confirmStop)
-        self.settingInterface.updateSnackButton.clicked.connect(lambda: self.browserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, self))
+        self.settingInterface.updateSnackButton.clicked.connect(lambda: self.browserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, True, self))
         self.aboutInterface.aboutVersion.button.clicked.connect(lambda: self.checkForUpdates(self))
+        self.aboutInterface.updateSnackButton.clicked.connect(lambda: self.browserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, True, self))
         cfg.appTheme.valueChanged.connect(lambda value: (
             self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smart.getRed(themeColor())}, {smart.getGreen(themeColor())}, {smart.getBlue(themeColor())}, 0.25)}}"), # type: ignore
             self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smart.getRed(themeColor())}, {smart.getGreen(themeColor())}, {smart.getBlue(themeColor())}, 0.25)}}"), # type: ignore
@@ -223,7 +224,7 @@ class SmartLinkerGUI(FluentWindow):
             # print(f'Opening GitHub releases page with link: "{SmartLinkerGitRepoURL}/releases"...')
             # smart.managerLog(f'Opening GitHub releases page with link: "{SmartLinkerGitRepoURL}/releases"...')
             # webbrowser.open(f"{SmartLinkerGitRepoURL}/releases")
-            self.browserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, self)
+            self.browserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, True, self)
 
     def confirmDeleteDialog(self, name: str, parent):
         """ Open a confirmation dialog to remove a browser from the SmartList """
@@ -283,16 +284,20 @@ class SmartLinkerGUI(FluentWindow):
             self.updateDownloadDlg.yesButton.setText("Download from GitHub releases")
             self.updateDownloadDlg.cancelButton.setText("Update later")
         self.updateDownloadDlg.show()
-        smart.playSound(soundStreamer, cfg.get(cfg.infoSFXPath), "update confirmation dialog")
+        if cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.infoSFXPath): smart.playSound(soundStreamer, cfg.get(cfg.infoSFXPath), "update confirmation dialog")
 
-    def browserSelect(self, url: str, title: str, linkType: str, icon: QIcon | FICO | FluentFontIconBase, parent):
+    def browserSelect(self, url: str, title: str, linkType: str, icon: QIcon | FICO | FluentFontIconBase, isDownload: bool, parent):
         """ Open a dialog to select the browser you would want to load a link into """
         if not self.browserDlg:
-            self.browserDlg = BrowserSelectDialog(f"Open {title} with...", icon, parent)
+            self.browserDlg = BrowserSelectDialog(f"Open {title} with...", icon, isDownload, parent)
         else:
             self.browserDlg = None
-            self.browserDlg = BrowserSelectDialog(f"Open {title} with...", icon, parent)
+            self.browserDlg = BrowserSelectDialog(f"Open {title} with...", icon, isDownload, parent)
         self.browserDlg.yesButton.setText(f"Open {title}")
+        self.browserDlg.downloadButton.clicked.connect(lambda checked: (
+            self.browserDlg.close() if self.browserDlg else None,
+            self.downloadDialog(parent) if isDownload else None
+        ))
         if self.browserDlg.exec():
             failedAttempts = 0
             if not self.browserDlg.browserCombo.currentText() == "Other browser":
@@ -343,6 +348,29 @@ class SmartLinkerGUI(FluentWindow):
                     smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to open the {title} {linkType} into {os.path.basename(self.browserDlg.otherBrowsEdit.text())}: {e}", parent)
                     print(f"{Fore.RED}An error occured while attempting to open the {title} {linkType} into '{os.path.basename(self.browserDlg.otherBrowsEdit.text())}': {e}{Style.RESET_ALL}")
                     smart.managerLog(f"ERROR: Failed to open the {title} {linkType} into browser at path '{self.browserDlg.otherBrowsEdit.text()}': {e}")
+
+    def downloadDialog(self, parent):
+        url = f"{SmartLinkerGitRepoURL}/releases/download/{cfg.get(cfg.updateVersion)}/SmartLinker-setup-win-{cfg.get(cfg.updateVersion)[1:]}.exe"
+        filename = smart.resourcePath(".temp/SmartLinkerUpdate.exe")
+        
+        downloadDlg = DownloadDialog(
+            "Initializing...",
+            FICO.DOWNLOAD,
+            url,
+            filename,
+            parent
+        )
+        if downloadDlg.exec():
+
+            print(f"{Fore.BLUE}Opening the downloaded installer at path: '{filename}'...{Style.RESET_ALL}")
+            smart.managerLog(f"INFO: Opening the downloaded installer at path: {filename}...")
+            try:
+                subprocess.Popen([filename])
+                smart.stopApp()
+            except Exception as e:
+                print(f"{Fore.RED}An error occured while attempting to launch the installer at path '{filename}': {e}{Style.RESET_ALL}")
+                smart.managerLog(f"ERROR: Failed to launch the installer at path '{filename}': {e}")
+                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to launch the installer: {e}", parent)
 
     def confirmRestart(self):
         """ Open a confirmation dialog to restart SmartLinker """

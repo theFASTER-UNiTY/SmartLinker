@@ -12,6 +12,7 @@ __author__ = "#theF∆STER™ CODE&BU!LD"
 # (In case you would be wondering...)
 # =========================================================
 
+from fileinput import filename
 import darkdetect, datetime, json, os, pathlib, pickle, platform, psutil, pygame, requests, shutil, socket, subprocess, sys, time
 import typing, threading, webbrowser, win32api, winreg
 from PyQt6.QtCore import QEventLoop, QFileInfo, QObject, QSize, Qt, QThread, QTimer, pyqtSignal
@@ -1229,6 +1230,8 @@ class DownloadDialog(MessageBoxBase):
         self.downloadThread.start()
         self.titleLabel.setText("Download in progress...")
         self.statusLabel.setText(f"The following file is currently being downloaded:\n{os.path.basename(urlparse(url).path)}")
+        print(f'Starting download of "{os.path.basename(urlparse(url).path)}"...')
+        smart.managerLog(f'Pending operation: Starting download of "{os.path.basename(urlparse(url).path)}"...')
         try:
             self.pauseButton.setEnabled(True)
             self.pauseButton.setVisible(True)
@@ -1269,6 +1272,7 @@ class DownloadDialog(MessageBoxBase):
         self.yesButton.setText("Install")
         self.cancelButton.setText("OK")
         self.cancelButton.clicked.connect(lambda: self.closeAndCleanup())
+        print(f'{Fore.GREEN}The file "{self.filename}" has been downloaded successfully!{Style.RESET_ALL}')
 
     def onError(self, message):
         self.titleLabel.setText("Oops! Something went wrong...")

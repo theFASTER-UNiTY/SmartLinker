@@ -384,8 +384,6 @@ class SmartLinkerGUI(FluentWindow):
                 smart.managerLog("WARNING: The update installer does not exist...")
                 smart.warningNotify("Warning, be careful!", "The update installer does not exist... Please try again...", parent)
 
-
-
     def confirmRestart(self):
         """ Open a confirmation dialog to restart SmartLinker """
         restartDlg = MessageBox(

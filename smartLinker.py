@@ -428,7 +428,8 @@ def isSystemCompatible(minBuild: int) -> bool:
 
 # =============================================================================
 
-if __name__ == "__main__":
+def main():
+    """ Main entry point of the application """
     app = QApplication(sys.argv)
     app.setOrganizationName(SmartLinkerOwner)
     app.setApplicationName(SmartLinkerName)
@@ -445,3 +446,8 @@ if __name__ == "__main__":
         appWindow = SmartLinkerGUI()
         appWindow.show()
     sys.exit(app.exec())
+
+# =============================================================================
+
+if __name__ == "__main__":
+    main()

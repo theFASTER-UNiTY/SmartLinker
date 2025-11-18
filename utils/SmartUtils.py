@@ -13,8 +13,8 @@ __author__ = "#theF∆STER™ CODE&BU!LD"
 # =========================================================
 
 from fileinput import filename
-import darkdetect, datetime, json, os, pathlib, pickle, platform, psutil, pygame, requests, shutil, socket, subprocess, sys, time
-import typing, threading, webbrowser, win32api, winreg
+import argparse, darkdetect, datetime, json, os, pathlib, pickle, platform, psutil, pygame, requests, shutil, socket, subprocess
+import sys, time, typing, threading, webbrowser, win32api, winreg
 from PyQt6.QtCore import QEventLoop, QFileInfo, QObject, QSize, Qt, QThread, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QIcon
 from PyQt6.QtWidgets import (

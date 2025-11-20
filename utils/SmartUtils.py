@@ -12,7 +12,6 @@ __author__ = "#theF∆STER™ CODE&BU!LD"
 # (In case you would be wondering...)
 # =========================================================
 
-from fileinput import filename
 import argparse, darkdetect, datetime, json, os, pathlib, pickle, platform, psutil, pygame, requests, shutil, socket, subprocess
 import sys, time, typing, threading, webbrowser, win32api, winreg
 from PyQt6.QtCore import QEventLoop, QFileInfo, QObject, QSize, Qt, QThread, QTimer, pyqtSignal
@@ -1338,3 +1337,24 @@ smart = SmartLogic()
 cfgFilePath = smart.resourcePath("bin/config.json")
 browsersCfgFilePath = smart.resourcePath("bin/browsers_config.dat")
 qconfig.load(cfgFilePath, cfg)
+
+"""
+pyinstaller --onefile \
+    --name SmartLinker \
+    --add-data "bin;bin" \
+    --add-data "resources;resources" \
+    --add-data "utils;utils" \
+    --hidden-import PyQt6.QtCore \
+    --hidden-import PyQt6.QtGui \
+    --hidden-import PyQt6.QtWidgets \
+    --hidden-import qfluentwidgets \
+    --hidden-import qframelesswindow \
+    --hidden-import shiboken6 \
+    --icon resources/images/icons/icon.ico \
+    --clean \
+    --noconfirm \
+    --noconsole \
+    --noupx \
+    --strip \
+    smartLinker.py
+"""

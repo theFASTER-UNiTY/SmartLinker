@@ -150,6 +150,10 @@ class MyBrowsersInterface(QWidget):
         self.updateSnackLayout.addStretch(1)
         self.updateSnackButton = PrimaryPushButton(FICO.DOWNLOAD, "Download now")
         self.updateSnackLayout.addWidget(self.updateSnackButton)
+        self.updateSnackInstall = PrimaryPushButton(SegoeFontIcon.fromName("openIn"), "Install now")
+        self.updateSnackInstall.setToolTip("The latest update has been found in your system.\nYou can install it right away.")
+        self.updateSnackInstall.installEventFilter(ToolTipFilter(self.updateSnackInstall))
+        self.updateSnackLayout.addWidget(self.updateSnackInstall)
 
     def loadBrowsers(self, parent):
         """ :MyBrowsersInterface: Saved browsers loader in the SmartList"""

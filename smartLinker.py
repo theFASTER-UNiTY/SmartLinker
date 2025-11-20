@@ -80,6 +80,7 @@ class SmartLinkerGUI(FluentWindow):
             )
         
         self.mybrowsInterface.updateSnackButton.clicked.connect(lambda: self.browserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, True, self))
+        self.mybrowsInterface.updateSnackInstall.clicked.connect(lambda: self.runUpdate(self))
         if self.settingInterface.widgetDef.optionMicaEffect:
             self.settingInterface.widgetDef.optionMicaEffect.setEnabled(smart.isSoftwareCompatible(22000))
             self.settingInterface.widgetDef.optionMicaEffect.setVisible(smart.isSoftwareCompatible(22000))
@@ -98,11 +99,14 @@ class SmartLinkerGUI(FluentWindow):
             self.mybrowsInterface.mybrowsLoadLinkCard.setHidden(checked),
             self.mybrowsInterface.myBrowsClearCard.setHidden(checked)
         ))
+        self.settingInterface.advancedTempClean.button.clicked.connect(lambda: self.cleanTempFiles(self))
         self.settingInterface.advancedRestart.button.clicked.connect(self.confirmRestart)
         self.settingInterface.advancedStop.button.clicked.connect(self.confirmStop)
         self.settingInterface.updateSnackButton.clicked.connect(lambda: self.browserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, True, self))
+        self.settingInterface.updateSnackInstall.clicked.connect(lambda: self.runUpdate(self))
         self.aboutInterface.aboutVersion.button.clicked.connect(lambda: self.checkForUpdates(self))
         self.aboutInterface.updateSnackButton.clicked.connect(lambda: self.browserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, True, self))
+        self.aboutInterface.updateSnackInstall.clicked.connect(lambda: self.runUpdate(self))
         cfg.appTheme.valueChanged.connect(lambda value: (
             self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smart.getRed(themeColor())}, {smart.getGreen(themeColor())}, {smart.getBlue(themeColor())}, 0.25)}}"), # type: ignore
             self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smart.getRed(themeColor())}, {smart.getGreen(themeColor())}, {smart.getBlue(themeColor())}, 0.25)}}"), # type: ignore
@@ -298,6 +302,12 @@ class SmartLinkerGUI(FluentWindow):
             self.browserDlg.close() if self.browserDlg else None,
             self.downloadDialog(parent) if isDownload else None
         ))
+        if isDownload and os.path.exists(smart.resourcePath(".temp\\SmartLinkerUpdate.exe")) and os.path.exists(smart.resourcePath(".temp\\.metadata")):
+            with open(smart.resourcePath(".temp\\.metadata"), "rb") as metaReader: metaSize = pickle.load(metaReader)
+            if metaSize == os.path.getsize(smart.resourcePath(".temp\\SmartLinkerUpdate.exe")):
+                self.mybrowsInterface.updateSnackLayout.addWidget(self.mybrowsInterface.updateSnackInstall)
+                self.settingInterface.updateSnackLayout.addWidget(self.settingInterface.updateSnackInstall)
+                self.aboutInterface.updateSnackLayout.addWidget(self.aboutInterface.updateSnackInstall)
         if self.browserDlg.exec():
             failedAttempts = 0
             if not self.browserDlg.browserCombo.currentText() == "Other browser":
@@ -384,6 +394,43 @@ class SmartLinkerGUI(FluentWindow):
                 smart.managerLog("WARNING: The update installer does not exist...")
                 smart.warningNotify("Warning, be careful!", "The update installer does not exist... Please try again...", parent)
 
+    def cleanTempFiles(self, parent):
+        """ Clean temporary files left over by SmartLinker in the Settings """
+        if os.path.exists(smart.resourcePath(".temp")): # and os.listdir(smart.resourcePath(".temp")):
+            try:
+                shutil.rmtree(smart.resourcePath(".temp"))
+                if self.mybrowsInterface.updateSnackInstall:
+                    self.mybrowsInterface.updateSnackInstall.setParent(None)
+                    self.mybrowsInterface.updateSnackLayout.removeWidget(self.mybrowsInterface.updateSnackInstall)
+                if self.settingInterface.updateSnackInstall:
+                    self.settingInterface.updateSnackInstall.setParent(None)
+                    self.settingInterface.updateSnackLayout.removeWidget(self.settingInterface.updateSnackInstall)
+                if self.aboutInterface.updateSnackInstall:
+                    self.aboutInterface.updateSnackInstall.setParent(None)
+                    self.aboutInterface.updateSnackLayout.removeWidget(self.aboutInterface.updateSnackInstall)
+                print(f"{Fore.GREEN}Temporary files have been successfully cleaned!{Style.RESET_ALL}")
+                smart.managerLog("SUCCESS: Temporary files successfully cleaned!")
+                smart.successNotify("Clean complete!", "All temporary files have been successfully removed.", parent)
+            except Exception as e:
+                print(f"{Fore.RED}Error cleaning temporary files: {e}{Style.RESET_ALL}")
+                smart.managerLog(f"ERROR: Failed to clean temporary files: {e}")
+                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to clean temporary files: {e}", parent)
+        else:
+            print(f"{Fore.BLUE}There are no temporary files to be removed...{Style.RESET_ALL}")
+            smart.managerLog("INFO: No temporary files to be removed")
+            smart.infoNotify("No temporary files", "There are no temporary files to be removed...", parent)
+
+    def runUpdate(self, parent):
+        print(f"Opening the latest update installer...\nUpdate installer path: {Fore.BLUE}[{smart.resourcePath(".temp\\SmartLinkerUpdate.exe")}]{Style.RESET_ALL}")
+        smart.managerLog(f"Opening the latest update installer at path: [{smart.resourcePath(".temp\\SmartLinkerUpdate.exe")}]...")
+        try:
+            subprocess.Popen(smart.resourcePath(".temp\\SmartLinkerUpdate.exe"))
+            smart.stopApp()
+        except Exception as e:
+            print(f"{Fore.RED}Something went wrong while attempting to run the update installer: {e}{Style.RESET_ALL}")
+            smart.managerLog(f"ERROR: Failed while attempting to run the update installer: {e}")
+            smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to run the update installer: {e}", parent)
+
     def confirmRestart(self):
         """ Open a confirmation dialog to restart SmartLinker """
         restartDlg = MessageBox(
@@ -428,7 +475,7 @@ def isSystemCompatible(minBuild: int) -> bool:
 
 # =============================================================================
 
-def main():
+def smartMain():
     """ Main entry point of the application """
     app = QApplication(sys.argv)
     app.setOrganizationName(SmartLinkerOwner)
@@ -450,4 +497,4 @@ def main():
 # =============================================================================
 
 if __name__ == "__main__":
-    main()
+    smartMain()

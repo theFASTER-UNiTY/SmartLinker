@@ -109,8 +109,11 @@ class AboutInterface(QWidget):
         self.updateSnackLayout.addLayout(self.updateSnackLabelBox)
         self.updateSnackLayout.addStretch(1)
         self.updateSnackButton = PrimaryPushButton(FICO.DOWNLOAD, "Download now")
-        # self.updateSnackButton.clicked.connect(lambda: self.linkBrowserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, True, parent))
         self.updateSnackLayout.addWidget(self.updateSnackButton)
+        self.updateSnackInstall = PrimaryPushButton(SegoeFontIcon.fromName("openIn"), "Install now")
+        self.updateSnackInstall.setToolTip("The latest update has been found in your system.\nYou can install it right away.")
+        self.updateSnackInstall.installEventFilter(ToolTipFilter(self.updateSnackInstall))
+        self.updateSnackLayout.addWidget(self.updateSnackInstall)
 
     def feedbackBrowserSelect(self, parent):
         """ Open a dialog to select which browser you want to load the feedback page into """

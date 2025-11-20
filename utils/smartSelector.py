@@ -75,7 +75,7 @@ class SmartSelectorGUI(FramelessWindow):
         mainTitleBox.setContentsMargins(10, 20, 0, 20)
         mainTitleLine.addLayout(mainTitleBox)
         mainTitleBox.addWidget(TitleLabel("New URL loading request detected!"))
-        self.mainSubtitle = CaptionLabel(f"Which browser do you want to load '{self.requestURL}' into?")
+        self.mainSubtitle = CaptionLabel(f"Which browser do you want to load this URL request into?")
         self.mainSubtitle.setStyleSheet("color: gray")
         self.mainSubtitle.setWordWrap(True)
         mainTitleBox.addWidget(self.mainSubtitle)

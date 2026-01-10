@@ -35,6 +35,7 @@ from shiboken6 import isValid
 from packaging.version import Version
 from pathlib import Path
 from urllib.parse import urlparse
+from rich.progress import Progress
 
 # =========================================================
 
@@ -123,7 +124,10 @@ class Config(QConfig):
     qAccentColor = ColorConfigItem("QFluentWidgets", "ThemeColor", "#ff25d9e6") #ff25d9e6
 
 class SegoeFontIcon(FluentFontIconBase):
-    """ Class for SmartLinker's custom font-based icons """
+    """ SmartUtils
+    ==========
+    Class for SmartLinker's custom font-based icons
+    """
 
     def path(self, theme=Theme.AUTO):
         return smart.resourcePath("resources/fonts/SegoeIcons.ttf")
@@ -132,7 +136,7 @@ class SegoeFontIcon(FluentFontIconBase):
         """ Override this method if you want to use `fromName` to create icons """
         return smart.resourcePath("resources/fonts/SegoeIconsMap.json")
 
-class SmartLogic():
+class SmartLogic:
     """ SmartUtils
     ==========
     General SmartLinker functions class
@@ -561,6 +565,28 @@ class SmartLogic():
                     break
                 else: print(f"{Back.RED}{browsName} != {os.path.basename(process.info['exe']).lower()}{Style.RESET_ALL}")
         print(f"\n'{browsName}' is running: {Fore.GREEN if isProcessOpen else Fore.RED}{isProcessOpen}{Style.RESET_ALL}\n")
+        return isProcessOpen
+    
+    def isSoftwareRunning(self, exePath: str) -> bool:
+        """ SmartUtils
+        ==========
+        Specified software running process checker
+        
+        Parameters
+        ----------
+        exePath: string
+            The complete path to the software executable
+        
+        Returns
+        -------
+        isProcessOpen: boolean
+            Whether the specified software is running
+        """
+        softName = os.path.basename(exePath).lower()
+        for process in psutil.process_iter(['exe']):
+            if process.info['exe']:
+                isProcessOpen = os.path.basename(process.info['exe']).lower() == softName
+                if isProcessOpen: break
         return isProcessOpen
 
     def consoleScript(self) -> str:
@@ -1337,24 +1363,3 @@ smart = SmartLogic()
 cfgFilePath = smart.resourcePath("bin/config.json")
 browsersCfgFilePath = smart.resourcePath("bin/browsers_config.dat")
 qconfig.load(cfgFilePath, cfg)
-
-"""
-pyinstaller --onefile \
-    --name SmartLinker \
-    --add-data "bin;bin" \
-    --add-data "resources;resources" \
-    --add-data "utils;utils" \
-    --hidden-import PyQt6.QtCore \
-    --hidden-import PyQt6.QtGui \
-    --hidden-import PyQt6.QtWidgets \
-    --hidden-import qfluentwidgets \
-    --hidden-import qframelesswindow \
-    --hidden-import shiboken6 \
-    --icon resources/images/icons/icon.ico \
-    --clean \
-    --noconfirm \
-    --noconsole \
-    --noupx \
-    --strip \
-    smartLinker.py
-"""

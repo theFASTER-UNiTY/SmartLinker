@@ -78,7 +78,7 @@ python smartLinker.py
 ```
 * **NOTE**: If you want to load a link to a webpage or a local file into the Smart Selector, run this command instead:
 ```shell
-python smartLinker.py "complete_file_path_or_website_url"
+python smartLinker.py load "complete_file_path_or_website_url"
 ```
 
 And you're all set! SmartLinker is installed into your system!

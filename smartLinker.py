@@ -1,4 +1,4 @@
-from utils.SmartUtils import *
+from utils.SmartCLIHandler import *
 from utils.settingsInterface import SettingsInterface as Settings
 from utils.mybrowsersInterface import MyBrowsersInterface as MyBrowsers
 from utils.aboutInterface import AboutInterface as About, BrowserSelectDialog
@@ -9,7 +9,7 @@ from utils.smartSelector import SmartSelectorGUI
 class SmartLinkerGUI(FluentWindow):
     """ Class for the SmartLinker Manager (main) window """
 
-    def __init__(self, parent=None):
+    def __init__(self, args=None, parent=None):
         super().__init__(parent)
         print(smart.consoleScript())
         self.setWindowTitle("SmartLinker - Mastering URL Handling")
@@ -78,7 +78,19 @@ class SmartLinkerGUI(FluentWindow):
                 aboutItem,
                 InfoBadgePosition.NAVIGATION_ITEM
             )
-        
+        if args:
+            argWarningDlg = MessageBox(
+                "Command-line arguments detected",
+                "Something went wrong while attempting to handle the arguments you provided "
+                "through the command-line interface... The argument handler might have not been initialized properly, "
+                "causing the application to open normally instead of processing your request.\n\n"
+                f"Here are listed the arguments you provided:\n{args}",
+                self)
+            argWarningDlg.yesButton.setText("Understood")
+            argWarningDlg.cancelButton.setEnabled(False)
+            argWarningDlg.cancelButton.setVisible(False)
+            argWarningDlg.show()
+
         self.mybrowsInterface.updateSnackButton.clicked.connect(lambda: self.browserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, True, self))
         self.mybrowsInterface.updateSnackInstall.clicked.connect(lambda: self.runUpdate(self))
         if self.settingInterface.widgetDef.optionMicaEffect:
@@ -215,6 +227,7 @@ class SmartLinkerGUI(FluentWindow):
                 smart.infoNotify(f"{SmartLinkerName} is up-to-date", "This is currently the latest update available.", self)
 
             cfg.set(cfg.lastCheckedDate, checkTime)
+        
         else:
             print(f"{Fore.YELLOW}Please check your internet connection, then try again...{Style.RESET_ALL}")
             smart.managerLog("WARNING: Unable to connect to the Internet...")
@@ -224,11 +237,7 @@ class SmartLinkerGUI(FluentWindow):
         self.aboutInterface.aboutVersion.setContent(self.lastChecked)
         self.aboutInterface.aboutVersion.button.setVisible(True)
         self.aboutInterface.aboutVersion.setEnabled(True)
-        if self.updateDownloadDlg and self.updateDownloadDlg.exec():
-            # print(f'Opening GitHub releases page with link: "{SmartLinkerGitRepoURL}/releases"...')
-            # smart.managerLog(f'Opening GitHub releases page with link: "{SmartLinkerGitRepoURL}/releases"...')
-            # webbrowser.open(f"{SmartLinkerGitRepoURL}/releases")
-            self.browserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, True, self)
+        if self.updateDownloadDlg and self.updateDownloadDlg.exec(): self.browserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, True, self)
 
     def confirmDeleteDialog(self, name: str, parent):
         """ Open a confirmation dialog to remove a browser from the SmartList """
@@ -396,7 +405,7 @@ class SmartLinkerGUI(FluentWindow):
 
     def cleanTempFiles(self, parent):
         """ Clean temporary files left over by SmartLinker in the Settings """
-        if os.path.exists(smart.resourcePath(".temp")): # and os.listdir(smart.resourcePath(".temp")):
+        if os.path.exists(smart.resourcePath(".temp")):
             try:
                 shutil.rmtree(smart.resourcePath(".temp"))
                 if self.mybrowsInterface.updateSnackInstall:
@@ -477,21 +486,58 @@ def isSystemCompatible(minBuild: int) -> bool:
 
 def smartMain():
     """ Main entry point of the application """
-    app = QApplication(sys.argv)
-    app.setOrganizationName(SmartLinkerOwner)
-    app.setApplicationName(SmartLinkerName)
-    app.setApplicationVersion(SmartLinkerVersion)
+    
+    # Basic platform / compatibility checks before attempting any GUI or CLI handling
     if not platform.system() == "Windows":
         print(f"{Fore.RED}CRITICAL: Only Windows systems are supported by {SmartLinkerName}...\nThe software process is stopping...{Style.RESET_ALL}")
         sys.exit()
     if not isSystemCompatible(19042):
-        print(f"{Fore.RED}CRITICAL: {smart.getSystemInformation()["osName"]} {smart.getSystemInformation()["osVersion"]} build {smart.getSystemInformation()["osBuildNumber"]}" \
+        print(f"{Fore.RED}CRITICAL: {smart.getSystemInformation()["osName"]} {smart.getSystemInformation()["osVersion"]} build {smart.getSystemInformation()["osBuildNumber"]}"
             f" is not supported by {SmartLinkerName}...\nThe software process is stopping...{Style.RESET_ALL}")
         sys.exit()
-    if len(sys.argv) > 1: appWindow = SmartSelectorGUI(sys.argv[1:])
-    else:
-        appWindow = SmartLinkerGUI()
-        appWindow.show()
+
+    # If command-line arguments provided, hand them to ArgumentsProcessor first.
+    # Show the SmartSelector GUI only when the parsed command is 'load' and
+    # both smart_list and external_browser are not provided (i.e. user expects selector).
+    if len(sys.argv) > 1:
+        # Import the CLI handler locally to avoid top-level import resolution issues
+        # try: from utils.SmartCLIHandler import ArgumentsProcessor
+        # except Exception as e:
+        #     print(f"{Fore.RED}Something went wrong while importing the CLI handler: {e}{Style.RESET_ALL}")
+        #     smart.managerLog(f"ERROR: Failed to import the CLI handler: {e}")
+
+        if ArgumentsProcessor is None:
+            # Could not import the CLI handler; fall back to opening SmartLinker GUI
+            app = QApplication(sys.argv)
+            app.setOrganizationName(SmartLinkerOwner)
+            app.setApplicationName(SmartLinkerName)
+            app.setApplicationVersion(SmartLinkerVersion)
+            appWindow = SmartLinkerGUI(sys.argv[1:])
+            appWindow.show()
+            sys.exit(app.exec())
+
+        try: proc = ArgumentsProcessor().args
+        except SystemExit: # argparse may call SystemExit after printing help or on error; stop here
+            return
+
+        if proc.cmd == "load" and not proc.smart_list and not proc.external_browser:
+            app = QApplication(sys.argv)
+            app.setOrganizationName(SmartLinkerOwner)
+            app.setApplicationName(SmartLinkerName)
+            app.setApplicationVersion(SmartLinkerVersion)
+            appWindow = SmartSelectorGUI(sys.argv[1:])
+            sys.exit(app.exec())
+
+        # Other CLI commands were handled by ArgumentsProcessor (or nothing to do) -> exit
+        return
+
+    # No arguments: start the main GUI
+    app = QApplication(sys.argv)
+    app.setOrganizationName(SmartLinkerOwner)
+    app.setApplicationName(SmartLinkerName)
+    app.setApplicationVersion(SmartLinkerVersion)
+    appWindow = SmartLinkerGUI()
+    appWindow.show()
     sys.exit(app.exec())
 
 # =============================================================================

@@ -41,7 +41,7 @@ class AboutInterface(QWidget):
         aboutTextBox.setContentsMargins(10, 20, 0, 20)
         aboutMainLine.addLayout(aboutTextBox)
         aboutTitle = TitleLabel("SmartLinker - Mastering URL Handling")
-        aboutSubtitle = CaptionLabel(f"© 2025 {SmartLinkerAuthor}")
+        aboutSubtitle = CaptionLabel(f"© 2025-2026 {SmartLinkerAuthor}")
         aboutSubtitle.setStyleSheet("color: gray")
         aboutTextBox.addWidget(aboutTitle)
         aboutTextBox.addWidget(aboutSubtitle)

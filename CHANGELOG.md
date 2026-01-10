@@ -1,10 +1,14 @@
-# Release 1.2.0
+# Release 2.0.0
 
 ## ✍️ Changes
 
 - Added integrated updates downloader for an easier and quicker updating process
     
     > ***NOTE**: You still have the possibility to check out the GitHub repository if you want, this new feature is optional.*
+
+- Added command-line interaction support, allowing users, especially terminal/command prompt lovers to manage their SmartLinker configuration only with their keyboard and a command-line window.
+
+    > ***NOTE**: The complete list of supported arguments and their description can be found [here](CLI-ARGUMENTS.md). Make sure to check this list before using the command-line part of the software.*
 
 ## 🔧 Fixes
 

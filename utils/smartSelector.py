@@ -60,7 +60,7 @@ class SmartSelectorGUI(FramelessWindow):
         self.setMinimumSize(750, 550)
         self.bottomLightSheet: str = "background-color: #F3F3F3; border: 1px solid #E5E5E5"
         self.bottomDarkSheet: str = "background-color: #161616; border: 1px solid #000000" # original: #202020, #1D1D1D
-        self.requestURL = requestArgs[0]
+        self.requestURL = requestArgs[1]
 
         mainLayout = QVBoxLayout(self)
         mainLayout.setContentsMargins(0, self.titleHeight, 0, 0)
@@ -162,7 +162,7 @@ class SmartSelectorGUI(FramelessWindow):
         self.otherBrowsPathEdit = LineEdit()
         self.otherBrowsPathEdit.setPlaceholderText("Other browser path")
         self.otherBrowsPathEdit.setClearButtonEnabled(True)
-        self.otherBrowsPathEdit.textChanged.connect(lambda text: self.otherBrowsLoad.setEnabled(bool(text)))
+        self.otherBrowsPathEdit.textChanged.connect(lambda text: self.otherBrowsPathChanged(text))
         otherBrowserLine.addWidget(self.otherBrowsPathEdit)
         self.otherBrowsPathBrowse = ToolButton(FICO.FOLDER)
         self.otherBrowsPathBrowse.setToolTip("Browse...")
@@ -216,6 +216,12 @@ class SmartSelectorGUI(FramelessWindow):
         else:
             self.show()
             if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.selectorSFXPath)): smart.playSound(soundStreamer, cfg.get(cfg.selectorSFXPath), "Smart Selector launch")
+
+    def otherBrowsPathChanged(self, text):
+        """ Enable/disable the 'Load link' button depending on the text entry content """
+        self.otherBrowsLoad.setEnabled(bool(text))
+        if text and text.endswith(".exe") and os.path.exists(text): self.otherBrowsLoad.setIcon(smart.getFileIcon(text))
+        else: self.otherBrowsLoad.setIcon(FICO.LINK)
 
     def loadToOtherBrowser(self):
         """ Load the forwarded link to another browser selected from storage """

@@ -3,7 +3,7 @@ SmartUtils
 ==========
 A complete utility module made specifically for SmartLinker basic and technical needs.
 
-:Copyright: © 2025 by #theF∆STER™ UN!TY.
+:Copyright: © 2025-2026 by #theF∆STER™ UN!TY.
 """
 __version__ = "v1.1.0"
 __author__ = "#theF∆STER™ CODE&BU!LD"

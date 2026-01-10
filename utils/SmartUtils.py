@@ -5,7 +5,7 @@ A complete utility module made specifically for SmartLinker basic and technical 
 
 :Copyright: © 2025-2026 by #theF∆STER™ UN!TY.
 """
-__version__ = "v1.1.0"
+__version__ = "v2.0.0"
 __author__ = "#theF∆STER™ CODE&BU!LD"
 
 # NOTE: CODE&BU!LD is actually the software development section of the UN!TY group.

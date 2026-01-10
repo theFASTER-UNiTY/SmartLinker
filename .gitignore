@@ -218,4 +218,7 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+### Other Files ###
+Milestones.md
+
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python,windows

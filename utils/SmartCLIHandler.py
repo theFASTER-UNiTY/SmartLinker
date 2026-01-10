@@ -143,9 +143,7 @@ class ArgumentsHandler:
 
         # ---------- core list-browsers ----------
         argCoreListBrowsers = argCoreSub.add_parser("list-browsers", help="List all browsers currently saved in your SmartList.")
-        argCoreListBrowsers.add_argument("-v", "--verbose", action="store_true", help="Enable verbose mode to show more details about each browser.")
         argCoreListBrowsers.add_argument("-j", "--json", action="store_true", help="Output the list in JSON format.")
-        argCoreListBrowsers.add_argument("-o", "--output", help="File path to save the browser list output.")
         argCoreListBrowsers.add_argument("--name-only", action="store_true", help="Output only the names of the browsers in the list.")
 
         # ---------- core main-browser ----------
@@ -161,18 +159,18 @@ class ArgumentsHandler:
         # ---------- core sfx ----------
         argCoreSfx = argCoreSub.add_parser("sfx", help=f"Enable or disable sound effects in {SmartLinkerName}.")
         sfxGroup = argCoreSfx.add_mutually_exclusive_group()
-        sfxGroup.add_argument("--enable", action="store_true", help="Enable sound effects.")
-        sfxGroup.add_argument("--disable", action="store_true", help="Disable sound effects.")
+        sfxGroup.add_argument("-on", "--enable", action="store_true", help="Enable sound effects.")
+        sfxGroup.add_argument("-off", "--disable", action="store_true", help="Disable sound effects.")
         argCoreSfx.add_argument("-t", "--type", type=self.validateSFX, help="The sound effect you would want to configure.") # required=True
-        argCoreSfx.add_argument("-f", "--file", type=self.validateAudio, help="The sound effect file path to set.") # required=True
+        argCoreSfx.add_argument("-f", "--file", help="The sound effect file path to set.") # required=True
         
         # ---------- core splash ----------
         argCoreSplash = argCoreSub.add_parser("splash", help=f"Enable or disable the splash screen on {SmartLinkerName} startup.")
         splashGroup = argCoreSplash.add_mutually_exclusive_group(required=True)
-        splashGroup.add_argument("--enable", action="store_true", help="Enable the splash screen.")
-        splashGroup.add_argument("--disable", action="store_true", help="Disable the splash screen.")
-        splashGroup.add_argument("--state", action="store_true", help="Show the current state of the splash screen.")
-        argCoreSplash.add_argument("--duration", type=int, help="Set the duration (in milliseconds) for the splash screen display.")
+        splashGroup.add_argument("-on", "--enable", action="store_true", help="Enable the splash screen.")
+        splashGroup.add_argument("-off", "--disable", action="store_true", help="Disable the splash screen.")
+        splashGroup.add_argument("-s", "--state", action="store_true", help="Show the current state of the splash screen.")
+        argCoreSplash.add_argument("-d", "--duration", type=int, help="Set the duration (in milliseconds) for the splash screen display.")
 
         # ---------- core temp-clean ----------
         argCoreTempClean = argCoreSub.add_parser("temp-clean", help=f"Clean temporary files created by {SmartLinkerName}.")
@@ -189,9 +187,9 @@ class ArgumentsHandler:
         # ---------- core update-banners ----------
         argCoreUpdateBanners = argCoreSub.add_parser("update-banners", help=f"Enable or disable update banners in {SmartLinkerName}.")
         updateBannersGroup = argCoreUpdateBanners.add_mutually_exclusive_group(required=True)
-        updateBannersGroup.add_argument("--enable", action="store_true", help="Enable update banners.")
-        updateBannersGroup.add_argument("--disable", action="store_true", help="Disable update banners.")
-        updateBannersGroup.add_argument("--state", action="store_true", help="Show the current state of the update banners.")
+        updateBannersGroup.add_argument("-on", "--enable", action="store_true", help="Enable update banners.")
+        updateBannersGroup.add_argument("-off", "--disable", action="store_true", help="Disable update banners.")
+        updateBannersGroup.add_argument("-s", "--state", action="store_true", help="Show the current state of the update banners.")
 
         # ---------- core version ----------
         argCoreSub.add_parser("version", help=f"Display the current version of {SmartLinkerName}.")
@@ -219,6 +217,7 @@ class ArgumentsProcessor:
             if self.args.action == "update": self.manageUpdates()
             if self.args.action == "update-banners": self.manageUpdateBanners()
             if self.args.action == "version": self.displayVersion()
+            # if not self.args.action: self.displayCommands()
     
     def loadURL(self):
         """ SmartCLIHandler
@@ -261,6 +260,16 @@ class ArgumentsProcessor:
         ===============
         Manages the sound effects state in the SmartLinker main interface.
         """
+        SFXLib = {
+            "startup": cfg.startupSFXPath,
+            "success": cfg.successSFXPath,
+            "info": cfg.infoSFXPath,
+            "warning": cfg.warningSFXPath,
+            "error": cfg.errorSFXPath,
+            "question": cfg.questionSFXPath,
+            "selector": cfg.selectorSFXPath
+        }
+
         if self.args.enable:
             if self.args.type or self.args.file:
                 print(f"{Fore.BLUE}[SmartCommands] If you want to enable a specific sound effect, you need to follow this pattern:\n{Style.RESET_ALL}"
@@ -280,27 +289,24 @@ class ArgumentsProcessor:
                 print(f"{Fore.BLUE}[SmartCommands] The sound effects state is now set as {Fore.RED}disabled{Fore.BLUE}.{Style.RESET_ALL}")
         
         elif self.args.type:
+            sfxType = self.argHandler.validateSFX(self.args.type)
+
             if not self.args.file:
-                print(f"{Fore.BLUE}[SmartCommands] If you want to set a specific sound effect file, you need to follow this pattern:\n{Style.RESET_ALL}"
-                      "\tcore sfx -t|--type <TYPE> -f|--file <PATH_TO_FILE>")
+                # print(f"{Fore.BLUE}[SmartCommands] If you want to set a specific sound effect file, you need to follow this pattern:\n{Style.RESET_ALL}"
+                #       "\tcore sfx -t|--type <TYPE> -f|--file <PATH_TO_FILE>")
+                for key, value in SFXLib.items():
+                    if key == sfxType:
+                        print(f"{Fore.BLUE}[SmartCommands] The {key} sound effect is currently {(Fore.GREEN + "enabled") if cfg.get(value) else (Fore.RED + "disabled")}{Fore.BLUE}{(' and set at path ' + PURPLE + '"' + cfg.get(value).replace("/", "\\") + '"' + Fore.BLUE) if cfg.get(value) else ''}.{Style.RESET_ALL}")
+                        break
             
             else:
                 try:
-                    SFXLib = {
-                        "startup": cfg.startupSFXPath,
-                        "success": cfg.successSFXPath,
-                        "info": cfg.infoSFXPath,
-                        "warning": cfg.warningSFXPath,
-                        "error": cfg.errorSFXPath,
-                        "question": cfg.questionSFXPath,
-                        "selector": cfg.selectorSFXPath
-                    }
-                    sfxType = self.argHandler.validateSFX(self.args.type)
-                    sfxFile = self.argHandler.validateAudio(self.args.file)
+                    if self.args.file.lower() not in ["", "empty", "none", "nothing"]: sfxFile = self.argHandler.validateAudio(self.args.file)
+                    else: sfxFile = ""
                     for key, value in SFXLib.items():
                         if key == sfxType:
                             cfg.set(value, sfxFile)
-                            print(f"{Fore.BLUE}[SmartCommands] The sound effect '{sfxType}' has been successfully set to the file: {PURPLE}{sfxFile}{Style.RESET_ALL}")
+                            print(f"{Fore.BLUE}[SmartCommands] The '{sfxType}' sound effect has been successfully set to {("the file: " + PURPLE + sfxFile.replace("/", "\\")) if sfxFile else (PURPLE + "None" + Fore.BLUE + ".")}{Style.RESET_ALL}")
                             break
                 except Exception as e: print(f"{Fore.RED}{e}{Style.RESET_ALL}")
 
@@ -308,7 +314,7 @@ class ArgumentsProcessor:
                 print(f"{Fore.BLUE}[SmartCommands] If you want to set a specific sound effect file, you need to follow this pattern:\n{Style.RESET_ALL}"
                   "\tcore sfx -t|--type <TYPE> -f|--file <PATH_TO_FILE>")
         
-        else: print(f"{Fore.BLUE}[SmartCommands] The sound effects are currently {Fore.GREEN if cfg.get(cfg.enableSoundEffects) else Fore.RED}{'enabled' if cfg.get(cfg.enableSoundEffects) else 'disabled'}{Fore.BLUE}.{Style.RESET_ALL}")
+        else: print(f"{Fore.BLUE}[SmartCommands] The sound effects are currently {Fore.GREEN + "enabled" if cfg.get(cfg.enableSoundEffects) else Fore.RED + "disabled"}{Fore.BLUE}.{Style.RESET_ALL}")
 
     def manageSplashScreen(self):
         """ SmartCLIHandler
@@ -331,7 +337,7 @@ class ArgumentsProcessor:
             elif self.args.duration >= 1:
                 cfg.set(cfg.showSplash, True)
                 cfg.set(cfg.splashDuration, self.args.duration)
-                print(f"{Fore.BLUE}[SmartCommands] The splash screen state is now set as {Fore.GREEN}enabled{Fore.BLUE} and will be display for {PURPLE}{self.args.duration} milliseconds{Fore.BLUE}.{Style.RESET_ALL}")
+                print(f"{Fore.BLUE}[SmartCommands] The splash screen state is now set as {Fore.GREEN}enabled{Fore.BLUE} and will be displayed for {PURPLE}{self.args.duration} milliseconds{Fore.BLUE}.{Style.RESET_ALL}")
                 if smart.isSoftwareRunning(sys.executable): print(f"{Fore.YELLOW}[SmartCommands - Warning] {SmartLinkerName} is currently running, so you will need to restart the software for the changes to take effect.{Style.RESET_ALL}")
             
             else: print(f"{Fore.BLUE}[SmartCommands] The splash screen duration must be at least {PURPLE}1 millisecond{Fore.BLUE}.{Style.RESET_ALL}")
@@ -345,8 +351,15 @@ class ArgumentsProcessor:
         elif self.args.state:
             if self.args.duration: print(f"{Fore.BLUE}[SmartCommands] You cannot set a duration when checking the splash screen state. The duration parameter will be ignored.{Style.RESET_ALL}")
             print(f"{Fore.BLUE}[SmartCommands] Splash screen current configuration:\n"
-                  f"\tState: {Fore.GREEN if cfg.get(cfg.showSplash) else Fore.RED}{"Enabled" if cfg.get(cfg.showSplash) else "Disabled"}{Fore.BLUE}\n"
+                  f"\tState: {Fore.GREEN + "Enabled" if cfg.get(cfg.showSplash) else Fore.RED + "Disabled"}{Fore.BLUE}\n"
                   f"\tDuration: {PURPLE}{cfg.get(cfg.splashDuration)} milliseconds{Style.RESET_ALL}")
+            
+        elif self.args.duration:
+            if self.args.duration < 1: print(f"{Fore.BLUE}[SmartCommands] The splash screen duration must be at least {PURPLE}1 millisecond{Fore.BLUE}.{Style.RESET_ALL}")
+            else:
+                cfg.set(cfg.splashDuration, self.args.duration)
+                print(f"{Fore.BLUE}[SmartCommands] The splash screen state will therefore be displayed for {PURPLE}{self.args.duration} milliseconds{Fore.BLUE}.{Style.RESET_ALL}")
+                if smart.isSoftwareRunning(sys.executable): print(f"{Fore.YELLOW}[SmartCommands - Warning] {SmartLinkerName} is currently running, so you will need to restart the software for the changes to take effect.{Style.RESET_ALL}")
 
     def cleanTempFiles(self):
         """ SmartCLIHandler
@@ -460,14 +473,14 @@ class ArgumentsProcessor:
             print(f"{Fore.BLUE}[SmartCommands] The update banners state is now set as {Fore.RED}disabled{Fore.BLUE}.{Style.RESET_ALL}")
             if smart.isSoftwareRunning(sys.executable): print(f"{Fore.YELLOW}[SmartCommands - Warning] {SmartLinkerName} is currently running, so you will need to restart the software for the changes to take effect.{Style.RESET_ALL}")
         
-        elif self.args.state: print(f"{Fore.BLUE}[SmartCommands] The update banners are currently {Fore.GREEN if cfg.get(cfg.showUpdateBanners) else Fore.RED}{"enabled" if cfg.get(cfg.showUpdateBanners) else "disabled"}{Fore.BLUE}.{Style.RESET_ALL}")
+        elif self.args.state: print(f"{Fore.BLUE}[SmartCommands] The update banners are currently {Fore.GREEN + "enabled" if cfg.get(cfg.showUpdateBanners) else Fore.RED + "disabled"}{Fore.BLUE}.{Style.RESET_ALL}")
 
     def displayVersion(self):
         """ SmartCLIHandler
         ===============
         Displays the current version of SmartLinker.
         """
-        print(f"{Fore.BLUE}[SmartCommands] Current version of {SmartLinkerName}: {PURPLE}{SmartLinkerVersion}{Style.RESET_ALL}")
+        print(f"{Fore.BLUE}[SmartCommands] Current version of {SmartLinkerName}: {PURPLE}{SmartLinkerName} version {SmartLinkerVersion[1:]}{Style.RESET_ALL}")
 
     def downloadUpdate(self):
         """ SmartCLIHandler

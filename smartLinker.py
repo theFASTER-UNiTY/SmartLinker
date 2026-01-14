@@ -486,7 +486,7 @@ def isSystemCompatible(minBuild: int) -> bool:
 
 def smartMain():
     """ Main entry point of the application """
-    
+
     # Basic platform / compatibility checks before attempting any GUI or CLI handling
     if not platform.system() == "Windows":
         print(f"{Fore.RED}CRITICAL: Only Windows systems are supported by {SmartLinkerName}...\nThe software process is stopping...{Style.RESET_ALL}")
@@ -500,12 +500,6 @@ def smartMain():
     # Show the SmartSelector GUI only when the parsed command is 'load' and
     # both smart_list and external_browser are not provided (i.e. user expects selector).
     if len(sys.argv) > 1:
-        # Import the CLI handler locally to avoid top-level import resolution issues
-        # try: from utils.SmartCLIHandler import ArgumentsProcessor
-        # except Exception as e:
-        #     print(f"{Fore.RED}Something went wrong while importing the CLI handler: {e}{Style.RESET_ALL}")
-        #     smart.managerLog(f"ERROR: Failed to import the CLI handler: {e}")
-
         if ArgumentsProcessor is None:
             # Could not import the CLI handler; fall back to opening SmartLinker GUI
             app = QApplication(sys.argv)

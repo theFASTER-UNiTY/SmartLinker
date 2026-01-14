@@ -10,6 +10,9 @@
 
     > ***NOTE**: The complete list of supported arguments and their description can be found [here](CLI-ARGUMENTS.md). Make sure to check this list before using the command-line part of the software.*
 
+    > [!Warning]
+    > For compatibility reasons, the executable is bundled with a terminal window. This helps make sure that SmartLinker handles every command-line argument correctly.
+
 ## 🔧 Fixes
 
 - Fixed a crash bug when clicking the "Download now" button on update banners

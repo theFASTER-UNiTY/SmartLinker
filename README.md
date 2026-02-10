@@ -80,6 +80,10 @@ python smartLinker.py
 ```shell
 python smartLinker.py load "complete_file_path_or_website_url"
 ```
+or simpler:
+```powershell
+python smartLinker.py "complete_file_path_or_website_url"
+```
 
 And you're all set! SmartLinker is installed into your system!
 

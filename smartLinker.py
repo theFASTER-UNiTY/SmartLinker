@@ -510,10 +510,15 @@ def smartMain():
             appWindow.show()
             sys.exit(app.exec())
 
+        if "load" not in sys.argv and "core" not in sys.argv:
+            newArgs = sys.argv
+            newArgs.insert(1, "load")
+            sys.argv = newArgs
+
         try: proc = ArgumentsProcessor().args
         except SystemExit: # argparse may call SystemExit after printing help or on error; stop here
             return
-
+        
         if proc.cmd == "load" and not proc.smart_list and not proc.external_browser:
             app = QApplication(sys.argv)
             app.setOrganizationName(SmartLinkerOwner)

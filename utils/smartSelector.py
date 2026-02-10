@@ -90,7 +90,7 @@ class SmartSelectorGUI(FramelessWindow):
         layout = QVBoxLayout(mainScrollContent)
         layout.setSpacing(10)
 
-        # List of opened SmartList browsers
+        # List of SmartList browsers
         self.myBrowsScroll = SingleDirectionScrollArea(self, Qt.Orientation.Horizontal)
         self.myBrowsScroll.setWidgetResizable(True)
         self.myBrowsScroll.setContentsMargins(0, 0, 0, 0)
@@ -220,8 +220,13 @@ class SmartSelectorGUI(FramelessWindow):
     def otherBrowsPathChanged(self, text):
         """ Enable/disable the 'Load link' button depending on the text entry content """
         self.otherBrowsLoad.setEnabled(bool(text))
-        if text and text.endswith(".exe") and os.path.exists(text): self.otherBrowsLoad.setIcon(smart.getFileIcon(text))
-        else: self.otherBrowsLoad.setIcon(FICO.LINK)
+        if text and text.endswith(".exe") and os.path.exists(text):
+            self.otherBrowsLoad.setIcon(smart.getFileIcon(text))
+            self.otherBrowsLoad.setToolTip(f'Load link into "{os.path.basename(text)}"')
+            self.otherBrowsLoad.installEventFilter(ToolTipFilter(self.otherBrowsLoad))
+        else:
+            self.otherBrowsLoad.setIcon(FICO.LINK)
+            # self.otherBrowsLoad.installEventFilter(None)
 
     def loadToOtherBrowser(self):
         """ Load the forwarded link to another browser selected from storage """

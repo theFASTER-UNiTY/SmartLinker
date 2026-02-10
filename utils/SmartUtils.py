@@ -101,7 +101,7 @@ class Config(QConfig):
     mainBrowserPath = ConfigItem("General", "MainBrowserPath", "")
     mainBrowserIsManual = ConfigItem("General", "MainBrowserIsManual", False, BoolValidator())
     appTheme = OptionsConfigItem("Personalization", "AppTheme", "Auto", OptionsValidator(["Light", "Dark", "Auto"]))
-    accentMode = OptionsConfigItem("Personalization", "AccentMode", "System", OptionsValidator(["System", "Custom"]))
+    accentMode = OptionsConfigItem("Personalization", "AccentMode", "Custom", OptionsValidator(["System", "Custom"]))
     accentColor = ColorConfigItem("Personalization", "CustomAccentColorHex", "#ff793bcc")
     micaEffect = ConfigItem("Personalization", "EnableMicaEffect", True, BoolValidator())
     showCommandBar = ConfigItem("Personalization", "ShowCommandBar", False, BoolValidator())

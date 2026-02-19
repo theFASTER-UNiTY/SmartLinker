@@ -10,7 +10,7 @@
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/Version-1.0.0-color)]()
+[![Version](https://img.shields.io/badge/Version-2.0.0-color)]()
 [![License GPLv3](https://img.shields.io/badge/License-GPLv3-8a2be2)](LICENSE)
 [![Platform Win32](https://img.shields.io/badge/Platform-Windows-2196f3)]()
 [![Architecture x64](https://img.shields.io/badge/Architecture-64--bit-fcaf00)]()

@@ -1,0 +1,90 @@
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            :root {
+                --bg-color: white;
+                --content-color: black;
+                --hover-color: #2196F3;
+                --hover-bgColor: #E3F2FD;
+            }
+            @media (prefers-color-scheme: dark) {
+                :root {
+                    --bg-color: #272727;
+                    --content-color: white;
+                    --hover-color: #5FB7FF;
+                    --hover-bgColor: #233C50;
+                }
+            }
+            body {
+                margin: 0;
+                padding: 5px;
+                box-sizing: border-box;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                background: var(--bg-color);
+                color: var(--content-color);
+                font-family: 'Segoe UI Variable', 'Segoe UI', Geneva, Verdana, sans-serif;
+            }
+            #dropzone {
+                flex-grow: 1;
+                display: flex;
+                flex-direction: column;
+                padding: 100px;
+                margin: 0;
+                gap: 10px;
+                align-items: center;
+                justify-content: center;
+                align-content: center;
+                opacity: 33%;
+                transition: all 0.3s ease-in-out;
+                span { font-size: large; }
+                .dropMsg { display: none; }
+                .icon { width: 208; height: 128; }
+            }
+            #dropzone.hover {
+                opacity: 100%;
+                border: 2px dashed var(--hover-color);
+                background-color: var(--hover-bgColor);
+                color: var(--hover-color);
+                .icon rect { stroke: var(--hover-color); }
+                .icon path { fill: var(--hover-color); }
+                .msg { display: none; }
+                .dropMsg { display: block; }
+            }
+        </style>
+    </head>
+
+    <body>
+        <div id="dropzone">
+            <svg class="icon">
+                <rect width="198" height="118" x="5" y="5" ry="10" stroke="currentColor" stroke-width="10" fill="none"/>
+                <path fill="currentColor" d="M30 98V30h20l20 25 20-25h20v68H90V59L70 84 50 59v39zm125 0l-30-33h20V30h20v35h20z"/>
+            </svg>
+            <h1>Markdown Viewer</h1>
+            <span align="center" class="msg">You can open a Markdown file from the "<b>Open a Markdown file</b>", from your history or with drag-and-drop into this frame.</span>
+            <span align="center" class="msg">Supported file types: <b>.md</b>, <b>.markdown</b></span>
+            <span align="center" class="dropMsg"><b>You can drop the file here</b></span>
+        </div>
+    </body>
+
+    <script>
+        const dropzone = document.getElementById("dropzone");
+
+        dropzone.ondragover = (e) => {
+            e.preventDefault();
+            onDragEnter();
+        }
+        dropzone.ondragleave = (e) => onDragLeave();
+        dropzone.ondrop = (e) => {
+            e.preventDefault();
+            onDrop();
+        };
+
+        function onDragEnter() { dropzone.classList.add("hover"); }
+        function onDragLeave() { dropzone.classList.remove("hover"); }
+        function onDrop() { dropzone.classList.remove("hover"); }
+    </script>
+</html>

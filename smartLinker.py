@@ -2,6 +2,7 @@ from utils.SmartCLIHandler import *
 from utils.settingsInterface import SettingsInterface as Settings
 from utils.mybrowsersInterface import MyBrowsersInterface as MyBrowsers
 from utils.aboutInterface import AboutInterface as About, BrowserSelectDialog
+from utils.markdownViewer import MarkdownViewer as MDView
 from utils.smartSelector import SmartSelectorGUI
 
 # =============================================================================
@@ -22,6 +23,8 @@ class SmartLinkerGUI(FluentWindow):
         elif cfg.get(cfg.appTheme) == "Light": setTheme(Theme.LIGHT)
         else: setTheme(Theme.AUTO)
         smart.emptyManagerLog()
+        fontDB = QFontDatabase.addApplicationFont(smart.resourcePath("resources/fonts/SegoeFont.ttf"))
+        fontUI = QFontDatabase.applicationFontFamilies(fontDB)[0]
 
         self.latestVersion = smart.getLatestVersionTag() if bool(cfg.get(cfg.checkUpdatesOnStart) and smart.checkConnectivity()) else ""
         self.myBrowsers = smart.loadBrowsers()
@@ -31,6 +34,7 @@ class SmartLinkerGUI(FluentWindow):
         self.updateDownloadDlg = None
         self.updateCheckToolTip = None
         self.browserDlg = None
+        # print(fontUI)
 
         if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.startupSFXPath)): smart.playSound(soundStreamer, cfg.get(cfg.startupSFXPath), "startup")
         if bool(cfg.get(cfg.showSplash)):
@@ -151,6 +155,8 @@ class SmartLinkerGUI(FluentWindow):
         loop.exec()
         self.mybrowsInterface = MyBrowsers(self)
         self.addSubInterface(self.mybrowsInterface, FICO.GLOBE, "My Browsers")
+        self.markdownViewer = MDView(self)
+        self.addSubInterface(self.markdownViewer, smIco.renderIcon(smIco.MARKDOWN), "Markdown Viewer")
         self.settingInterface = Settings(self)
         self.addSubInterface(self.settingInterface, FICO.SETTING, "Settings", NavigationItemPosition.BOTTOM)
         self.aboutInterface = About(self)
@@ -487,6 +493,10 @@ def isSystemCompatible(minBuild: int) -> bool:
 def smartMain():
     """ Main entry point of the application """
 
+    QCoreApplication.setOrganizationName(SmartLinkerOwner)
+    QCoreApplication.setApplicationName(SmartLinkerName)
+    QCoreApplication.setApplicationVersion(SmartLinkerVersion)
+    
     # Basic platform / compatibility checks before attempting any GUI or CLI handling
     if not platform.system() == "Windows":
         print(f"{Fore.RED}CRITICAL: Only Windows systems are supported by {SmartLinkerName}...\nThe software process is stopping...{Style.RESET_ALL}")
@@ -503,9 +513,6 @@ def smartMain():
         if ArgumentsProcessor is None:
             # Could not import the CLI handler; fall back to opening SmartLinker GUI
             app = QApplication(sys.argv)
-            app.setOrganizationName(SmartLinkerOwner)
-            app.setApplicationName(SmartLinkerName)
-            app.setApplicationVersion(SmartLinkerVersion)
             appWindow = SmartLinkerGUI(sys.argv[1:])
             appWindow.show()
             sys.exit(app.exec())
@@ -521,9 +528,6 @@ def smartMain():
         
         if proc.cmd == "load" and not proc.smart_list and not proc.external_browser:
             app = QApplication(sys.argv)
-            app.setOrganizationName(SmartLinkerOwner)
-            app.setApplicationName(SmartLinkerName)
-            app.setApplicationVersion(SmartLinkerVersion)
             appWindow = SmartSelectorGUI(sys.argv[1:])
             sys.exit(app.exec())
 
@@ -532,9 +536,6 @@ def smartMain():
 
     # No arguments: start the main GUI
     app = QApplication(sys.argv)
-    app.setOrganizationName(SmartLinkerOwner)
-    app.setApplicationName(SmartLinkerName)
-    app.setApplicationVersion(SmartLinkerVersion)
     appWindow = SmartLinkerGUI()
     appWindow.show()
     sys.exit(app.exec())

@@ -5,37 +5,48 @@ A complete utility module made specifically for SmartLinker basic and technical 
 
 :Copyright: © 2025-2026 by #theF∆STER™ UN!TY.
 """
-__version__ = "v2.0.0"
+__version__ = "v3.0.0 (Preview)"
 __author__ = "#theF∆STER™ CODE&BU!LD"
 
 # NOTE: CODE&BU!LD is actually the software development section of the UN!TY group.
 # (In case you would be wondering...)
 # =========================================================
 
-import argparse, ctypes, darkdetect, datetime, json, os, pathlib, pickle, platform, psutil, pygame, requests, shutil, socket, subprocess
-import sys, time, typing, threading, webbrowser, win32api, winreg
-from PyQt6.QtCore import QEventLoop, QFileInfo, QObject, QSize, Qt, QThread, QTimer, pyqtSignal
-from PyQt6.QtGui import QColor, QFont, QIcon
-from PyQt6.QtWidgets import (
-    QAbstractItemView, QApplication, QFileDialog, QFileIconProvider, QHBoxLayout, QTableWidgetItem, QVBoxLayout, QWidget
+import argparse, ctypes, darkdetect, datetime, json, markdown, os, pathlib, pickle, platform, psutil, pygame, requests, shutil, socket
+import subprocess, sys, time, typing, threading, webbrowser, win32api, winreg
+from PyQt6.QtCore import (
+    QCoreApplication, QEvent, QEventLoop, QFileInfo, QObject, QRegularExpression, QSize, Qt, QThread, QTimer, QUrl, pyqtSignal
 )
+from PyQt6.QtGui import (
+    QColor, QDragEnterEvent, QDragLeaveEvent, QDragMoveEvent, QDropEvent, QFont, QFontDatabase, QFontMetrics, QIcon, QKeyEvent, QPainter,
+    QPixmap, QResizeEvent, QSyntaxHighlighter, QTextCharFormat, QTextCursor
+)
+from PyQt6.QtWidgets import (
+    QAbstractItemView, QApplication, QFileDialog, QFileIconProvider, QHBoxLayout, QLayout, QStatusBar, QTableWidgetItem, QTextEdit, QVBoxLayout,
+    QWidget
+)
+from PyQt6.QtSvg import QSvgRenderer
+from PyQt6.Qsci import QsciScintilla, QsciLexerMarkdown
 from qfluentwidgets import (
     Action, BodyLabel, BoolValidator, CaptionLabel, CardWidget, ColorConfigItem, ColorDialog, ComboBox, CommandBar, ConfigItem,
-    ElevatedCardWidget, ExpandGroupSettingCard, FluentFontIconBase, FluentIcon as FICO, FluentWindow, HyperlinkButton, HyperlinkCard,
-    IconInfoBadge, IconWidget, IndeterminateProgressRing, IndicatorPosition, InfoBadgePosition, InfoBar, InfoBarPosition, LineEdit,
-    MessageBox, MessageBoxBase, NavigationItemPosition, OptionsConfigItem, OptionsSettingCard, OptionsValidator, PrimaryPushButton,
-    PrimaryPushSettingCard, ProgressRing, PushButton, PushSettingCard, QConfig, qconfig, RangeConfigItem, RangeValidator, setTheme,
-    setThemeColor, SimpleExpandGroupSettingCard, SingleDirectionScrollArea, SpinBox, SplashScreen, StrongBodyLabel, SubtitleLabel,
-    SwitchButton, SwitchSettingCard, TableWidget, Theme, theme, themeColor, TitleLabel, ToolButton, ToolTipFilter, ToolTipPosition
+    DropDownPushButton, ElevatedCardWidget, ExpandGroupSettingCard, FluentFontIconBase, FluentIcon as FICO, FluentWindow,
+    HyperlinkButton, HyperlinkCard, IconInfoBadge, IconWidget, IndeterminateProgressRing, IndicatorPosition, InfoBadgePosition, InfoBar,
+    InfoBarPosition, LineEdit, MessageBox, MessageBoxBase, NavigationItemPosition, OptionsConfigItem, OptionsSettingCard, OptionsValidator,
+    PrimaryPushButton, PrimaryPushSettingCard, ProgressRing, PushButton, PushSettingCard, QConfig, qconfig, RangeConfigItem, RangeValidator,
+    RoundMenu, setFont, setTheme, setThemeColor, ScrollBar, SimpleExpandGroupSettingCard, SingleDirectionScrollArea, SpinBox, SplashScreen,
+    StrongBodyLabel, SubtitleLabel, SwitchButton, SwitchSettingCard, TableWidget, TextEdit, Theme, theme, themeColor, TitleLabel, ToolButton,
+    ToolTipFilter, ToolTipPosition, TransparentDropDownPushButton, TransparentToggleToolButton, TransparentToolButton,
 )
-from qframelesswindow import FramelessWindow, TitleBar
+from qframelesswindow import FramelessWindow, StandardTitleBar, TitleBar
 from qframelesswindow.utils import getSystemAccentColor
+from qframelesswindow.webengine import FramelessWebEngineView
 from colorama import init, Fore, Back, Style
 from shiboken6 import isValid
 from packaging.version import Version
 from pathlib import Path
 from urllib.parse import urlparse
 from rich.progress import Progress
+from markdown_it import MarkdownIt
 
 # =========================================================
 
@@ -139,7 +150,7 @@ class SegoeFontIcon(FluentFontIconBase):
 class SmartLogic:
     """ SmartUtils
     ==========
-    General SmartLinker functions class
+    General class for SmartLinker functions
     """
     def __init__(self):
         super().__init__()
@@ -496,6 +507,36 @@ class SmartLogic:
             The selected file path returned by the dialog
         """
         filePath, _ = QFileDialog.getOpenFileName(
+            parent,
+            dialogTitle,
+            mainDir,
+            typeFilter
+        )
+        if filePath: return filePath
+        return ""
+
+    def saveFileDialog(self, parent: typing.Optional[QWidget], dialogTitle: typing.Optional[str], mainDir: typing.Optional[str], typeFilter: typing.Optional[str]) -> str:
+        """ SmartUtils
+        ==========
+        Specified type file saver through file picker dialog
+
+        Parameters
+        ----------
+        parent: QWidget
+            The parent of the file picker dialog (optional)
+        dialogTitle: string
+            The file picker dialog title (optional but preferred)
+        mainDir: string
+            The main directory you want the dialog to open into (optional)
+        typeFilter: string | list[string]
+            All the different file types you want to filter in the dialog (optional)
+        
+        Returns
+        -------
+        filePath: string
+            The selected file path returned by the dialog
+        """
+        filePath, _ = QFileDialog.getSaveFileName(
             parent,
             dialogTitle,
             mainDir,
@@ -1106,8 +1147,65 @@ class SmartLogic:
             print(f"{Fore.RED}An error occured while attempting to check system compatibility: {e}{Style.RESET_ALL}")
             self.managerLog(f"ERROR: Failed to check system compatibility: {e}")
         finally: return isCompatible
-		
+
+    def markdownBaseSheet(self) -> str:
+        return f"""
+            <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                </head>
+                
+                <body style="padding: 0; margin: 0; background-color: {'#272727' if self.isDarkMode() else 'white'}; border: 1px solid {"#393939" if self.isDarkMode() else "#E3E6E9"}; border-radius: 10px 0 0 0;"></body>
+            </html>
+        """
+    
+class SmartIcons:
+    """ SmartUtils
+    ==========
+    Class for SVG-based icons
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.MARKDOWN = """
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -44 208 208">
+            <rect width="198" height="118" x="5" y="5" ry="10" stroke="#000" stroke-width="10" fill="#FFF"/>
+            <path fill="#000" d="M30 98V30h20l20 25 20-25h20v68H90V59L70 84 50 59v39zm125 0l-30-33h20V30h20v35h20z"/>
+        </svg>
+        """
+
+    def renderIcon(self, svgData: str, size: int = 32) -> QIcon:
+        """ SmartUtils
+        ==========
+        SVG data to QIcon converter
+
+        Parameters
+        ----------
+        svgData: string
+            The SVG data you want to convert to a QIcon
+        
+        Returns
+        -------
+        :QIcon: The rendered QIcon (empty if the conversion failed)
+        """
+        # color = QColor("#FFFFFF") if not smart.isDarkModeEnabled() else QColor("#000000")
+        try:
+            renderer = QSvgRenderer(svgData.encode('utf-8'))
+            pixmap = QPixmap(size, size)
+            pixmap.fill(Qt.GlobalColor.transparent)
+            painter = QPainter(pixmap)
+            # painter.setPen(color)
+            # painter.setBrush(color)
+            renderer.render(painter)
+            painter.end()
+            return QIcon(pixmap)
+        except: return QIcon()
+
 class DownloadWorker(QObject):
+    """ SmartUtils
+    ==========
+    SmartLinker's file downloading processor
+    """
     # Definition of signals that the worker can send to the interface
     progress = pyqtSignal(int, int, str) # (bytes downloaded, total bytes, speed)
     finished = pyqtSignal(str)           # (success message)
@@ -1126,7 +1224,10 @@ class DownloadWorker(QObject):
         self.isPaused = False
 
     def run(self):
-        """Lance le téléchargement. C'est cette méthode qui tournera dans le thread."""
+        """ SmartUtils
+        ==========
+        Method to run the download
+        """
         try:
             reponse = requests.get(self.url, stream=True, timeout=10)
             reponse.raise_for_status()
@@ -1168,16 +1269,21 @@ class DownloadWorker(QObject):
             self.error.emit(f"An unexpected error has occured: {e}")
 
     def cancel(self):
-        """ Method to request the cancellation of the download. """
+        """ SmartUtils
+        ==========
+        Method to request the cancellation of the download
+        """
         # Mark cancelled and ensure we unblock any wait caused by pause
         self.isCancelled = True
         try: self.pauseEvent.set()
         except Exception: pass
 
     def pause(self):
-        """ Method to request the pause of the download.
+        """ SmartUtils
+        ==========
+        Method to request the pause of the download.
 
-        Note: the download must already be started for the pause to take effect
+        :Note: the download must already be started for the pause to take effect
         (the thread is iterating over `response.iter_content`).
         """
         self.isPaused = True
@@ -1185,7 +1291,10 @@ class DownloadWorker(QObject):
         except Exception: pass
 
     def resume(self):
-        """ Resume a previously paused download. """
+        """ SmartUtils
+        ==========
+        Method to resume a previously paused download
+        """
         self.isPaused = False
         try: self.pauseEvent.set()
         except Exception: pass
@@ -1243,6 +1352,10 @@ class DownloadDialog(MessageBoxBase):
         self.startDownload(url, filename)
 
     def startDownload(self, url: str, filename: str):
+        """ SmartUtils
+        ==========
+        Method to start the download through the worker
+        """
         self.downloadThread = QThread()
         self.worker = DownloadWorker(url, filename)
 
@@ -1265,6 +1378,10 @@ class DownloadDialog(MessageBoxBase):
         except Exception: pass
     
     def updateProgress(self, downloaded, total, speed):
+        """ SmartUtils
+        ==========
+        Method to update the download progress bar
+        """
         with open(smart.resourcePath(".temp\\.metadata"), "wb") as metaWriter:
             pickle.dump(total, metaWriter)
         if total > 0:
@@ -1282,6 +1399,10 @@ class DownloadDialog(MessageBoxBase):
         self.downloadSpeed.setText(speed)
     
     def onFinished(self, message):
+        """ SmartUtils
+        ==========
+        Operations to apply once the download is complete
+        """
         self.titleLabel.setText("Download complete!")
         self.dialogIcon.setIcon(FICO.ACCEPT)
         self.statusLabel.setText(message)
@@ -1300,6 +1421,10 @@ class DownloadDialog(MessageBoxBase):
         print(f'{Fore.GREEN}The file "{self.filename}" has been downloaded successfully!{Style.RESET_ALL}')
 
     def onError(self, message):
+        """ SmartUtils
+        ==========
+        Operations to apply when an error occurs during download
+        """
         self.titleLabel.setText("Oops! Something went wrong...")
         self.dialogIcon.setIcon(FICO.CLOSE)
         self.statusLabel.setText("It looks like we are unable to connect to the Internet... Please check your network connection, then try again.")
@@ -1316,6 +1441,10 @@ class DownloadDialog(MessageBoxBase):
         print(f"{Fore.RED}{message}{Style.RESET_ALL}")
 
     def cancelDownload(self):
+        """ SmartUtils
+        ==========
+        Method to cancel the download
+        """
         self.titleLabel.setText("Cancelling download...")
         self.dialogIcon.setIcon(FICO.REMOVE_FROM)
         self.statusLabel.setText("Please wait for the download process to stop...")
@@ -1326,7 +1455,10 @@ class DownloadDialog(MessageBoxBase):
         if self.worker: self.worker.cancel()
 
     def togglePause(self):
-        """ Toggle between pause and resume. Only works if the download has been started. """
+        """ SmartUtils
+        ==========
+        Toggle between pause and resume (only works if the download has been started)
+        """
         if not hasattr(self, 'worker') or self.worker is None: return
 
         if getattr(self.worker, 'isPaused', False):
@@ -1349,17 +1481,107 @@ class DownloadDialog(MessageBoxBase):
             except Exception as e: print(f"Failed to pause download: {e}")
     
     def closeEvent(self, event):
+        """ SmartUtils
+        ==========
+        Closing event listener
+        """
         self.cancelDownload()
         event.accept()
 
     def closeAndCleanup(self):
+        """ SmartUtils
+        ==========
+        Operations to apply when the download dialog is closed
+        """
         if self.downloadThread.isRunning():
             self.downloadThread.quit()
             self.downloadThread.wait()
         self.accept()
 
+# Elidable labels ======================================
+
+class ElidableTitleLabel(TitleLabel):
+    def __init__(self, text: str, parent=None):
+        super().__init__(text, parent)
+        self.initText = text
+        super().setToolTip(text)
+    
+    def resizeEvent(self, event):
+        metrics = QFontMetrics(self.font())
+        self.setText(
+            metrics.elidedText(
+                self.text(),
+                Qt.TextElideMode.ElideRight,
+                self.width()
+            )
+        )
+        super().resizeEvent(event)
+    
+    def setToolTip(self, text: str | None) -> None:
+        if text is None: text = self.initText
+        super().setToolTip(text)
+
+    def installEventFilter(self, obj: QObject | None) -> None:
+        super().installEventFilter(ToolTipFilter(self))
+
+class ElidableSubtitleLabel(SubtitleLabel):
+    def __init__(self, text: str, parent=None):
+        super().__init__(text)
+        self.initText = text
+        super().setToolTip(text)
+    
+    def setToolTip(self, text: str | None) -> None:
+        if text is None: text = self.initText
+        super().setToolTip(text)
+
+    def installEventFilter(self, obj: QObject | None) -> None:
+        super().installEventFilter(ToolTipFilter(self))
+
+    def setText(self, text: str) -> None:
+        super().setText(text)
+        self.setToolTip(text)
+        self.installEventFilter(ToolTipFilter(self))
+    
+    def resizeEvent(self, event):
+        metrics = QFontMetrics(self.font())
+        self.setText(
+            metrics.elidedText(
+                self.text(),
+                Qt.TextElideMode.ElideMiddle,
+                self.width()
+            )
+        )
+        super().resizeEvent(event)
+
+class ElidableBodyLabel(BodyLabel):
+    def resizeEvent(self, event):
+        metrics = QFontMetrics(self.font())
+        self.setText(
+            metrics.elidedText(
+                self.text(),
+                Qt.TextElideMode.ElideRight,
+                self.width()
+            )
+        )
+        super().resizeEvent(event)
+
+class ElidableCaptionLabel(CaptionLabel):
+    def resizeEvent(self, event):
+        metrics = QFontMetrics(self.font())
+        self.setText(
+            metrics.elidedText(
+                self.text(),
+                Qt.TextElideMode.ElideRight,
+                self.width()
+            )
+        )
+        super().resizeEvent(event)
+
+# ======================================================
+
 cfg = Config()
 smart = SmartLogic()
+smIco = SmartIcons()
 cfgFilePath = smart.resourcePath("bin/config.json")
 browsersCfgFilePath = smart.resourcePath("bin/browsers_config.dat")
 qconfig.load(cfgFilePath, cfg)

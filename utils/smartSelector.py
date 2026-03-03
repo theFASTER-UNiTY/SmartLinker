@@ -1,4 +1,5 @@
 from utils.SmartUtils import *
+from utils.smartDownMarker import SmartDownMarkerGUI as DownMarker
 
 # ===========================================================================================================
 
@@ -44,9 +45,6 @@ class SmartSelectorGUI(FramelessWindow):
     def __init__(self, requestArgs: list[str], parent = None):
         super().__init__(parent=parent)
         print(smart.consoleScript())
-        self.lightSheetOnDark: str = "SingleDirectionScrollArea {background-color: rgba(242, 242, 242, 0.05); border: 1px solid rgba(242, 242, 242, 0.25)}"
-        self.darkSheetOnLight: str = "SingleDirectionScrollArea {background-color: rgba(32, 32, 32, 0.05); border: 1px solid rgba(32, 32, 32, 0.25)}"
-        self.runningBrowsers = 0
         smart.emptySelectorLog()
         if cfg.get(cfg.appTheme) == "Dark": setTheme(Theme.DARK)
         elif cfg.get(cfg.appTheme) == "Light": setTheme(Theme.LIGHT)
@@ -56,8 +54,12 @@ class SmartSelectorGUI(FramelessWindow):
         self.setWindowTitle(f"Smart Selector | {SmartLinkerName}")
         self.setStyleSheet(("background: white" if not smart.isDarkMode() else "") if cfg.get(cfg.appTheme) == "Auto" else
                            "" if cfg.get(cfg.appTheme) == "Dark" else "background: white")
-        self.titleHeight = self.titleBar.height()
         self.setMinimumSize(750, 550)
+        
+        self.titleHeight = self.titleBar.height()
+        self.lightSheetOnDark: str = "SingleDirectionScrollArea {background-color: rgba(242, 242, 242, 0.05); border: 1px solid rgba(242, 242, 242, 0.25)}"
+        self.darkSheetOnLight: str = "SingleDirectionScrollArea {background-color: rgba(32, 32, 32, 0.05); border: 1px solid rgba(32, 32, 32, 0.25)}"
+        self.runningBrowsers = 0
         self.bottomLightSheet: str = "background-color: #F3F3F3; border: 1px solid #E5E5E5"
         self.bottomDarkSheet: str = "background-color: #161616; border: 1px solid #000000" # original: #202020, #1D1D1D
         self.requestURL = requestArgs[1]
@@ -108,6 +110,15 @@ class SmartSelectorGUI(FramelessWindow):
               "Scanning running processes...\n" \
               "=============================\n")
         smart.selectorLog("Scanning running browsers...")
+        if self.requestURL.endswith(".md") or self.requestURL.endswith(".markdown"):
+            browsCard = BrowserCard(
+                smIco.renderIcon(smIco.MARKDOWN, 56),
+                "Smart DownMarker",
+                "Embedded",
+                self.requestURL,
+                self
+            )
+            self.myBrowsLayout.addWidget(browsCard)
         if myBrowsList["MyBrowsers"]:
             for browser in myBrowsList["MyBrowsers"]:
                 print(f"Browser in queue: {os.path.basename(browser["path"])}\n" \
@@ -146,10 +157,10 @@ class SmartSelectorGUI(FramelessWindow):
             self.myBrowsLayout.addWidget(browsCard)
         if not myBrowsList["MyBrowsers"] and not cfg.get(cfg.mainBrowserPath): self.myBrowsLayout.addWidget(self.myBrowsEmptyMsg, 0, Qt.AlignmentFlag.AlignCenter)
         print("-----------------------------------------------------\n" \
-             f"{self.runningBrowsers} browser{"s are" if self.runningBrowsers != 1 else " is"} actually running.\n" \
+             f"{self.runningBrowsers} browser{"s are" if self.runningBrowsers != 1 else " is"} currently running.\n" \
              f"{"NOTE: They may be the same browser.\n" if self.runningBrowsers > 1 else ""}" \
               "-----------------------------------------------------\n")
-        smart.selectorLog(f"Scanning running browsers terminated. {self.runningBrowsers} browser{"s are" if self.runningBrowsers != 1 else " is"} actually running{" (they may be the same browser)" if self.runningBrowsers > 1 else ""}.")
+        smart.selectorLog(f"Scanning running browsers terminated. {self.runningBrowsers} browser{"s are" if self.runningBrowsers != 1 else " is"} currently running{" (they may be the same browser)" if self.runningBrowsers > 1 else ""}.")
         
         layout.addStretch(1)
 
@@ -203,6 +214,11 @@ class SmartSelectorGUI(FramelessWindow):
         self.restartBtn.installEventFilter(ToolTipFilter(self.restartBtn))
         self.restartBtn.clicked.connect(self.confirmRestart)
         bottomLayout.addWidget(self.restartBtn)
+        self.managerBtn = ToolButton(smart.resourcePath("resources/images/icons/icon.ico"))
+        self.managerBtn.setToolTip("Open the Smart Manager")
+        self.managerBtn.installEventFilter(ToolTipFilter(self.managerBtn))
+        self.managerBtn.clicked.connect(self.openManager)
+        bottomLayout.addWidget(self.managerBtn)
         
         self.titleBar.raise_()
         print(f"Loading '{self.requestURL}'...\n")
@@ -262,6 +278,12 @@ class SmartSelectorGUI(FramelessWindow):
             smart.successNotify("Copying complete!", "The forwarded link has been successfully copied to the clipboard!", self)
         else: self.copyLinkToClip()
 
+    def openManager(self):
+        """ Open the Smart Manager """
+        from smartLinker import SmartLinkerGUI as SManager
+        self.managerWindow = SManager()
+        self.managerWindow.show()
+
     def confirmRestart(self):
         """ Open a confirmation dialog to restart the Smart Selector """
         restartDlg = MessageBox(
@@ -274,7 +296,10 @@ class SmartSelectorGUI(FramelessWindow):
         if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smart.playSound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
         if restartDlg.exec():
             try:
-                smart.restartAppPlus()
+                reArgs = sys.argv
+                reArgs.remove("load")
+                sys.argv = reArgs
+                smart.restartApp()
                 print("Restarting the Smart Selector...")
                 smart.selectorLog("Restarting the Smart Selector...")
             except Exception as e:
@@ -310,7 +335,13 @@ class BrowserCard(ElevatedCardWidget):
     def cardSelect(self, name, link, parent=None):
         failedAttempts = 0
         manualCount = 1 if cfg.get(cfg.mainBrowserPath) and cfg.get(cfg.mainBrowserIsManual) else 0
-        if myBrowsList["MyBrowsers"]:
+        if name == "Smart DownMarker":
+            mdWindow = DownMarker(link)
+            mdWindow.show()
+            print(f"{Fore.GREEN}Successfully loaded '{link}' into the Smart DownMarker{Style.RESET_ALL}")
+            smart.selectorLog(f"SUCCESS: '{link}' has been successfully loaded into the Smart DownMarker.")
+            if bool(cfg.get(cfg.closeOnBrowserSelect)): parent.close() # type: ignore
+        elif myBrowsList["MyBrowsers"]:
             for browser in myBrowsList["MyBrowsers"]:
                 if browser["name"] == name:
                     if browser["path"]:

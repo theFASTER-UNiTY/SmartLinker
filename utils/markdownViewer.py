@@ -6,7 +6,8 @@ class MarkdownViewer(QWidget):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.setObjectName("Markdown-Viewer")
-        self.name = "SmartDown"
+        self.name = "Markdown Viewer"
+        self.baseSub = "Your embedded SmartLinker-friendly Markdown viewer"
         self.renderMD = MarkdownIt().enable("table")
         self.markHistory = self.loadHistory()
         self.isHome: bool = True
@@ -19,7 +20,7 @@ class MarkdownViewer(QWidget):
         mainMDLayout.setSpacing(10)
 
         mainTopLine = QHBoxLayout()
-        mainTopLine.setContentsMargins(0, 0, 40, 20)
+        mainTopLine.setContentsMargins(0, 0, 40, 10)
         mainTopLine.setSpacing(10)
         
         mainMDLayout.addLayout(mainTopLine)
@@ -29,12 +30,11 @@ class MarkdownViewer(QWidget):
         mainTitleLine.setSpacing(0)
         mainTopLine.addLayout(mainTitleLine)
         
-        self.title = ElidableSubtitleLabel(self.name)
+        self.title = SubtitleLabel(self.name)
         mainTitleLine.addWidget(self.title)
         
-        self.subtitle = CaptionLabel("Subtitle")
+        self.subtitle = CaptionLabel(self.baseSub)
         self.subtitle.setStyleSheet("color: gray")
-        self.subtitle.setVisible(False)
         mainTitleLine.addWidget(self.subtitle)
         
         mainTopLine.addStretch()
@@ -56,7 +56,7 @@ class MarkdownViewer(QWidget):
             self.historyList = RoundMenu(parent=self)
             for path in self.markHistory["MarkdownHistory"]:
                 mdPath = path["path"]
-                self.historyList.addAction(Action(FICO.DOCUMENT, path["path"], triggered=lambda checked, text=mdPath: self.loadMDFile(text)))
+                self.historyList.addAction(Action(FICO.DOCUMENT, path["path"], triggered=lambda checked, text=mdPath, parent=parent: self.loadMDFile(text, parent, True)))
             self.historyList.addSeparator()
             self.historyList.addAction(Action(FICO.SETTING, "Manage history"))
             self.history.setMenu(self.historyList)
@@ -70,11 +70,18 @@ class MarkdownViewer(QWidget):
         mainTopLine.addWidget(self.info)
         
         self.mdContainer = QWidget(self)
-        self.mdContainer.setContentsMargins(0, 0, 0, 0)
-        self.mdContainer.setStyleSheet(f"background: transparent; border-top: 1px solid {"#E3E6E9" if not smart.isDarkMode() else "#393939"}; border-left: 1px solid {"#E3E6E9" if not smart.isDarkMode() else "#393939"};")
+        self.mdContainer.setObjectName("Container")
+        self.mdContainer.setContentsMargins(1, 1, 0, 0)
+        self.mdContainer.setStyleSheet(f"""
+            QWidget#Container {{
+                border-top: 1px solid {"#E3E6E9" if not smart.isDarkMode() else "#393939"};
+                border-left: 1px solid {"#E3E6E9" if not smart.isDarkMode() else "#393939"};
+                background: transparent;
+            }}
+        """)
         
         MDCLayout = QVBoxLayout(self.mdContainer)
-        MDCLayout.setContentsMargins(1, 1, 0, 0)
+        MDCLayout.setContentsMargins(0, 0, 0, 0)
         MDCLayout.setSpacing(0)
 
         self.browserMD = MarkWebView(self)
@@ -89,25 +96,36 @@ class MarkdownViewer(QWidget):
         title = self.title.text()
         path = smart.browseFileDialog(parent, "Open a file in the Markdown Viewer", "", "Markdown files (*.md; *.markdown)")
         if not path: self.title.setText(title)
-        else: self.loadMDFile(path)
+        else: self.loadMDFile(path, parent)
 
-    def loadMDFile(self, path: str):
+    def loadMDFile(self, path: str, parent, history: bool = False):
         fileExists: bool = False
         if os.path.exists(path):
             fileExists = True
-            self.markUpdate(fileExists, path)
-            with open(path, encoding="utf-8") as mdReader: self.contentMD = self.renderMD.render(mdReader.read())
-            htmlContent = f'<html>\n<head>\n<style>\n{self.styleMD}</style>\n</head>\n\n<body class="markdown-body" style="padding: 20px;">\n{self.contentMD}\n</body>\n</html>'
-            self.browserMD.setHtml(htmlContent, QUrl())
-            self.isHome = False
-            print(path.replace("/", "\\"))
-            with open("markdownHtml.log", "w", encoding="utf-8") as htmlWriter: htmlWriter.write(htmlContent)
-        # Retirer un chemin de l'historique à la sélection si le fichier est introuvable au chemin spécifié + notif d'erreur/avertissement
-        # Notif d'erreur/avertissement si fichier ≠ .md/.markdown
+            if path.endswith(".md") or path.endswith(".markdown"):
+                if smart.getFileMimeType(path).startswith("text"):
+                    self.markUpdate(fileExists, path, parent)
+                    with open(path, encoding="utf-8") as mdReader: self.contentMD = self.renderMD.render(mdReader.read())
+                    htmlContent = f'<html>\n<head>\n<style>\n{self.styleMD}</style>\n</head>\n\n<body class="markdown-body" style="padding: 20px;">\n{self.contentMD}\n</body>\n</html>'
+                    self.browserMD.setHtml(htmlContent, QUrl())
+                    self.isHome = False
+                    print(path.replace("/", "\\"))
+                    with open("markdownHtml.log", "w", encoding="utf-8") as htmlWriter: htmlWriter.write(htmlContent)
+                else:
+                    smart.warningNotify("Warning, be careful!", "The format of the provided file is not supported...", parent)
+                    smart.managerLog(f"WARNING: Incompatible format of the provided file: {path.replace("/", "\\")}")
+                    print(f"{Fore.YELLOW}WARNING!! The format of the provided file is not supported...{Style.RESET_ALL}")
+                    if history: self.removeFromHistory(path, parent)
+            else:
+                smart.warningNotify("Warning, be careful!", "The provided file is not recognised as a Markdown file...", parent)
+                smart.managerLog(f"WARNING: Provided file not recognised as a Markdown file: {path.replace("/", "\\")}")
+                print(f"{Fore.YELLOW}WARNING!! The provided file is not recognised as a Markdown file...{Style.RESET_ALL}")
+                if history: self.removeFromHistory(path, parent)
     
-    def markUpdate(self, exists: bool, path: str):
+    def markUpdate(self, exists: bool, path: str, parent):
         pathExists: bool = False
         if exists:
+            print(f"{os.path.basename(path)} - {self.name}")
             self.title.setText(f"{os.path.basename(path)} - {self.name}")
             self.subtitle.setText(path.replace("/", "\\"))
             self.subtitle.setVisible(True)
@@ -121,7 +139,7 @@ class MarkdownViewer(QWidget):
                 self.markHistory = self.loadHistory()
                 self.history.setEnabled(True)
                 self.historyList = RoundMenu(parent=self)
-                for hPath in self.markHistory["MarkdownHistory"]: self.historyList.addAction(Action(FICO.DOCUMENT, hPath["path"], triggered=lambda: self.openMDFile(hPath["path"])))
+                for hPath in self.markHistory["MarkdownHistory"]: self.historyList.addAction(Action(FICO.DOCUMENT, hPath["path"], triggered=lambda: self.loadMDFile(hPath["path"], parent)))
                 self.historyList.addSeparator()
                 self.historyList.addAction(Action(FICO.SETTING, "Manage history"))
                 self.history.setMenu(self.historyList)
@@ -130,12 +148,11 @@ class MarkdownViewer(QWidget):
         else:
             self.home.setEnabled(False)
             self.info.setEnabled(False)
-    
+
     def backToHome(self):
         self.isHome = True
         self.title.setText("Markdown Viewer")
-        self.subtitle.setText("")
-        self.subtitle.setVisible(False)
+        self.subtitle.setText("Your embedded SmartLinker-friendly Markdown viewer")
         self.home.setEnabled(False)
         self.info.setEnabled(False)
         self.browserMD.setHtml(self.baseMD, QUrl())
@@ -151,6 +168,26 @@ class MarkdownViewer(QWidget):
         except Exception as e:
             print(f"{Fore.RED}An error occured while attempting to save browser-related changes: {e}{Style.RESET_ALL}")
             smart.managerLog(f"ERROR: Failed to save browser-related changes: {e}")
+
+    def removeFromHistory(self, value: str, parent):
+        self.markHistory = self.loadHistory()
+        self.newHistory = {"MarkdownHistory": []}
+        for path in self.markHistory["MarkdownHistory"]:
+            if path and path["path"] != value:
+                self.newHistory["MarkdownHistory"].append({"path": path["path"].replace("/", "\\")})
+        if self.newHistory["MarkdownHistory"]:
+            self.historyList = RoundMenu(parent=self)
+            for hPath in self.newHistory["MarkdownHistory"]: self.historyList.addAction(Action(FICO.DOCUMENT, hPath["path"], triggered=lambda savedPath=hPath["path"], parent=parent: self.loadMDFile(savedPath, parent, True)))
+            self.historyList.addSeparator()
+            self.historyList.addAction(Action(FICO.SETTING, "Manage history"))
+            self.history.setMenu(self.historyList)
+        else:
+            self.history.setEnabled(False)
+            self.historyList.clear()
+            smart.infoNotify("Empty history", "Your Markdown history is now empty.")
+            self.backToHome()
+        self.saveHistory(self.newHistory)
+        self.markHistory = self.loadHistory()
 
 class MarkWebView(FramelessWebEngineView):
     """ Class for the Markdown viewer webview """

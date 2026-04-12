@@ -1,4 +1,4 @@
-from SmartUtils import *
+from utils.SmartUtils import *
 
 # =========================================================
 
@@ -38,15 +38,26 @@ class SmartDownMarkerGUI(FramelessWindow):
         else: setTheme(Theme.AUTO)
         self.setStyleSheet((("background: white" if not smart.isDarkMode() else "") if cfg.get(cfg.appTheme) == "Auto" else
                            "" if cfg.get(cfg.appTheme) == "Dark" else "background: white") if not cfg.get(cfg.micaEffect) else "")
-        fontDB = QFontDatabase.addApplicationFont(smart.resourcePath("resources/fonts/CascadiaCode.ttf"))
-        fontEditor = QFontDatabase.applicationFontFamilies(fontDB)[6]
-        fontDB = QFontDatabase.addApplicationFont(smart.resourcePath("resources/fonts/SegoeFont.ttf"))
-        fontUI = QFontDatabase.applicationFontFamilies(fontDB)[12]
+        try:
+            fontDB = QFontDatabase.addApplicationFont(smart.resourcePath("resources\\fonts\\CascadiaCode.ttf"))
+            fontEditFam = QFontDatabase.applicationFontFamilies(fontDB)[6]
+        except Exception as e:
+            print(f"{Fore.RED}Something went wrong while attempting to load the editor font: {e}{Style.RESET_ALL}")
+            fontEditFam = "Consolas"
+        finally: fontEditor = fontEditFam
+        try:
+            fontDB = QFontDatabase.addApplicationFont(smart.resourcePath("resources\\fonts\\SegoeFont.ttf"))
+            fontUIFam = QFontDatabase.applicationFontFamilies(fontDB)[12]
+        except Exception as e:
+            print(f"{Fore.RED}Something went wrong while attempting to load the editor font: {e}{Style.RESET_ALL}")
+            fontUIFam = "Segoe UI"
+        finally: fontUI = fontUIFam
         fontEditor_QSS = f"font-family: {fontEditor}, 'Consolas', 'Courier New', monospace;"
         fontUI_QSS = f"font-family: {fontUI}, 'Segoe UI', sans-serif;"
 
         self.validPath = os.path.exists(self.mdPath)
         self.markHistory = self.loadHistory()
+        self.historyManageDlg = None
         self.renderMD = MarkdownIt().enable("table")
         self.content = ""
         self.contentMD = None
@@ -56,7 +67,7 @@ class SmartDownMarkerGUI(FramelessWindow):
             '<', '>', '[', ']', '{', '}', '(', ')', '/', '\\', '"', "'", '.', ',', ';', ':', '-', '_', '=', '&', '|', '`', '?', '!', '@', '#', '^',
             '¨', '$', '%', '~', '°', '*', '+', '§', 'µ'
         ]
-        with open(smart.resourcePath("resources/assets/markdown-base-content.html"), encoding="utf-8") as baseReader: self.baseMD = baseReader.read().replace("Markdown Viewer", self.title)
+        with open(smart.resourcePath("resources/assets/markdown-base-content.html"), encoding="utf-8") as baseReader: self.baseMD = (baseReader.read().replace("Markdown Viewer", self.title)).replace("Open a Markdown file", "Open")
         with open(smart.resourcePath("resources/assets/github-markdown.css"), encoding="utf-8") as styleReader: self.styleMD = styleReader.read()
 
         mainLayout = QVBoxLayout(self)
@@ -75,9 +86,9 @@ class SmartDownMarkerGUI(FramelessWindow):
             self.historyList = RoundMenu(parent=self)
             for path in self.markHistory["MarkdownHistory"]:
                 mdPath = path["path"]
-                self.historyList.addAction(Action(FICO.DOCUMENT, path["path"], triggered=lambda checked, text=mdPath: self.loadMDFile(text)))
+                self.historyList.addAction(Action(FICO.DOCUMENT, path["path"], triggered=lambda checked, text=mdPath, parent=self: self.loadMDFile(text, parent)))
             self.historyList.addSeparator()
-            self.historyList.addAction(Action(FICO.SETTING, "Manage history"))
+            self.historyList.addAction(Action(FICO.SETTING, "Manage history", triggered=lambda checked, parent=self: self.openHistoryManager(parent)))
             self.openRecent.setMenu(self.historyList)
         else: self.openRecent.setEnabled(False)
         self.mdEdit = Action(FICO.EDIT, "Edit", checkable=True, triggered=lambda checked: self.toggleEditMode(checked))
@@ -161,14 +172,16 @@ class SmartDownMarkerGUI(FramelessWindow):
         self.editorBox = QWidget()
         self.editorBox.setObjectName("EditorBox")
         self.editorBox.setContentsMargins(0, 0, 0, 0)
-        self.editorBox.setStyleSheet(f"EditorBox {{ border-top: 1px solid {"#E3E6E9" if not smart.isDarkMode() else "#393939"}; }}")
+        self.editorBox.setStyleSheet(f"#EditorBox {{ border-top: 1px solid {"#E3E6E9" if not smart.isDarkMode() else "#393939"}; }}")
         self.editorBox.setFixedWidth(self.width() // 2)
         self.editorBox.setEnabled(self.mdEdit.isChecked())
         self.editorBox.setVisible(self.mdEdit.isChecked())
         editorLayout = QVBoxLayout(self.editorBox)
-        editorLayout.setContentsMargins(0, 2, 0, 0)
+        editorLayout.setContentsMargins(0, 0, 0, 0)
+        editorLayout.setSpacing(0)
         editorZone = QHBoxLayout()
         editorZone.setContentsMargins(0, 0, 0, 0)
+        editorZone.setSpacing(0)
         
         self.mdEditor = MarkEditor(fontEditor)
         self.mdEditor.installEventFilter(self)
@@ -197,6 +210,13 @@ class SmartDownMarkerGUI(FramelessWindow):
         self.editorSymbols.setWidgetResizable(True)
         self.editorSymbols.setMaximumHeight(41)
         self.editorSymbols.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.editorSymbols.enableTransparentBackground()
+        self.editorSymbols.setStyleSheet(f"""
+            SingleDirectionalScrollArea {{
+                border-radius: 0px;
+                border-top: 1px solid {"#E3E6E9" if not smart.isDarkMode() else "#393939"};
+            }}
+        """)
         self.editorSymbolsWidget = QWidget()
         self.editorSymbols.setWidget(self.editorSymbolsWidget)
         self.editorSymbolsLayout = QHBoxLayout(self.editorSymbolsWidget)
@@ -257,11 +277,14 @@ class SmartDownMarkerGUI(FramelessWindow):
         MDCLayout.addWidget(self.editorBox)
 
         self.mdContainer = QWidget(self)
+        self.mdContainer.setObjectName("Container")
         self.mdContainer.setContentsMargins(0, 0, 0, 0)
         self.mdContainer.setStyleSheet(f"""
-            background: transparent;
-            border: 1px solid {"#E3E6E9" if not smart.isDarkMode() else "#393939"};
-            border-bottom: none;
+            #Container {{
+                border: 1px solid {"#E3E6E9" if not smart.isDarkMode() else "#393939"};
+                border-bottom: none;
+                background: transparent;
+            }}
         """)
         displayLayout = QVBoxLayout(self.mdContainer)
         displayLayout.setContentsMargins(1, 1, 1, 0)
@@ -275,36 +298,44 @@ class SmartDownMarkerGUI(FramelessWindow):
 
         self.titleBar.raise_()
         self.mdSave.setEnabled(False)
-        self.loadMDFile(self.mdPath)
+        self.loadMDFile(self.mdPath, self)
 
     def newMDFile(self):
-        self.mdPath = "Untitled"
-        self.validPath = False
-        self.mdEditor.setText("")
-        self.setWindowTitle(f"Untitled - {self.title} | {SmartLinkerName}")
-        self.editorUpdate()
+        if self.canSave() or self.windowTitle().startswith("*"):
+            print("Unsaved!")
+            self.backToHome()
+        else: self.backToHome()
     
     def openMDFile(self, parent):
         """ Open a Markdown file from storage """
         title = self.mdPath
         path = smart.browseFileDialog(parent, "Open a file in the Markdown Viewer", "", "Markdown files (*.md; *.markdown)")
         if not path: self.setWindowTitle(f"{title} - {self.title} | {SmartLinkerName}")
-        else: self.loadMDFile(path)
+        else: self.loadMDFile(path, parent)
 
-    def loadMDFile(self, path: str):
+    def loadMDFile(self, path: str, parent, history: bool = False):
         if os.path.exists(path):
-            with open(path, encoding="utf-8") as mdReader: self.content = mdReader.read()
-            self.contentMD = self.renderMD.render(self.content)
-            htmlContent = f'<html>\n<head>\n<style>\n{self.styleMD}</style>\n</head>\n\n<body class="markdown-body" style="padding: 20px;">\n{self.contentMD}\n</body>\n</html>'
-            self.mdEditor.setText(self.content)
-            self.mdDisplayer.setHtml(htmlContent, QUrl())
-            self.isHome = False
-            self.mdHome.setEnabled(True)
-            self.mdInfo.setEnabled(True)
-            print(path.replace("/", "\\"))
-            self.mdPath = path.replace("/", "\\")
-            self.setWindowTitle(f"{self.mdPath} - {self.title} | {SmartLinkerName}")
-            with open("markdownHtml.log", "w", encoding="utf-8") as htmlWriter: htmlWriter.write(htmlContent)
+            if path.endswith(".md") or path.endswith(".markdown"):
+                if smart.getFileMimeType(path).startswith("text"):
+                    with open(path, encoding="utf-8") as mdReader: self.content = mdReader.read()
+                    self.contentMD = self.renderMD.render(self.content)
+                    htmlContent = f'<html>\n<head>\n<style>\n{self.styleMD}</style>\n</head>\n\n<body class="markdown-body" style="padding: 20px;">\n{self.contentMD}\n</body>\n</html>'
+                    self.mdEditor.setText(self.content)
+                    self.mdDisplayer.setHtml(htmlContent, QUrl())
+                    self.isHome = False
+                    self.mdHome.setEnabled(True)
+                    self.mdInfo.setEnabled(True)
+                    print(path.replace("/", "\\"))
+                    self.mdPath = path.replace("/", "\\")
+                    self.setWindowTitle(f"{self.mdPath} - {self.title} | {SmartLinkerName}")
+                    with open("markdownContent.log", "w", encoding="utf-8") as mdWriter: mdWriter.write(self.content)
+                    with open("markdownHtml.log", "w", encoding="utf-8") as htmlWriter: htmlWriter.write(htmlContent)
+                else:
+                    smart.warningNotify("Warning, be careful!", "The format of the provided file is not supported...", parent)
+                    if history: self.removeFromHistory(path, parent)
+            else:
+                smart.warningNotify("Warning, be careful!", "The provided file is not recognised as a Markdown file...", parent)
+                if history: self.removeFromHistory(path, parent)
 
     def saveMDFile(self, path: str, content: str, saveAs: bool, parent):
         self.validPath = os.path.exists(self.mdPath)
@@ -314,12 +345,13 @@ class SmartDownMarkerGUI(FramelessWindow):
                 with open(newPath, "w", encoding="utf-8") as mdWriter: mdWriter.write(content)
                 self.mdPath = newPath
                 self.setWindowTitle(f"{self.mdPath} - {self.title} | {SmartLinkerName}")
+                smart.successNotify("Save complete!", "The file has been saved successfully!", parent)
             print(newPath)
         else:
             with open(self.mdPath, 'w', encoding="utf-8") as mdWriter: mdWriter.write(content)
             self.setWindowTitle(f"{self.windowTitle()[1:] if self.windowTitle().startswith('*') else self.windowTitle()}")
             print(path)
-        smart.successNotify("Save complete!", "The file has been saved successfully!", parent)
+            smart.successNotify("Save complete!", "The file has been saved successfully!", parent)
         self.mdSave.setEnabled(False)
 
     def backToHome(self):
@@ -345,6 +377,34 @@ class SmartDownMarkerGUI(FramelessWindow):
         except Exception as e:
             print(f"{Fore.RED}An error occured while attempting to save browser-related changes: {e}{Style.RESET_ALL}")
             smart.managerLog(f"ERROR: Failed to save browser-related changes: {e}")
+
+    def openHistoryManager(self, parent):
+        history = self.loadHistory()
+        if not self.historyManageDlg: self.historyManageDlg = ManageHistoryDialog(history, parent)
+        else:
+            self.historyManageDlg = None
+            self.openHistoryManager(parent)
+        self.historyManageDlg.exec() # type: ignore
+
+    def removeFromHistory(self, value: str, parent):
+        self.markHistory = self.loadHistory()
+        self.newHistory = {"MarkdownHistory":[]}
+        for path in self.markHistory["MarkdownHistory"]:
+            if path["path"] != value:
+                self.newHistory["MarkdownHistory"].append({"path": path["path"].replace("/", "\\")})
+        if self.newHistory["MarkdownHistory"]:
+            self.historyList = RoundMenu(parent=self)
+            for hPath in self.newHistory["MarkdownHistory"]: self.historyList.addAction(Action(FICO.DOCUMENT, hPath["path"], triggered=lambda savedPath=hPath["path"], parent=parent: self.loadMDFile(savedPath, parent, True)))
+            self.historyList.addSeparator()
+            self.historyList.addAction(Action(FICO.SETTING, "Manage history"))
+            self.openRecent.setMenu(self.historyList)
+        else:
+            self.openRecent.setEnabled(False)
+            self.historyList.clear()
+            smart.infoNotify("Empty history", "Your Markdown history is now empty.")
+            self.backToHome()
+        self.saveHistory(self.newHistory)
+        self.markHistory = self.loadHistory()
 
     def toggleEditMode(self, check: bool):
         self.editMode = check
@@ -489,169 +549,13 @@ class MarkWebView(FramelessWebEngineView):
     def dragLeaveEvent(self, event: QDragLeaveEvent | None):
         event.accept()                                                                  # type: ignore
         if self.dropParent.isHome: self.page().runJavaScript("onDragLeave()")           # type: ignore
-
     
     def dropEvent(self, event: QDropEvent | None):
         if event.mimeData().hasUrls():                                                  # type: ignore
             for url in event.mimeData().urls():                                         # type: ignore
                 localPath = url.toLocalFile()
                 if self.dropParent.isHome: self.page().runJavaScript("onDrop()")        # type: ignore
-                self.dropParent.loadMDFile(localPath)
-
-class MarkEditorM(TextEdit):
-    """ Class for the SmartLinker-adapted Markdown editor """
-
-    PAIRS = {
-        "'": "'",
-        '"': '"',
-        "`": "`",
-        "(": ")",
-        "[": "]",
-        "{": "}"
-    }
-    REVERSE_PAIRS = {v: k for k, v in PAIRS.items()}
-    PAIRS_COLORS = [
-        QColor("#E06C75"),    # level 0
-        QColor("#61AFEF"),    # level 1
-        QColor("#C678DD"),    # level 2
-        QColor("#98C379"),    # level 3
-        QColor("#E5C07B"),    # level 4
-        QColor("#56B6C2"),    # level 5
-    ]
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.highlightColor = QColor(cfg.get(cfg.accentColor))
-        self.highlightColor.setAlpha(75)
-
-        self.cursorPositionChanged.connect(self.highlightMatchingPairs)
-
-        # Match format
-        self.match_format = QTextCharFormat()
-        self.match_format.setBackground(self.highlightColor)        # Visible color
-        self.match_format.setForeground(Qt.GlobalColor.black)
-
-    def highlightMatchingPairs(self):
-        selections = []
-
-        cursor = self.textCursor()
-        pos = cursor.position()
-
-        if pos == 0:
-            self.setExtraSelections([])
-            return
-
-        char = self.document().characterAt(pos - 1) # type: ignore
-
-        if char not in list(self.PAIRS.keys()) + list(self.REVERSE_PAIRS.keys()):
-            self.setExtraSelections([])
-            return
-
-        # Find match
-        match_pos, depth = self.findMatchingPair(pos - 1, char)
-
-        if match_pos is None:
-            self.setExtraSelections([])
-            return
-
-        # Current format
-        fmtCurrent = QTextCharFormat()
-        fmtCurrent.setBackground(self.PAIRS_COLORS[depth % len(self.PAIRS_COLORS)])
-
-        # Match format
-        fmt_match = QTextCharFormat()
-        fmt_match.setBackground(self.PAIRS_COLORS[depth % len(self.PAIRS_COLORS)])
-
-        # Selection 1
-        sel1 = QTextEdit.ExtraSelection()
-        sel1.cursor = self.textCursor()
-        sel1.cursor.setPosition(pos - 1)
-        sel1.cursor.movePosition(
-            QTextCursor.MoveOperation.Right,
-            QTextCursor.MoveMode.KeepAnchor
-        )
-        sel1.format = fmtCurrent
-
-        # Selection 2
-        sel2 = QTextEdit.ExtraSelection()
-        sel2.cursor = self.textCursor()
-        sel2.cursor.setPosition(match_pos)
-        sel2.cursor.movePosition(
-            QTextCursor.MoveOperation.Right,
-            QTextCursor.MoveMode.KeepAnchor
-        )
-        sel2.format = fmt_match
-
-        selections.append(sel1)
-        selections.append(sel2)
-
-        self.setExtraSelections(selections)
-
-    def findMatchingPair(self, startPos, char):
-        doc = self.document()
-
-        if char in self.PAIRS:              # forward
-            open_char = char
-            close_char = self.PAIRS[char]
-
-            depth = 0
-            i = startPos + 1
-
-            while i < doc.characterCount(): # type: ignore
-                c = doc.characterAt(i)      # type: ignore
-
-                if c == open_char: depth += 1
-                elif c == close_char:
-                    if depth == 0: return i, depth
-                    depth -= 1
-                i += 1
-
-        elif char in self.REVERSE_PAIRS:    # backward
-            close_char = char
-            open_char = self.REVERSE_PAIRS[char]
-
-            depth = 0
-            i = startPos - 1
-
-            while i >= 0:
-                c = doc.characterAt(i)      # type: ignore
-
-                if c == close_char: depth += 1
-                elif c == open_char:
-                    if depth == 0: return i, depth
-                    depth -= 1
-                i -= 1
-
-        return None, 0
-    
-    def keyPressEvent(self, event):
-        text = event.text()
-
-        # Auto closing
-        if text in self.PAIRS:
-            curs = self.textCursor()
-            closing = self.PAIRS[text]
-            if curs.hasSelection():
-                selected = curs.selectedText()
-                curs.insertText(text + selected + closing)
-                return
-            curs.insertText(text + closing)
-
-            # Move the cursor in the pairs
-            curs.movePosition(QTextCursor.MoveOperation.Left)
-            self.setTextCursor(curs)
-            return
-        
-        # Existing closing key
-        if text in self.PAIRS.values():
-            curs = self.textCursor()
-            if not curs.hasSelection():
-                nextChar = self.document().characterAt(curs.position()) # type: ignore
-                if nextChar == text:
-                    curs.movePosition(QTextCursor.MoveOperation.Right)
-                    self.setTextCursor(curs)
-                    return
-        super().keyPressEvent(event)
+                self.dropParent.loadMDFile(localPath, self.dropParent)
 
 class MarkEditor(QsciScintilla):
     """ Class for the SmartLinker-adapted Markdown editor """
@@ -659,6 +563,7 @@ class MarkEditor(QsciScintilla):
     def __init__(self, font: str, parent=None):
         super().__init__(parent)
         self.setStyleSheet(f"background: {"#282C34" if smart.isDarkMode() else "#EFF1F5"};")
+        self.setSelectionBackgroundColor(cfg.get(cfg.accentColor))
         
         # Font config
         self.editorFont = QFont(font, 12)
@@ -679,6 +584,7 @@ class MarkEditor(QsciScintilla):
         self.editorLexer.setColor(QColor("#98C379") if smart.isDarkMode() else QColor("#40A02B"), QsciLexerMarkdown.EmphasisAsterisks)
         self.editorLexer.setColor(QColor("#98C379") if smart.isDarkMode() else QColor("#40A02B"), QsciLexerMarkdown.StrongEmphasisAsterisks)
         self.editorLexer.setColor(QColor("#5C6370") if smart.isDarkMode() else QColor("#8C8FA1"), QsciLexerMarkdown.StrikeOut)
+        self.editorLexer.setColor(QColor("#C678DD") if smart.isDarkMode() else QColor("#8839EF"), QsciLexerMarkdown.Link)
         self.editorLexer.setColor(QColor("#61AFEF") if smart.isDarkMode() else QColor("#1E66F5"), QsciLexerMarkdown.CodeBackticks)
         self.editorLexer.setColor(QColor("#E5C07B") if smart.isDarkMode() else QColor("#DF8E1D"), QsciLexerMarkdown.CodeDoubleBackticks)
         self.setLexer(self.editorLexer)
@@ -721,17 +627,70 @@ class MarkEditor(QsciScintilla):
         if self.hasSelectedText(): self.indent(line)
         else: self.insertAt("\t", line, col)
 
-class MarkHighlighter(QSyntaxHighlighter):
-    """ Class for the `Markdown-HTML-CSS` syntax highlighting in the editor """
+class ManageHistoryDialog(MessageBoxBase):
+    """ Class for the "Manage history" dialog box """
 
-    def __init__(self, document, parent = None):
-        super().__init__(document)
-        self.doc = document
+    def __init__(self, history: dict[str, list], parent=None):
+        super().__init__(parent)
+        self.markdownHistory = history
 
+        self.topLine = QHBoxLayout()
+        self.topLine.setContentsMargins(0, 0, 0, 0)
+        self.topLine.setSpacing(15)
+        # self.topLine.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.icon = IconWidget(FICO.HISTORY)
+        self.icon.setFixedSize(24, 24)
+        self.title = TitleLabel("Manage your history")
+        self.description = BodyLabel("Select from the list below the different Markdown file paths you want to work on.", self)
+        self.description.setWordWrap(True)
 
-if __name__ == "__main__":
-    qapp = QApplication(sys.argv)
-    appWindow = SmartDownMarkerGUI("")
-    appWindow.show()
-    sys.exit(qapp.exec())
+        historyBtnLayout = QHBoxLayout()
+        # historyBtnLayout.setContentsMargins(0, 0, 0, 0)
+        # historyBtnLayout.setSpacing(5)
+        self.openBtn = PrimaryPushButton(FICO.LINK, "Load file", self)
+        self.openBtn.setEnabled(False)
+        self.removeBtn = PushButton(FICO.REMOVE, "Remove", self)
+        self.removeBtn.setEnabled(False)
+        self.selectAllBtn = PushButton(SegoeFontIcon.fromName("selectAll"), "Select All", self)
+        self.deselectAllBtn = PushButton(SegoeFontIcon.fromName("grid"), "Deselect All", self)
+        self.deselectAllBtn.setEnabled(False)
+        historyBtnLayout.addWidget(self.openBtn)
+        historyBtnLayout.addWidget(self.removeBtn)
+        historyBtnLayout.addWidget(self.selectAllBtn)
+        historyBtnLayout.addWidget(self.deselectAllBtn)
+
+        self.historyList = ListWidget()
+        self.historyList.setMinimumHeight(150)
+        self.historyList.setAlternatingRowColors(True)
+        self.historyList.setSelectRightClickedRow(True)
+        self.historyList.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        for path in self.markdownHistory["MarkdownHistory"]: self.historyList.addItem(path["path"])
+
+        # self.openBtn.clicked.connect()
+        # self.removeBtn.clicked.connect()
+        self.selectAllBtn.clicked.connect(self.selectAll)
+        self.deselectAllBtn.clicked.connect(self.deselectAll)
+        self.historyList.itemSelectionChanged.connect(lambda: (
+            self.openBtn.setEnabled(len(self.historyList.selectedItems()) == 1),
+            self.removeBtn.setEnabled(len(self.historyList.selectedItems()) > 0),
+            self.deselectAllBtn.setEnabled(len(self.historyList.selectedItems()) > 0)
+        ))
+
+        self.viewLayout.setSpacing(20)
         
+        self.viewLayout.addLayout(self.topLine)
+        self.topLine.addWidget(self.icon)
+        self.topLine.addWidget(self.title)
+        self.viewLayout.addWidget(self.description)
+        self.viewLayout.addLayout(historyBtnLayout)
+        self.viewLayout.addWidget(self.historyList)
+
+        self.yesButton.setText("Save changes")
+        self.yesButton.setEnabled(False)
+        self.widget.setMinimumWidth(500)
+
+    def selectAll(self):
+        self.historyList.selectAll()
+    
+    def deselectAll(self):
+        self.historyList.clearSelection()

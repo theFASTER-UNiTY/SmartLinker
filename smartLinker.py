@@ -34,7 +34,6 @@ class SmartLinkerGUI(FluentWindow):
         self.updateDownloadDlg = None
         self.updateCheckToolTip = None
         self.browserDlg = None
-        # print(fontUI)
 
         if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.startupSFXPath)): smart.playSound(soundStreamer, cfg.get(cfg.startupSFXPath), "startup")
         if bool(cfg.get(cfg.showSplash)):
@@ -46,6 +45,8 @@ class SmartLinkerGUI(FluentWindow):
         else:
             self.mybrowsInterface = MyBrowsers(self)
             self.addSubInterface(self.mybrowsInterface, FICO.GLOBE, "My Browsers")
+            self.markdownViewer = MDView(self)
+            self.addSubInterface(self.markdownViewer, smIco.renderIcon(smIco.MARKDOWN), "Markdown Viewer")
             self.settingInterface = Settings(self)
             self.addSubInterface(self.settingInterface, FICO.SETTING, "Settings", NavigationItemPosition.BOTTOM)
             self.aboutInterface = About(self)

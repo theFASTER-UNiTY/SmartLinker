@@ -157,7 +157,7 @@ class SmartSelectorGUI(FramelessWindow):
             self.myBrowsLayout.addWidget(browsCard)
         if not myBrowsList["MyBrowsers"] and not cfg.get(cfg.mainBrowserPath): self.myBrowsLayout.addWidget(self.myBrowsEmptyMsg, 0, Qt.AlignmentFlag.AlignCenter)
         print("-----------------------------------------------------\n" \
-             f"{self.runningBrowsers} browser{"s are" if self.runningBrowsers != 1 else " is"} currently running.\n" \
+             f"{self.runningBrowsers if self.runningBrowsers else "No"} browser{"s are" if self.runningBrowsers != 1 else " is"} currently running.\n" \
              f"{"NOTE: They may be the same browser.\n" if self.runningBrowsers > 1 else ""}" \
               "-----------------------------------------------------\n")
         smart.selectorLog(f"Scanning running browsers terminated. {self.runningBrowsers} browser{"s are" if self.runningBrowsers != 1 else " is"} currently running{" (they may be the same browser)" if self.runningBrowsers > 1 else ""}.")

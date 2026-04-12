@@ -1,8 +1,15 @@
 colorama
 darkdetect
+markdown
+markdown_it
+packaging
 psutil
 pygame
 PyQt6
 PyQt6-Fluent-Widgets
 PyQt6-Frameless-Window
-pywin32
+PyQt6-QScintilla
+requests
+rich
+shiboken6
+win32api

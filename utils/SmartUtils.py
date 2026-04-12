@@ -5,14 +5,14 @@ A complete utility module made specifically for SmartLinker basic and technical 
 
 :Copyright: © 2025-2026 by #theF∆STER™ UN!TY.
 """
-__version__ = "v3.0.0 (Preview)"
+__version__ = "v3.0.0 Alpha #1"
 __author__ = "#theF∆STER™ CODE&BU!LD"
 
 # NOTE: CODE&BU!LD is actually the software development section of the UN!TY group.
 # (In case you would be wondering...)
 # =========================================================
 
-import argparse, ctypes, darkdetect, datetime, json, markdown, os, pathlib, pickle, platform, psutil, pygame, requests, shutil, socket
+import argparse, ctypes, darkdetect, datetime, json, magic, markdown, os, pathlib, pickle, platform, psutil, pygame, requests, shutil, socket
 import subprocess, sys, time, typing, threading, webbrowser, win32api, winreg
 from PyQt6.QtCore import (
     QCoreApplication, QEvent, QEventLoop, QFileInfo, QObject, QRegularExpression, QSize, Qt, QThread, QTimer, QUrl, pyqtSignal
@@ -31,11 +31,11 @@ from qfluentwidgets import (
     Action, BodyLabel, BoolValidator, CaptionLabel, CardWidget, ColorConfigItem, ColorDialog, ComboBox, CommandBar, ConfigItem,
     DropDownPushButton, ElevatedCardWidget, ExpandGroupSettingCard, FluentFontIconBase, FluentIcon as FICO, FluentWindow,
     HyperlinkButton, HyperlinkCard, IconInfoBadge, IconWidget, IndeterminateProgressRing, IndicatorPosition, InfoBadgePosition, InfoBar,
-    InfoBarPosition, LineEdit, MessageBox, MessageBoxBase, NavigationItemPosition, OptionsConfigItem, OptionsSettingCard, OptionsValidator,
-    PrimaryPushButton, PrimaryPushSettingCard, ProgressRing, PushButton, PushSettingCard, QConfig, qconfig, RangeConfigItem, RangeValidator,
-    RoundMenu, setFont, setTheme, setThemeColor, ScrollBar, SimpleExpandGroupSettingCard, SingleDirectionScrollArea, SpinBox, SplashScreen,
-    StrongBodyLabel, SubtitleLabel, SwitchButton, SwitchSettingCard, TableWidget, TextEdit, Theme, theme, themeColor, TitleLabel, ToolButton,
-    ToolTipFilter, ToolTipPosition, TransparentDropDownPushButton, TransparentToggleToolButton, TransparentToolButton,
+    InfoBarPosition, LineEdit, ListWidget, MessageBox, MessageBoxBase, NavigationItemPosition, OptionsConfigItem, OptionsSettingCard,
+    OptionsValidator, PrimaryPushButton, PrimaryPushSettingCard, ProgressRing, PushButton, PushSettingCard, QConfig, qconfig, RangeConfigItem,
+    RangeValidator, RoundMenu, setFont, setTheme, setThemeColor, ScrollBar, SimpleExpandGroupSettingCard, SingleDirectionScrollArea, SpinBox,
+    SplashScreen, StrongBodyLabel, SubtitleLabel, SwitchButton, SwitchSettingCard, TableWidget, TextEdit, Theme, theme, themeColor, TitleLabel,
+    ToolButton, ToolTipFilter, ToolTipPosition, TransparentDropDownPushButton, TransparentToggleToolButton, TransparentToolButton
 )
 from qframelesswindow import FramelessWindow, StandardTitleBar, TitleBar
 from qframelesswindow.utils import getSystemAccentColor
@@ -1148,16 +1148,10 @@ class SmartLogic:
             self.managerLog(f"ERROR: Failed to check system compatibility: {e}")
         finally: return isCompatible
 
-    def markdownBaseSheet(self) -> str:
-        return f"""
-            <html lang="en">
-                <head>
-                    <meta charset="UTF-8">
-                </head>
-                
-                <body style="padding: 0; margin: 0; background-color: {'#272727' if self.isDarkMode() else 'white'}; border: 1px solid {"#393939" if self.isDarkMode() else "#E3E6E9"}; border-radius: 10px 0 0 0;"></body>
-            </html>
-        """
+    def getFileMimeType(self, path: str) -> str:
+        magicMime = magic.from_file(path, True)
+        if path: return magicMime
+        return ""
     
 class SmartIcons:
     """ SmartUtils
@@ -1539,8 +1533,10 @@ class ElidableSubtitleLabel(SubtitleLabel):
 
     def setText(self, text: str) -> None:
         super().setText(text)
+        self.initText = text
         self.setToolTip(text)
         self.installEventFilter(ToolTipFilter(self))
+        print(self.initText)
     
     def resizeEvent(self, event):
         metrics = QFontMetrics(self.font())

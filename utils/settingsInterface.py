@@ -761,3 +761,4 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
             print(f"{Fore.GREEN}The {soundType} sound effect has been successfully removed!{Style.RESET_ALL}")
             smart.managerLog(f"SUCCESS: The {soundType} sound effect has been successfully removed!")
             smart.successNotify("Removal complete!", f"The {soundType} sound has been successfully removed!", parent)
+        else: pass

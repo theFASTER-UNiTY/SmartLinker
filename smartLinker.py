@@ -10,7 +10,7 @@ from utils.smartSelector import SmartSelectorGUI
 class SmartLinkerGUI(FluentWindow):
     """ Class for the SmartLinker Manager (main) window """
 
-    def __init__(self, args=None, parent=None):
+    def __init__(self, args = None, parent = None):
         super().__init__(parent)
         print(smart.consoleScript())
         self.setWindowTitle("SmartLinker - Mastering URL Handling")

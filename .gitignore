@@ -219,6 +219,7 @@ $RECYCLE.BIN/
 *.lnk
 
 ### Other Files ###
+bin/
 Milestones.md
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python,windows

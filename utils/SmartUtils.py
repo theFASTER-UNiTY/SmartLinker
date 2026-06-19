@@ -14,6 +14,7 @@ __author__ = "#theF∆STER™ CODE&BU!LD"
 
 import argparse, ctypes, darkdetect, datetime, json, magic, markdown, os, pathlib, pickle, platform, psutil, pygame, requests, shutil, socket
 import subprocess, sys, time, typing, threading, webbrowser, win32api, winreg
+from enum import Enum
 from PyQt6.QtCore import (
     QCoreApplication, QEvent, QEventLoop, QFileInfo, QObject, QRegularExpression, QSize, Qt, QThread, QTimer, QUrl, pyqtSignal
 )
@@ -29,9 +30,9 @@ from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.Qsci import QsciScintilla, QsciLexerMarkdown
 from qfluentwidgets import (
     Action, BodyLabel, BoolValidator, CaptionLabel, CardWidget, ColorConfigItem, ColorDialog, ComboBox, CommandBar, ConfigItem,
-    DropDownPushButton, ElevatedCardWidget, ExpandGroupSettingCard, FluentFontIconBase, FluentIcon as FICO, FluentWindow,
-    HyperlinkButton, HyperlinkCard, IconInfoBadge, IconWidget, IndeterminateProgressRing, IndicatorPosition, InfoBadgePosition, InfoBar,
-    InfoBarPosition, LineEdit, ListWidget, MessageBox, MessageBoxBase, NavigationItemPosition, OptionsConfigItem, OptionsSettingCard,
+    DropDownPushButton, ElevatedCardWidget, ExpandGroupSettingCard, FluentFontIconBase, FluentIcon as FICO, FluentIconBase, FluentWindow,
+    getIconColor, HyperlinkButton, HyperlinkCard, IconInfoBadge, IconWidget, IndeterminateProgressRing, IndicatorPosition, InfoBadgePosition,
+    InfoBar, InfoBarPosition, LineEdit, ListWidget, MessageBox, MessageBoxBase, NavigationItemPosition, OptionsConfigItem, OptionsSettingCard,
     OptionsValidator, PrimaryPushButton, PrimaryPushSettingCard, ProgressRing, PushButton, PushSettingCard, QConfig, qconfig, RangeConfigItem,
     RangeValidator, RoundMenu, setFont, setTheme, setThemeColor, ScrollBar, SimpleExpandGroupSettingCard, SingleDirectionScrollArea, SpinBox,
     SplashScreen, StrongBodyLabel, SubtitleLabel, SwitchButton, SwitchSettingCard, TableWidget, TextEdit, Theme, theme, themeColor, TitleLabel,
@@ -118,7 +119,7 @@ class Config(QConfig):
     showCommandBar = ConfigItem("Personalization", "ShowCommandBar", False, BoolValidator())
     showSplash = ConfigItem("Personalization", "ShowSplash", True, BoolValidator())
     splashDuration = RangeConfigItem("Personalization", "SplashDuration", 3000, RangeValidator(0, 10000))
-    showUpdateBanners = ConfigItem("Personalization", "ShowUpdateBanners", True, BoolValidator())
+    showUpdateBanners = ConfigItem("Personalization", "ShowUpdateBanners", True, BoolValidator(), restart=True)
     enableSoundEffects = ConfigItem("Sound", "EnableSoundEffects", False, BoolValidator())
     startupSFXPath = ConfigItem("Sound", "StartupSFXPath", "")
     successSFXPath = ConfigItem("Sound", "SuccessSFXPath", "")
@@ -134,6 +135,31 @@ class Config(QConfig):
     updateVersion = ConfigItem("About", "UpdateVersion", "")
     qAccentColor = ColorConfigItem("QFluentWidgets", "ThemeColor", "#ff25d9e6") #ff25d9e6
 
+class MarkdownConfig(QConfig):
+    """ SmartUtils
+    ==========
+    Markdown viewer configuration handling class
+    """
+    fontFamily = ConfigItem("Editor", "FontFamily", "")
+    fontSize = ConfigItem("Editor", "FontSize", 12)
+    fontWeight = RangeConfigItem("Editor", "FontWeight", 400, RangeValidator(100, 800))
+    displayLineNumbers = ConfigItem("Editor", "DisplayLineNumbers", True, BoolValidator())
+    displaySymbolsBar = ConfigItem("Editor", "DisplaySymbolsBar", True, BoolValidator())
+    displayStatusBar = ConfigItem("Editor", "DisplayStatusBar", True, BoolValidator())
+    enableWordWrap = ConfigItem("Editor", "EnableWordWrap", False, BoolValidator())
+    indentationWidth = RangeConfigItem("Editor", "IndentationWidth", 4, RangeValidator(2, 8))
+    highlightCurrentLine = ConfigItem("Editor", "HighlightCurrentLine", True, BoolValidator())
+    selectionColorMode = OptionsConfigItem("Editor", "SelectionColorMode", "Accent", OptionsValidator(["Accent", "Custom"]))
+    selectionCustomColor = ColorConfigItem("Editor", "SelectionCustomColor", "#ff793bcc") #ff793bcc
+    enableSyntaxHighlighting = ConfigItem("Editor", "EnableSyntaxHighlighting", True, BoolValidator())
+    # to-do: syntax colors
+    cssSource = OptionsConfigItem("Viewer", "CSSSource", "Default", OptionsValidator(["Default", "Custom"]))
+    cssSourcePath = ConfigItem("Viewer", "CSSSourcePath", "Default")
+    cssProperties = ConfigItem("Viewer", "CSSProperties", "")
+    homepageSource = OptionsConfigItem("Viewer", "HomepageSource", "Default", OptionsValidator(["Default", "Custom"]))
+    homepageSourcePath = ConfigItem("Viewer", "HomepageSourcePath", "Default")
+    homepageProperties = ConfigItem("Viewer", "HomepageProperties", "")
+
 class SegoeFontIcon(FluentFontIconBase):
     """ SmartUtils
     ==========
@@ -146,6 +172,17 @@ class SegoeFontIcon(FluentFontIconBase):
     def iconNameMapPath(self):
         """ Override this method if you want to use `fromName` to create icons """
         return smart.resourcePath("resources/fonts/SegoeIconsMap.json")
+
+class SegoeSVGIcon(FluentIconBase, Enum):
+    """ SmartUtils
+    ==========
+    Class for custom SVG-based Segoe Fluent icons
+    """
+
+    TEXT_WRAP = "TextWrap"
+
+    def path(self, theme=Theme.AUTO) -> str:
+        return f':/resources/icons/svg/{getIconColor(theme)}/{self.value}.svg'
 
 class SmartLogic:
     """ SmartUtils
@@ -1299,7 +1336,7 @@ class DownloadDialog(MessageBoxBase):
     Dialog box for download purposes
     """
 
-    def __init__(self, title: str, icon: QIcon | FICO | FluentFontIconBase, url: str, filename: str, parent=None):
+    def __init__(self, title: str, icon: QIcon | FICO | FluentFontIconBase, url: str, filename: str, parent = None):
         super().__init__(parent)
         self.titleBox = QHBoxLayout()
         self.titleLabel = SubtitleLabel(title, self)
@@ -1495,7 +1532,7 @@ class DownloadDialog(MessageBoxBase):
 # Elidable labels ======================================
 
 class ElidableTitleLabel(TitleLabel):
-    def __init__(self, text: str, parent=None):
+    def __init__(self, text: str, parent = None):
         super().__init__(text, parent)
         self.initText = text
         super().setToolTip(text)
@@ -1519,7 +1556,7 @@ class ElidableTitleLabel(TitleLabel):
         super().installEventFilter(ToolTipFilter(self))
 
 class ElidableSubtitleLabel(SubtitleLabel):
-    def __init__(self, text: str, parent=None):
+    def __init__(self, text: str, parent = None):
         super().__init__(text)
         self.initText = text
         super().setToolTip(text)
@@ -1576,8 +1613,11 @@ class ElidableCaptionLabel(CaptionLabel):
 # ======================================================
 
 cfg = Config()
+markCfg = MarkdownConfig()
 smart = SmartLogic()
 smIco = SmartIcons()
 cfgFilePath = smart.resourcePath("bin/config.json")
+markCfgFilePath = smart.resourcePath("bin/markdown_config.json")
 browsersCfgFilePath = smart.resourcePath("bin/browsers_config.dat")
 qconfig.load(cfgFilePath, cfg)
+qconfig.load(markCfgFilePath, markCfg)

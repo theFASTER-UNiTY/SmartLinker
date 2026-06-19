@@ -5,7 +5,7 @@ myBrowsList = smart.loadBrowsers()
 class SettingsInterface(QWidget):
     """ Main class for the "Settings" interface """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent = None):
         super().__init__(parent)
         self.setObjectName("Settings")
 
@@ -25,7 +25,7 @@ class SettingsInterface(QWidget):
         mainSetScrollContent = QWidget()
         mainSetScroll.setWidget(mainSetScrollContent)
         mainSetScroll.setAlignment(Qt.AlignmentFlag.AlignTop)
-        mainSetScroll.setStyleSheet("background-color: rgba(0, 0, 0, 0); border: 0px solid #FFFFFF")
+        mainSetScroll.setStyleSheet("background-color: rgba(0, 0, 0, 0); border: none")
         mainSetScrollContent.setContentsMargins(40, 0, 40, 0)
         layout = QVBoxLayout(mainSetScrollContent)
         layout.setSpacing(5)
@@ -88,7 +88,7 @@ class SettingsInterface(QWidget):
         layout.addWidget(self.advancedTempClean)
         self.advancedRestart = PushSettingCard(
             "Restart",
-            SegoeFontIcon.fromName("reboot"),
+            SegoeFontIcon.fromName("Restart3"),
             f"Restart {SmartLinkerName}",
             "If you need for some reason to restart the software, this is the easiest way to proceed."
         )
@@ -120,7 +120,7 @@ class SettingsInterface(QWidget):
         self.updateSnackLayout.addStretch(1)
         self.updateSnackButton = PrimaryPushButton(FICO.DOWNLOAD, "Download now")
         self.updateSnackLayout.addWidget(self.updateSnackButton)
-        self.updateSnackInstall = PrimaryPushButton(SegoeFontIcon.fromName("openIn"), "Install now")
+        self.updateSnackInstall = PrimaryPushButton(SegoeFontIcon.fromName("OpenWith"), "Install now")
         self.updateSnackInstall.setToolTip("The latest update has been found in your system.\nYou can install it right away.")
         self.updateSnackInstall.installEventFilter(ToolTipFilter(self.updateSnackInstall))
         self.updateSnackLayout.addWidget(self.updateSnackInstall)
@@ -257,7 +257,7 @@ class SettingsInterface(QWidget):
 class SettingWidgetDefinition():
     """ Declaration class for some of SettingsInterface widgets """
 
-    def __init__(self, parent=None):
+    def __init__(self):
         super().__init__()
         if cfg.get(cfg.mainBrowserPath):
             if cfg.get(cfg.mainBrowserIsManual):
@@ -281,7 +281,7 @@ class SettingWidgetDefinition():
         )
         self.optionMainRefresh = PushSettingCard(
             "Refresh",
-            SegoeFontIcon.fromName("refresh"),
+            SegoeFontIcon.fromName("Refresh"),
             "Refresh main browser card",
             "In case your main browser card above is not synchronized with some changes, you can make it unified again with this option."
         )
@@ -326,7 +326,7 @@ class SettingWidgetDefinition():
 class ThemeColorSelectGroup(ExpandGroupSettingCard):
     """ Class for SmartLinker's accent mode and color in the Look & Feel section """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent = None):
         super().__init__(
             FICO.PALETTE,
             "Customize the theme color",
@@ -379,7 +379,7 @@ class ThemeColorSelectGroup(ExpandGroupSettingCard):
 class FlagsSettingGroup(ExpandGroupSettingCard):
     """ Class for SmartLinker's appearance flags configuration in the Look & Feel section """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent = None):
         super().__init__(
             FICO.FLAG,
             "Customize appearance flags",
@@ -440,7 +440,7 @@ class FlagsSettingGroup(ExpandGroupSettingCard):
 class MainBrowsersCard(CardWidget):
     """ Class for the the main browser configuration card """
 
-    def __init__(self, icon, title, content, parent=None):
+    def __init__(self, icon, title, content, parent = None):
         super().__init__(parent)
         self.iconWidget = IconWidget(icon)
         self.titleLabel = SubtitleLabel(title, self)
@@ -484,7 +484,7 @@ class MainBrowsersCard(CardWidget):
 class SelectFromListDialog(MessageBoxBase):
     """ Class for the main browser selection from SmartList dialog """
 
-    def __init__(self, browsers, parent=None):
+    def __init__(self, browsers, parent = None):
         super().__init__(parent)
         self.titleLabel = SubtitleLabel('Select from your SmartList', self)
         self.icon = IconWidget(FICO.GLOBE)
@@ -537,7 +537,7 @@ class SelectFromListDialog(MessageBoxBase):
 class SoundFxConfigGroup(ExpandGroupSettingCard):
     """ Class for SmartLinker's sound effects configuration in the Sound section """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent = None):
         super().__init__(
             FICO.MIX_VOLUMES,
             "Configure sound effects",

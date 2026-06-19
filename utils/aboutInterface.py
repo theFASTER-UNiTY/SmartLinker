@@ -3,7 +3,7 @@ from utils.SmartUtils import *
 class AboutInterface(QWidget):
     """ Main class for the 'About' interface """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent = None):
         super().__init__(parent)
         self.setObjectName("About-SmartLinker")
         self.lastChecked = f"Last checked: {cfg.get(cfg.lastCheckedDate)}{f" (Latest version: {cfg.get(cfg.updateVersion)})" if cfg.get(cfg.updateAvailable) else ""}" if cfg.get(cfg.lastCheckedDate) \
@@ -110,7 +110,7 @@ class AboutInterface(QWidget):
         self.updateSnackLayout.addStretch(1)
         self.updateSnackButton = PrimaryPushButton(FICO.DOWNLOAD, "Download now")
         self.updateSnackLayout.addWidget(self.updateSnackButton)
-        self.updateSnackInstall = PrimaryPushButton(SegoeFontIcon.fromName("openIn"), "Install now")
+        self.updateSnackInstall = PrimaryPushButton(SegoeFontIcon.fromName("OpenWith"), "Install now")
         self.updateSnackInstall.setToolTip("The latest update has been found in your system.\nYou can install it right away.")
         self.updateSnackInstall.installEventFilter(ToolTipFilter(self.updateSnackInstall))
         self.updateSnackLayout.addWidget(self.updateSnackInstall)
@@ -252,7 +252,7 @@ class AboutInterface(QWidget):
 class AboutAppGroup(SimpleExpandGroupSettingCard):
     """ Class for the informative text about SmartLinker in the About section """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent = None):
         super().__init__(
             FICO.QUESTION,
             "What exactly is SmartLinker?",
@@ -289,9 +289,9 @@ class AboutAppGroup(SimpleExpandGroupSettingCard):
 class ResourcesGroup(ExpandGroupSettingCard):
     """ Class for the Resources group in the About section """
     
-    def __init__(self, parent=None):
+    def __init__(self, parent = None):
         super().__init__(
-            SegoeFontIcon.fromName("plugin"), # type: ignore
+            SegoeFontIcon.fromName("Puzzle"), # type: ignore
             "Resources",
         )
         self.creditsLabel = BodyLabel("For this software to work correctly, the following resources have been used:")
@@ -359,7 +359,7 @@ class ResourcesGroup(ExpandGroupSettingCard):
 class BrowserSelectDialog(MessageBoxBase):
     """ Class for the browser selection dialog box """
 
-    def __init__(self, title: str, icon: QIcon | FICO | FluentFontIconBase, isDownload: bool, parent=None):
+    def __init__(self, title: str, icon: QIcon | FICO | FluentFontIconBase, isDownload: bool, parent = None):
         super().__init__(parent)
         self.myBrowsList = smart.loadBrowsers()
         self.titleLabel = SubtitleLabel(title, self)

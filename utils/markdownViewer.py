@@ -3,7 +3,7 @@ from utils.SmartUtils import *
 class MarkdownViewer(QWidget):
     """ Main class for the Markdown file/data viewer """
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent = None) -> None:
         super().__init__(parent)
         self.setObjectName("Markdown-Viewer")
         self.name = "Markdown Viewer"
@@ -99,27 +99,26 @@ class MarkdownViewer(QWidget):
         else: self.loadMDFile(path, parent)
 
     def loadMDFile(self, path: str, parent, history: bool = False):
-        fileExists: bool = False
+        path = path.replace("/", "\\")
         if os.path.exists(path):
-            fileExists = True
             if path.endswith(".md") or path.endswith(".markdown"):
                 if smart.getFileMimeType(path).startswith("text"):
-                    self.markUpdate(fileExists, path, parent)
+                    self.markUpdate(True, path, parent)
                     with open(path, encoding="utf-8") as mdReader: self.contentMD = self.renderMD.render(mdReader.read())
                     htmlContent = f'<html>\n<head>\n<style>\n{self.styleMD}</style>\n</head>\n\n<body class="markdown-body" style="padding: 20px;">\n{self.contentMD}\n</body>\n</html>'
                     self.browserMD.setHtml(htmlContent, QUrl())
                     self.isHome = False
-                    print(path.replace("/", "\\"))
+                    print(path)
                     with open("markdownHtml.log", "w", encoding="utf-8") as htmlWriter: htmlWriter.write(htmlContent)
                 else:
                     smart.warningNotify("Warning, be careful!", "The format of the provided file is not supported...", parent)
-                    smart.managerLog(f"WARNING: Incompatible format of the provided file: {path.replace("/", "\\")}")
+                    smart.managerLog(f"WARNING: Incompatible format of the provided file: {path}")
                     print(f"{Fore.YELLOW}WARNING!! The format of the provided file is not supported...{Style.RESET_ALL}")
                     if history: self.removeFromHistory(path, parent)
             else:
-                smart.warningNotify("Warning, be careful!", "The provided file is not recognised as a Markdown file...", parent)
-                smart.managerLog(f"WARNING: Provided file not recognised as a Markdown file: {path.replace("/", "\\")}")
-                print(f"{Fore.YELLOW}WARNING!! The provided file is not recognised as a Markdown file...{Style.RESET_ALL}")
+                smart.warningNotify("Warning, be careful!", "The provided file is not recognized as a Markdown file...", parent)
+                smart.managerLog(f"WARNING: Provided file not recognized as a Markdown file: {path}")
+                print(f"{Fore.YELLOW}WARNING!! The provided file is not recognized as a Markdown file...{Style.RESET_ALL}")
                 if history: self.removeFromHistory(path, parent)
     
     def markUpdate(self, exists: bool, path: str, parent):
@@ -127,14 +126,14 @@ class MarkdownViewer(QWidget):
         if exists:
             print(f"{os.path.basename(path)} - {self.name}")
             self.title.setText(f"{os.path.basename(path)} - {self.name}")
-            self.subtitle.setText(path.replace("/", "\\"))
+            self.subtitle.setText(path)
             self.subtitle.setVisible(True)
             for mdPath in self.markHistory["MarkdownHistory"]:
-                if mdPath["path"] == path.replace("/", "\\"):
+                if mdPath["path"] == path:
                     pathExists = True
                     break
             if not pathExists:
-                self.markHistory["MarkdownHistory"].append({"path": path.replace("/", "\\")})
+                self.markHistory["MarkdownHistory"].append({"path": path})
                 self.saveHistory(self.markHistory)
                 self.markHistory = self.loadHistory()
                 self.history.setEnabled(True)

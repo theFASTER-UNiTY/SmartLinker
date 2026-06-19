@@ -209,7 +209,7 @@ class SmartSelectorGUI(FramelessWindow):
         self.requestLinkCopy = PrimaryPushButton(FICO.COPY, "Copy link")
         self.requestLinkCopy.clicked.connect(self.copyLinkToClip)
         bottomLayout.addWidget(self.requestLinkCopy)
-        self.restartBtn = ToolButton(SegoeFontIcon.fromName("reboot"))
+        self.restartBtn = ToolButton(SegoeFontIcon.fromName("Restart3"))
         self.restartBtn.setToolTip("Restart the Smart Selector")
         self.restartBtn.installEventFilter(ToolTipFilter(self.restartBtn))
         self.restartBtn.clicked.connect(self.confirmRestart)
@@ -308,14 +308,14 @@ class SmartSelectorGUI(FramelessWindow):
                 smart.selectorLog(f"ERROR: Failed to restart the Smart Selector: {e}")
 
 class BrowserCard(ElevatedCardWidget):
-    """ Class for listed browser(s) card"""
+    """ Class for listed browser(s) card """
 
-    def __init__(self, icon: QIcon | str, name: str, status: str, reqURL: str, parent=None):
+    def __init__(self, icon: QIcon | str, name: str, status: str, reqURL: str, parent = None):
         super().__init__(parent)
         self.statusLabel = CaptionLabel(status)
         self.iconWidget = IconWidget(icon, self)
         self.label = CaptionLabel(name, self)
-        self.selectButton = HyperlinkButton(SegoeFontIcon.fromName("link"), "", "Load here")
+        self.selectButton = HyperlinkButton(SegoeFontIcon.fromName("Link"), "", "Load here")
 
         self.iconWidget.setFixedSize(56, 56)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -332,7 +332,7 @@ class BrowserCard(ElevatedCardWidget):
 
         self.setFixedSize(168, 176)
 
-    def cardSelect(self, name, link, parent=None):
+    def cardSelect(self, name, link, parent = None):
         failedAttempts = 0
         manualCount = 1 if cfg.get(cfg.mainBrowserPath) and cfg.get(cfg.mainBrowserIsManual) else 0
         if name == "Smart DownMarker":

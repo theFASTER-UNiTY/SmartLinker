@@ -5,7 +5,7 @@ myBrowsList = smart.loadBrowsers()
 class MyBrowsersInterface(QWidget):
     """ Main class for the 'My Browsers' interface """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent = None):
         super().__init__(parent)
         self.setObjectName("My-Browsers")
         self.lightSheetOnDark: str = "SingleDirectionScrollArea {background: rgba(242, 242, 242, 0.05); border-radius: 10px; border: 1px solid rgba(242, 242, 242, 0.1)}"
@@ -75,7 +75,7 @@ class MyBrowsersInterface(QWidget):
         self.mybrowsAddCard.setVisible(not cfg.get(cfg.showCommandBar))
         self.mybrowsRefreshCard = PushSettingCard(
             "Refresh",
-            SegoeFontIcon.fromName("refresh"),
+            SegoeFontIcon.fromName("Refresh"),
             "Refresh my SmartList",
             "If for any reason, you need to refresh the list of browsers above, this is the quickest way to proceed."
         )
@@ -84,7 +84,7 @@ class MyBrowsersInterface(QWidget):
         self.mybrowsRefreshCard.setVisible(not cfg.get(cfg.showCommandBar))
         self.mybrowsLoadLinkCard = PushSettingCard(
             "Load a link",
-            SegoeFontIcon.fromName("link"),
+            SegoeFontIcon.fromName("Link"),
             "Load a link into a browser",
             "For ease of access, you can directly load a URL into any browser of your choice from your SmartList."
         )
@@ -150,7 +150,7 @@ class MyBrowsersInterface(QWidget):
         self.updateSnackLayout.addStretch(1)
         self.updateSnackButton = PrimaryPushButton(FICO.DOWNLOAD, "Download now")
         self.updateSnackLayout.addWidget(self.updateSnackButton)
-        self.updateSnackInstall = PrimaryPushButton(SegoeFontIcon.fromName("openIn"), "Install now")
+        self.updateSnackInstall = PrimaryPushButton(SegoeFontIcon.fromName("OpenWith"), "Install now")
         self.updateSnackInstall.setToolTip("The latest update has been found in your system.\nYou can install it right away.")
         self.updateSnackInstall.installEventFilter(ToolTipFilter(self.updateSnackInstall))
         self.updateSnackLayout.addWidget(self.updateSnackInstall)
@@ -420,7 +420,7 @@ class MyBrowsersInterface(QWidget):
 class NewBrowserDialog(MessageBoxBase):
     """ Class for the 'Add a new browser' dialog box """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent = None):
         super().__init__(parent)
         self.title = SubtitleLabel("Add a new browser", self)
         self.iconLine = QHBoxLayout()
@@ -543,7 +543,7 @@ class NewBrowserDialog(MessageBoxBase):
 class EditBrowserDialog(MessageBoxBase):
     """ Class for the 'Add a new browser' dialog box """
 
-    def __init__(self, path: str, name: str, parent=None):
+    def __init__(self, path: str, name: str, parent = None):
         super().__init__(parent)
         self.title = SubtitleLabel(f"Edit {name}", self)
         self.iconLine = QHBoxLayout()
@@ -684,7 +684,7 @@ class EditBrowserDialog(MessageBoxBase):
 class MyBrowsersCard(CardWidget):
     """ Class for the SmartList's saved browsers cards """
 
-    def __init__(self, icon, title, content, parent=None):
+    def __init__(self, icon, title, content, parent = None):
         super().__init__(parent)
         self.iconWidget = IconWidget(icon)
         self.titleLabel = BodyLabel(title, self)
@@ -720,7 +720,7 @@ class MyBrowsersCard(CardWidget):
 class LoadLinkDialog(MessageBoxBase):
     """ Class for the 'Open with link' dialog box """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent = None):
         super().__init__(parent)
         self.titleLabel = SubtitleLabel("Load link into a browser", self)
         self.browsIcon = IconWidget(FICO.LINK)

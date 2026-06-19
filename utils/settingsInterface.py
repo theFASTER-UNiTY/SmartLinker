@@ -351,10 +351,10 @@ class ThemeColorSelectGroup(ExpandGroupSettingCard):
         self.viewLayout.setSpacing(0)
 
 
-        self.add_group(self.accentLabel, self.accentCombo)
-        self.add_group(self.selectLabel, self.selectButton)
+        self.add(self.accentLabel, self.accentCombo)
+        self.add(self.selectLabel, self.selectButton)
 
-    def add_group(self, label, widget):
+    def add(self, label, widget):
         """ :ThemeColorSelect: Add accent mode and color elements to the group. """
         wid = QWidget()
         wid.setFixedHeight(60)

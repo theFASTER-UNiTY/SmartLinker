@@ -209,7 +209,7 @@ class SmartSelectorGUI(FramelessWindow):
         self.requestLinkCopy = PrimaryPushButton(FICO.COPY, "Copy link")
         self.requestLinkCopy.clicked.connect(self.copyLinkToClip)
         bottomLayout.addWidget(self.requestLinkCopy)
-        self.restartBtn = ToolButton(SegoeFontIcon.fromName("Restart3"))
+        self.restartBtn = ToolButton(SegoeFontIcon.fromName("UpdateRestore"))
         self.restartBtn.setToolTip("Restart the Smart Selector")
         self.restartBtn.installEventFilter(ToolTipFilter(self.restartBtn))
         self.restartBtn.clicked.connect(self.confirmRestart)

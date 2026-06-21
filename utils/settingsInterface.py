@@ -88,7 +88,7 @@ class SettingsInterface(QWidget):
         layout.addWidget(self.advancedTempClean)
         self.advancedRestart = PushSettingCard(
             "Restart",
-            SegoeFontIcon.fromName("Restart3"),
+            SegoeFontIcon.fromName("UpdateRestore"),
             f"Restart {SmartLinkerName}",
             "If you need for some reason to restart the software, this is the easiest way to proceed."
         )

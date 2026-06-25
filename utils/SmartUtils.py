@@ -19,8 +19,8 @@ from PyQt6.QtCore import (
     QCoreApplication, QEvent, QEventLoop, QFileInfo, QObject, QRegularExpression, QSize, Qt, QThread, QTimer, QUrl, pyqtSignal
 )
 from PyQt6.QtGui import (
-    QColor, QDragEnterEvent, QDragLeaveEvent, QDragMoveEvent, QDropEvent, QFont, QFontDatabase, QFontMetrics, QIcon, QKeyEvent, QPainter,
-    QPixmap, QResizeEvent, QSyntaxHighlighter, QTextCharFormat, QTextCursor
+    QColor, QContextMenuEvent, QDragEnterEvent, QDragLeaveEvent, QDragMoveEvent, QDropEvent, QFont, QFontDatabase, QFontMetrics, QIcon,
+    QKeyEvent, QPainter, QPixmap, QResizeEvent, QSyntaxHighlighter, QTextCharFormat, QTextCursor
 )
 from PyQt6.QtWidgets import (
     QAbstractItemView, QApplication, QFileDialog, QFileIconProvider, QHBoxLayout, QLayout, QStatusBar, QTableWidgetItem, QTextEdit, QVBoxLayout,
@@ -28,6 +28,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.Qsci import QsciScintilla, QsciLexerMarkdown
+from PyQt6.QtWebEngineCore import QWebEngineNavigationRequest
 from qfluentwidgets import (
     Action, BodyLabel, BoolValidator, CaptionLabel, CardWidget, ColorConfigItem, ColorDialog, ComboBox, CommandBar, ConfigItem,
     DropDownPushButton, ElevatedCardWidget, ExpandGroupSettingCard, FluentFontIconBase, FluentIcon as FICO, FluentIconBase, FluentWindow,
@@ -45,7 +46,7 @@ from colorama import init, Fore, Back, Style
 from shiboken6 import isValid
 from packaging.version import Version
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import quote, unquote, urlparse
 from rich.progress import Progress
 from markdown_it import MarkdownIt
 
@@ -114,7 +115,7 @@ class Config(QConfig):
     mainBrowserIsManual = ConfigItem("General", "MainBrowserIsManual", False, BoolValidator())
     appTheme = OptionsConfigItem("Personalization", "AppTheme", "Auto", OptionsValidator(["Light", "Dark", "Auto"]))
     accentMode = OptionsConfigItem("Personalization", "AccentMode", "Custom", OptionsValidator(["System", "Custom"]))
-    accentColor = ColorConfigItem("Personalization", "CustomAccentColorHex", "#ff793bcc")
+    accentColor = ColorConfigItem("Personalization", "CustomAccentColorHex", "")
     micaEffect = ConfigItem("Personalization", "EnableMicaEffect", True, BoolValidator())
     showCommandBar = ConfigItem("Personalization", "ShowCommandBar", False, BoolValidator())
     showSplash = ConfigItem("Personalization", "ShowSplash", True, BoolValidator())
@@ -140,6 +141,7 @@ class MarkdownConfig(QConfig):
     ==========
     Markdown viewer configuration handling class
     """
+    startInEditMode = ConfigItem("General", "StartInEditMode", False, BoolValidator())
     fontFamily = ConfigItem("Editor", "FontFamily", "")
     fontSize = ConfigItem("Editor", "FontSize", 12)
     fontWeight = RangeConfigItem("Editor", "FontWeight", 400, RangeValidator(100, 800))
@@ -147,18 +149,22 @@ class MarkdownConfig(QConfig):
     displaySymbolsBar = ConfigItem("Editor", "DisplaySymbolsBar", True, BoolValidator())
     displayStatusBar = ConfigItem("Editor", "DisplayStatusBar", True, BoolValidator())
     enableWordWrap = ConfigItem("Editor", "EnableWordWrap", False, BoolValidator())
-    indentationWidth = RangeConfigItem("Editor", "IndentationWidth", 4, RangeValidator(2, 8))
+    indentWidth = RangeConfigItem("Editor", "IndentationWidth", 4, RangeValidator(2, 8))
+    displayIndentGuides = ConfigItem("Editor", "DisplayIndentationGuides", True, BoolValidator())
+    enableAutoIndent = ConfigItem("Editor", "EnableAutoIndent", True, BoolValidator())
     highlightCurrentLine = ConfigItem("Editor", "HighlightCurrentLine", True, BoolValidator())
     selectionColorMode = OptionsConfigItem("Editor", "SelectionColorMode", "Accent", OptionsValidator(["Accent", "Custom"]))
-    selectionCustomColor = ColorConfigItem("Editor", "SelectionCustomColor", "#ff793bcc") #ff793bcc
+    selectionCustomColor = ColorConfigItem("Editor", "SelectionCustomColor", "#7f793bcc") #ff793bcc
     enableSyntaxHighlighting = ConfigItem("Editor", "EnableSyntaxHighlighting", True, BoolValidator())
     # to-do: syntax colors
-    cssSource = OptionsConfigItem("Viewer", "CSSSource", "Default", OptionsValidator(["Default", "Custom"]))
+    openExternalLinks = ConfigItem("Viewer", "OpenExternalLinks", False, BoolValidator())
+    cssSource = OptionsConfigItem("Viewer", "CSSSource", "Default", OptionsValidator(["Default", "Local", "Custom"]))
     cssSourcePath = ConfigItem("Viewer", "CSSSourcePath", "Default")
     cssProperties = ConfigItem("Viewer", "CSSProperties", "")
-    homepageSource = OptionsConfigItem("Viewer", "HomepageSource", "Default", OptionsValidator(["Default", "Custom"]))
+    homepageSource = OptionsConfigItem("Viewer", "HomepageSource", "Default", OptionsValidator(["Default", "Local", "Custom"]))
     homepageSourcePath = ConfigItem("Viewer", "HomepageSourcePath", "Default")
     homepageProperties = ConfigItem("Viewer", "HomepageProperties", "")
+    qThemeColor = ColorConfigItem("QFluentWidgets", "ThemeColor", "")
 
 class SegoeFontIcon(FluentFontIconBase):
     """ SmartUtils
@@ -179,10 +185,15 @@ class SegoeSVGIcon(FluentIconBase, Enum):
     Class for custom SVG-based Segoe Fluent icons
     """
 
+    COLOR_LINE = "ColorLine"
+    MARKDOWN = "Markdown"
+    NUMBER_SYMBOL = "NumberSymbol"
+    SMARTLINKER_OUTLINE = "SmartLinkerOutline"
+    STYLE_GUIDE = "StyleGuide"
     TEXT_WRAP = "TextWrap"
 
     def path(self, theme=Theme.AUTO) -> str:
-        return f':/resources/icons/svg/{getIconColor(theme)}/{self.value}.svg'
+        return smart.resourcePath(f"resources/icons/svg/{getIconColor(theme)}/{self.value}.svg")
 
 class SmartLogic:
     """ SmartUtils
@@ -1186,10 +1197,47 @@ class SmartLogic:
         finally: return isCompatible
 
     def getFileMimeType(self, path: str) -> str:
+        """ SmartUtils
+        ==========
+        File MIME type provider
+        
+        Parameters
+        ----------
+        path: string
+            The file path to check
+
+        Returns
+        -------
+        mimeType: string
+            The MIME type of the file
+        """
         magicMime = magic.from_file(path, True)
         if path: return magicMime
         return ""
-    
+
+    def isMarkdownExtension(self, path: str) -> bool:
+        """ SmartUtils
+        ==========
+        Markdown file extension checker
+        
+        Parameters
+        ----------
+        path: string
+            The file path to check
+
+        Returns
+        -------
+        isMarkdown: boolean
+            Whether the file has a Markdown extension
+        """
+        isMarkdown = (
+            path.endswith(".md") or path.endswith(".markdown") or
+            path.endswith(".mdown") or path.endswith(".mdwn") or
+            path.endswith(".mkdn") or path.endswith(".mkd") or
+            path.endswith(".mdtxt") or path.endswith(".mdtext")
+        )
+        return isMarkdown
+
 class SmartIcons:
     """ SmartUtils
     ==========
@@ -1202,6 +1250,25 @@ class SmartIcons:
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -44 208 208">
             <rect width="198" height="118" x="5" y="5" ry="10" stroke="#000" stroke-width="10" fill="#FFF"/>
             <path fill="#000" d="M30 98V30h20l20 25 20-25h20v68H90V59L70 84 50 59v39zm125 0l-30-33h20V30h20v35h20z"/>
+        </svg>
+        """
+        self.CSS = """
+        <svg width="800px" height="800px" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g id="SVGRepo_bgCarrier" stroke-width="0"/>
+            <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"/>
+            <g id="SVGRepo_iconCarrier"> <path d="M6 28L4 3H28L26 28L16 31L6 28Z" fill="#1172B8"/> <path d="M26 5H16V29.5L24 27L26 5Z" fill="#33AADD"/> <path d="M19.5 17.5H9.5L9 14L17 11.5H9L8.5 8.5H24L23.5 12L17 14.5H23L22 24L16 26L10 24L9.5 19H12.5L13 21.5L16 22.5L19 21.5L19.5 17.5Z" fill="white"/> </g>
+        </svg>
+        """
+        self.HTML = """
+        <svg height="800px" width="800px" xmlns="http://www.w3.org/2000/svg" aria-label="HTML5" role="img" viewBox="0 0 512 512" fill="#000000">
+            <g id="SVGRepo_bgCarrier" stroke-width="0"/>
+            <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"/>
+            <g id="SVGRepo_iconCarrier">
+                <path fill="#e34f26" d="M71 460L30 0h451l-41 460-185 52"/>
+                <path fill="#ef652a" d="M256 472l149-41 35-394H256"/>
+                <path fill="#ebebeb" d="M256 208h-75l-5-58h80V94H114l15 171h127zm-1 147l-63-17-4-45h-56l7 89 116 32z"/>
+                <path fill="#ffffff" d="M255 208v57h70l-7 73-63 17v59l116-32 16-174zm0-114v56h137l5-56z"/>
+            </g>
         </svg>
         """
 

@@ -157,7 +157,7 @@ class SmartLinkerGUI(FluentWindow):
         self.mybrowsInterface = MyBrowsers(self)
         self.addSubInterface(self.mybrowsInterface, FICO.GLOBE, "My Browsers")
         self.markdownViewer = MDView(self)
-        self.addSubInterface(self.markdownViewer, smIco.renderIcon(smIco.MARKDOWN), "Markdown Viewer")
+        self.addSubInterface(self.markdownViewer, SegoeSVGIcon.MARKDOWN, "Markdown Viewer")
         self.settingInterface = Settings(self)
         self.addSubInterface(self.settingInterface, FICO.SETTING, "Settings", NavigationItemPosition.BOTTOM)
         self.aboutInterface = About(self)
@@ -167,17 +167,14 @@ class SmartLinkerGUI(FluentWindow):
         """ Toggle the interface theme """
         if button.text() == "Use system setting":
             setTheme(Theme.AUTO)
-            self.settingInterface.widgetDef.optionMainBrowserCard.iconWidget.setIcon(QIcon(smart.resourcePath("resources/images/icons/icon_outline_black.ico"))) if not smart.isDarkModeEnabled() \
-            else self.settingInterface.widgetDef.optionMainBrowserCard.iconWidget.setIcon(QIcon(smart.resourcePath("resources/images/icons/icon_outline.ico")))
             self.mybrowsInterface.mybrowsScroll.setStyleSheet(self.mybrowsInterface.lightSheetOnDark if smart.isDarkModeEnabled() else self.mybrowsInterface.darkSheetOnLight)
         elif button.text() == "Dark":
             setTheme(Theme.DARK)
-            self.settingInterface.widgetDef.optionMainBrowserCard.iconWidget.setIcon(QIcon(smart.resourcePath("resources/images/icons/icon_outline.ico")))
             self.mybrowsInterface.mybrowsScroll.setStyleSheet(self.mybrowsInterface.lightSheetOnDark)
         else:
             setTheme(Theme.LIGHT)
-            self.settingInterface.widgetDef.optionMainBrowserCard.iconWidget.setIcon(QIcon(smart.resourcePath("resources/images/icons/icon_outline_black.ico")))
             self.mybrowsInterface.mybrowsScroll.setStyleSheet(self.mybrowsInterface.darkSheetOnLight)
+        self.settingInterface.widgetDef.optionMainBrowserCard.iconWidget.setIcon(SegoeSVGIcon.SMARTLINKER_OUTLINE)
 
     def checkForUpdates(self, parent):
         """ Connect to the GitHub repository to check for the latest available update """

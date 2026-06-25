@@ -110,7 +110,7 @@ class SmartSelectorGUI(FramelessWindow):
               "Scanning running processes...\n" \
               "=============================\n")
         smart.selectorLog("Scanning running browsers...")
-        if self.requestURL.endswith(".md") or self.requestURL.endswith(".markdown"):
+        if smart.isMarkdownExtension(self.requestURL) and smart.getFileMimeType(self.requestURL).startswith("text"):
             browsCard = BrowserCard(
                 smIco.renderIcon(smIco.MARKDOWN, 56),
                 "Smart DownMarker",

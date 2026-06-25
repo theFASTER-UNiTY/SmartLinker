@@ -101,7 +101,7 @@ class MarkdownViewer(QWidget):
     def loadMDFile(self, path: str, parent, history: bool = False):
         path = path.replace("/", "\\")
         if os.path.exists(path):
-            if path.endswith(".md") or path.endswith(".markdown"):
+            if smart.isMarkdownExtension(path):
                 if smart.getFileMimeType(path).startswith("text"):
                     self.markUpdate(True, path, parent)
                     with open(path, encoding="utf-8") as mdReader: self.contentMD = self.renderMD.render(mdReader.read())

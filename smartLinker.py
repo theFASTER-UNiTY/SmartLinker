@@ -14,7 +14,7 @@ class SmartLinkerGUI(FluentWindow):
         super().__init__(parent)
         print(smart.consoleScript())
         self.setWindowTitle("SmartLinker - Mastering URL Handling")
-        self.setWindowIcon(QIcon(smart.resourcePath("resources/images/icons/icon.ico")))
+        self.setWindowIcon(QIcon(smart.resourcePath("resources/icons/ico/icon.ico")))
         self.resize(1100, 700)
         self.setMinimumWidth(1040)
         self.move(40, 25)
@@ -37,7 +37,7 @@ class SmartLinkerGUI(FluentWindow):
 
         if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.startupSFXPath)): smart.playSound(soundStreamer, cfg.get(cfg.startupSFXPath), "startup")
         if bool(cfg.get(cfg.showSplash)):
-            self.splash = SplashScreen(smart.resourcePath("resources/images/icons/icon_splash.ico"), self)
+            self.splash = SplashScreen(smart.resourcePath("resources/icons/ico/icon_splash.ico"), self)
             self.splash.setIconSize(QSize(125, 125))
             self.show()
             self.createSubInterfaces()

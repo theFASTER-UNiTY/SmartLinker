@@ -193,7 +193,7 @@ class SegoeSVGIcon(FluentIconBase, Enum):
     TEXT_WRAP = "TextWrap"
 
     def path(self, theme=Theme.AUTO) -> str:
-        return smart.resourcePath(f"resources/icons/svg/{getIconColor(theme)}/{self.value}.svg")
+        return smart.resourcePath(f"resources/icons/ico/svg/{getIconColor(theme)}/{self.value}.svg")
 
 class SmartLogic:
     """ SmartUtils

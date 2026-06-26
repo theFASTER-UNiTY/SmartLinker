@@ -179,7 +179,7 @@ class SettingsInterface(QWidget):
             self.widgetDef.optionMainBrowserCard.contentLabel.setText(f"{SmartLinkerName} will redirect your web requests to {cfg.get(cfg.mainBrowser) if not cfg.get(cfg.mainBrowserIsManual) else os.path.basename(cfg.get(cfg.mainBrowserPath))} if no browser is running.")
             self.widgetDef.optionMainBrowserCard.removeMainButton.setEnabled(True)
         else:
-            self.widgetDef.optionMainBrowserCard.iconWidget.setIcon(QIcon(smart.resourcePath(f"resources/images/icons/icon_outline{"" if theme() == Theme.DARK else "_black"}.ico")))
+            self.widgetDef.optionMainBrowserCard.iconWidget.setIcon(QIcon(smart.resourcePath(f"resources/icons/ico/icon_outline{"" if theme() == Theme.DARK else "_black"}.ico")))
             self.widgetDef.optionMainBrowserCard.titleLabel.setText("Configure your main browser")
             self.widgetDef.optionMainBrowserCard.contentLabel.setText("You can either set a browser from your storage or SmartList as your main browser if no one is running.")
             self.widgetDef.optionMainBrowserCard.removeMainButton.setEnabled(False)
@@ -203,7 +203,7 @@ class SettingsInterface(QWidget):
             cfg.set(cfg.mainBrowserPath, "")
             cfg.set(cfg.mainBrowserIsManual, False)
             self.widgetDef.optionMainBrowserCard.removeMainButton.setEnabled(False)
-            self.widgetDef.optionMainBrowserCard.iconWidget.setIcon(QIcon(smart.resourcePath(f"resources/images/icons/icon_outline{"" if theme() == Theme.DARK else "_black"}.ico")))
+            self.widgetDef.optionMainBrowserCard.iconWidget.setIcon(QIcon(smart.resourcePath(f"resources/icons/ico/icon_outline{"" if theme() == Theme.DARK else "_black"}.ico")))
             self.widgetDef.optionMainBrowserCard.titleLabel.setText("Configure your main browser")
             self.widgetDef.optionMainBrowserCard.contentLabel.setText("You can either set a browser from your storage or SmartList as your main browser if no one is running.")
             self.widgetDef.optionMainBrowserCard.fromStorageButton.removeEventFilter(self.widgetDef.optionMainBrowserCard.fromStorageToolTip)
@@ -272,8 +272,7 @@ class SettingWidgetDefinition():
 
         # General
         self.optionMainBrowserCard = MainBrowsersCard(
-            smart.getFileIcon(cfg.get(cfg.mainBrowserPath)) if cfg.get(cfg.mainBrowserPath) else \
-                QIcon(smart.resourcePath(f"resources/images/icons/icon_outline{"" if theme() == Theme.DARK else "_black"}.ico")),
+            smart.getFileIcon(cfg.get(cfg.mainBrowserPath)) if cfg.get(cfg.mainBrowserPath) else SegoeSVGIcon.SMARTLINKER_OUTLINE,
             f"Your main browser has been set {"manually" if cfg.get(cfg.mainBrowserIsManual) else "from your SmartList"}" if cfg.get(cfg.mainBrowserPath) else \
             "Configure your main browser",
             f"{SmartLinkerName} will redirect your web requests to {os.path.basename(cfg.get(cfg.mainBrowserPath)) if cfg.get(cfg.mainBrowserIsManual) else cfg.get(cfg.mainBrowser)} if no browser is running." if cfg.get(cfg.mainBrowserPath) else \
@@ -446,7 +445,7 @@ class MainBrowsersCard(CardWidget):
         self.titleLabel = SubtitleLabel(title, self)
         self.contentLabel = BodyLabel(content, self)
         self.fromStorageButton = ToolButton(FICO.FOLDER, self)
-        self.fromListButton = ToolButton(smart.resourcePath("resources/images/icons/icon-0.ico"), self)
+        self.fromListButton = ToolButton(smart.resourcePath("resources/icons/ico/icon-0.ico"), self)
         self.removeMainButton = ToolButton(FICO.REMOVE_FROM, self)
         self.fromStorageToolTip = ToolTipFilter(self.fromStorageButton)
         self.fromListToolTip = ToolTipFilter(self.fromListButton)

@@ -5,7 +5,7 @@ class MarkdownViewer(QWidget):
 
     def __init__(self, parent = None) -> None:
         super().__init__(parent)
-        self.setObjectName("Markdown-Viewer")
+        self.setObjectName("MarkdownViewer")
         self.name = "Markdown Viewer"
         self.baseSub = "Your embedded SmartLinker-friendly Markdown viewer"
         self.renderMD = MarkdownIt().enable("table")
@@ -97,8 +97,6 @@ class MarkdownViewer(QWidget):
         MDCLayout.addWidget(self.browserMD)
 
         mdLayout.addWidget(self.mdContainer)
-
-        # mainMDLayout.addStretch(1)
         
         self.updateSnack = UpdateSnack("MDSnackBase", self)
         self.updateSnack.setStyleSheet(f"#MDSnackBase {{background-color: rgba({smart.convertToRGB(themeColor().name())}, 0.25)}}")

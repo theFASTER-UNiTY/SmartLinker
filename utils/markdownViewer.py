@@ -100,7 +100,8 @@ class MarkdownViewer(QWidget):
 
         # mainMDLayout.addStretch(1)
         
-        self.updateSnack = UpdateSnack("MDSnackBase", smart.convertToRGB(themeColor().name()), self)
+        self.updateSnack = UpdateSnack("MDSnackBase", self)
+        self.updateSnack.setStyleSheet(f"#MDSnackBase {{background-color: rgba({smart.convertToRGB(themeColor().name())}, 0.25)}}")
         mainMDLayout.addWidget(self.updateSnack)
     
     def openMDFile(self, parent):
@@ -208,18 +209,18 @@ class MarkWebView(FramelessWebEngineView):
         self.setAcceptDrops(True)
         self.dropParent = parent
     
-    def dragEnterEvent(self, event: QDragEnterEvent | None):
-        if event.mimeData().hasUrls():                                                  # type: ignore
-            event.acceptProposedAction()                                                # type: ignore
+    def dragEnterEvent(self, e: QDragEnterEvent | None):
+        if e.mimeData().hasUrls():                                                  # type: ignore
+            e.acceptProposedAction()                                                # type: ignore
             if self.dropParent.isHome: self.page().runJavaScript("onDragEnter()")       # type: ignore
     
-    def dragLeaveEvent(self, event: QDragLeaveEvent | None):
-        event.accept()                                                                  # type: ignore
+    def dragLeaveEvent(self, e: QDragLeaveEvent | None):
+        e.accept()                                                                  # type: ignore
         if self.dropParent.isHome: self.page().runJavaScript("onDragLeave()")           # type: ignore
 
     
-    def dropEvent(self, event: QDropEvent | None):
-        if event.mimeData().hasUrls():                                                  # type: ignore
+    def dropEvent(self, e: QDropEvent | None):
+        if e.mimeData().hasUrls():                                                  # type: ignore
             for url in event.mimeData().urls():                                         # type: ignore
                 localPath = url.toLocalFile()
                 if self.dropParent.isHome: self.page().runJavaScript("onDrop()")        # type: ignore

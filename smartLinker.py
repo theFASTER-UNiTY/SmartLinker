@@ -239,8 +239,6 @@ class SmartLinkerGUI(FluentWindow):
                 cfg.set(cfg.updateVersion, "")
                 self.mybrowsInterface.updateSnack.setVisible(False)
                 self.mybrowsInterface.updateSnack.setEnabled(False)
-                self.mybrowsInterface.updateSnack.setVisible(False)
-                self.mybrowsInterface.updateSnack.setEnabled(False)
                 self.markdownViewer.updateSnack.setVisible(False)
                 self.markdownViewer.updateSnack.setEnabled(False)
                 self.settingInterface.updateSnack.setVisible(False)
@@ -431,18 +429,10 @@ class SmartLinkerGUI(FluentWindow):
         if os.path.exists(smart.resourcePath(".temp")):
             try:
                 shutil.rmtree(smart.resourcePath(".temp"))
-                if self.mybrowsInterface.updateSnack.snackInstall.isVisible():
-                    self.mybrowsInterface.updateSnack.snackInstall.setVisible(False)
-                    self.mybrowsInterface.updateSnack.snackInstall.setEnabled(False)
-                if self.markdownViewer.updateSnack.snackInstall.isVisible():
-                    self.markdownViewer.updateSnack.snackInstall.setVisible(False)
-                    self.markdownViewer.updateSnack.snackInstall.setEnabled(False)
-                if self.settingInterface.updateSnack.snackInstall.isVisible():
-                    self.settingInterface.updateSnack.snackInstall.setVisible(False)
-                    self.settingInterface.updateSnack.snackInstall.setEnabled(False)
-                if self.aboutInterface.updateSnackInstall.isVisible():
-                    self.aboutInterface.updateSnackInstall.setVisible(False)
-                    self.aboutInterface.updateSnackInstall.setEnabled(False)
+                for button in self.snackButtons["Install"]:
+                    if button.isVisible():
+                        button.setVisible(False)
+                        button.setEnabled(False)
                 print(f"{Fore.GREEN}Temporary files have been successfully cleaned!{Style.RESET_ALL}")
                 smart.managerLog("SUCCESS: Temporary files successfully cleaned!")
                 smart.successNotify("Clean complete!", "All temporary files have been successfully removed.", parent)

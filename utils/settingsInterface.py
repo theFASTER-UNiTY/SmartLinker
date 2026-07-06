@@ -103,7 +103,8 @@ class SettingsInterface(QWidget):
 
         layout.addStretch(1)
         
-        self.updateSnack = UpdateSnack("SSnackBase", smart.convertToRGB(themeColor().name()), self)
+        self.updateSnack = UpdateSnack("SSnackBase", self)
+        self.updateSnack.setStyleSheet(f"QWidget#SSnackBase {{background-color: rgba({smart.convertToRGB(themeColor())}, 0.25);}}")
         mainSetLayout.addWidget(self.updateSnack)
 
     def cardManualSelect(self, parent):

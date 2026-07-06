@@ -141,7 +141,8 @@ class MyBrowsersInterface(QWidget):
 
         layout.addStretch(1)
         
-        self.updateSnack = UpdateSnack("BSnackBase", smart.convertToRGB(themeColor().name()), self)
+        self.updateSnack = UpdateSnack("BSnackBase", self)
+        self.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smart.convertToRGB(themeColor().name())}, 0.25)}}")
         mainBrowLayout.addWidget(self.updateSnack)
 
     def loadBrowsers(self, parent):

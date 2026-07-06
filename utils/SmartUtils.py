@@ -1563,10 +1563,9 @@ class UpdateSnack(QWidget):
     Class for the update snack
     """
 
-    def __init__(self, objName: str, rgbColors: str, parent = None):
+    def __init__(self, objName: str, parent = None):
         super().__init__(parent)
         self.setObjectName(objName)
-        self.setStyleSheet(f"QWidget#{objName} {{background-color: rgba({rgbColors}, 0.25)}}")
         self.setVisible(bool(cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners)))
         self.setEnabled(bool(cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners)))
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)

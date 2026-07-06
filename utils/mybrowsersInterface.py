@@ -14,15 +14,24 @@ class MyBrowsersInterface(QWidget):
         self.browsEditDlg = None
         self.loadLinkDlg = None
         self.myBrowsCards = []
+        self.searchComp = QCompleter()
+        self.searchModel = QStandardItemModel()
 
         mainBrowLayout = QVBoxLayout(self)
         mainBrowLayout.setContentsMargins(0, 20, 0, 0)
         mainTitleLine = QHBoxLayout()
-        mainTitleLine.setContentsMargins(40, 0, 0, 0)
+        mainTitleLine.setContentsMargins(40, 0, 40, 0)
         mainBrowLayout.addLayout(mainTitleLine)
         self.title = TitleLabel("My Browsers", self)
         self.title.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.searchBar = SearchLineEdit()
+        self.searchBar.setPlaceholderText("Search from your SmartList")
+        self.searchBar.setEnabled(bool(myBrowsList["MyBrowsers"]))
+        self.searchBar.setVisible(bool(myBrowsList["MyBrowsers"]))
+        self.initSearchCompleter(self.searchModel, self.searchComp, self.searchBar)
         mainTitleLine.addWidget(self.title)
+        mainTitleLine.addStretch()
+        mainTitleLine.addWidget(self.searchBar)
         mainBrowScroll = SingleDirectionScrollArea(self, Qt.Orientation.Vertical)
         mainBrowLayout.addWidget(mainBrowScroll)
         mainBrowScroll.setWidgetResizable(True)
@@ -41,8 +50,8 @@ class MyBrowsersInterface(QWidget):
         layout.addWidget(self.mybrowsSub)
         self.mybrowsSub.setHidden(not myBrowsList["MyBrowsers"])
         self.addCommand = Action(FICO.ADD, "Add a browser", triggered=lambda: self.openNewBrowserDialog(parent))
-        self.refreshCommand = Action(FICO.SYNC, "Refresh", triggered=lambda: self.refreshWrapper(parent))
-        self.loadLinkCommand = Action(FICO.LINK, "Load a link", triggered=lambda: self.loadLinkDialog(parent))
+        self.refreshCommand = Action(segFont.fromName("Refresh"), "Refresh", triggered=lambda: self.refreshWrapper(parent))
+        self.loadLinkCommand = Action(segFont.fromName("Link"), "Load a link", triggered=lambda: self.loadLinkDialog(parent))
         self.clearCommand = Action(FICO.DELETE.colored(QColor("red"), QColor("#F44336")), "Clear SmartList", triggered=lambda: self.confirmClearDialog(parent))
         self.clearCommand.setEnabled(bool(myBrowsList["MyBrowsers"]))
         self.myBrowsCommandBar = CommandBar()
@@ -75,7 +84,7 @@ class MyBrowsersInterface(QWidget):
         self.mybrowsAddCard.setVisible(not cfg.get(cfg.showCommandBar))
         self.mybrowsRefreshCard = PushSettingCard(
             "Refresh",
-            SegoeFontIcon.fromName("Refresh"),
+            segFont.fromName("Refresh"),
             "Refresh my SmartList",
             "If for any reason, you need to refresh the list of browsers above, this is the quickest way to proceed."
         )
@@ -84,7 +93,7 @@ class MyBrowsersInterface(QWidget):
         self.mybrowsRefreshCard.setVisible(not cfg.get(cfg.showCommandBar))
         self.mybrowsLoadLinkCard = PushSettingCard(
             "Load a link",
-            SegoeFontIcon.fromName("Link"),
+            segFont.fromName("Link"),
             "Load a link into a browser",
             "For ease of access, you can directly load a URL into any browser of your choice from your SmartList."
         )
@@ -132,31 +141,17 @@ class MyBrowsersInterface(QWidget):
 
         layout.addStretch(1)
         
-        self.updateSnack = QWidget()
-        self.updateSnack.setObjectName("BSnackBase")
-        self.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smart.convertToRGB(themeColor().name())}, 0.25)}}")
+        self.updateSnack = UpdateSnack("BSnackBase", smart.convertToRGB(themeColor().name()), self)
         mainBrowLayout.addWidget(self.updateSnack)
-        self.updateSnack.setVisible(bool(cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners))) 
-        self.updateSnack.setEnabled(bool(cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners))) 
-        self.updateSnackLayout = QHBoxLayout(self.updateSnack)
-        self.updateSnackLayout.setContentsMargins(20, 10, 20, 10)
-        self.updateSnackIcon = IconWidget(FICO.IOT)
-        self.updateSnackIcon.setFixedSize(32, 32)
-        self.updateSnackLayout.setSpacing(20)
-        self.updateSnackLayout.addWidget(self.updateSnackIcon)
-        self.updateSnackLabel = StrongBodyLabel("A new update is available for download!")
-        self.updateSnackLabel.setStyleSheet("background-color: transparent")
-        self.updateSnackLayout.addWidget(self.updateSnackLabel)
-        self.updateSnackLayout.addStretch(1)
-        self.updateSnackButton = PrimaryPushButton(FICO.DOWNLOAD, "Download now")
-        self.updateSnackLayout.addWidget(self.updateSnackButton)
-        self.updateSnackInstall = PrimaryPushButton(SegoeFontIcon.fromName("OpenWith"), "Install now")
-        self.updateSnackInstall.setToolTip("The latest update has been found in your system.\nYou can install it right away.")
-        self.updateSnackInstall.installEventFilter(ToolTipFilter(self.updateSnackInstall))
-        self.updateSnackLayout.addWidget(self.updateSnackInstall)
 
     def loadBrowsers(self, parent):
-        """ :MyBrowsersInterface: Saved browsers loader in the SmartList"""
+        """ :MyBrowsersInterface: Load the saved browsers in the SmartList
+        
+        Parameters
+        ----------
+        parent
+            The parent widget
+        """
         myBrowsList = smart.loadBrowsers()
         if myBrowsList["MyBrowsers"]:
             print("Loading browsers from database...")
@@ -176,21 +171,27 @@ class MyBrowsersInterface(QWidget):
                 self.myBrowsCards.append(bCard)
             print(f"{Fore.GREEN}Your browsers database has been successfully loaded!{Style.RESET_ALL}")
             smart.managerLog("SUCCESS: The browsers database has been succesfully loaded into the SmartList.")
-            self.mybrowsEmptyMsg.setHidden(True)
-            self.mybrowsSub.setHidden(False)
             if cfg.get(cfg.showCommandBar): self.clearCommand.setEnabled(True)
             else: self.myBrowsClearCard.setHidden(False)
         else:
             print(f"{Fore.YELLOW}Your browsers database is currently empty...{Style.RESET_ALL}")
             smart.managerLog("WARNING: The browsers database is currently empty...")
             self.mybrowsLayout.addWidget(self.mybrowsEmptyMsg, 0, Qt.AlignmentFlag.AlignCenter)
-            self.mybrowsEmptyMsg.setHidden(False)
-            self.mybrowsSub.setHidden(True)
             if cfg.get(cfg.showCommandBar): self.clearCommand.setEnabled(False)
             else: self.myBrowsClearCard.setHidden(True)
+        self.mybrowsEmptyMsg.setVisible(not myBrowsList["MyBrowsers"])
+        self.mybrowsSub.setVisible(bool(myBrowsList["MyBrowsers"]))
+        self.searchBar.setEnabled(bool(myBrowsList["MyBrowsers"]))
+        self.searchBar.setVisible(bool(myBrowsList["MyBrowsers"]))
 
     def refreshBrowsers(self, parent):
-        """ :MyBrowsersInterface: Refresh the SmartList without need to restart """
+        """ :MyBrowsersInterface: Refresh the SmartList without need to restart
+        
+        Parameters
+        ----------
+        parent
+            The parent widget
+        """
         print("Refreshing the SmartList...")
         smart.managerLog("Refreshing the SmartList...")
         while self.mybrowsLayout.count():
@@ -205,11 +206,62 @@ class MyBrowsersInterface(QWidget):
         self.loadBrowsers(parent)
     
     def refreshWrapper(self, parent):
+        """ :MyBrowsersInterface: Handle the SmartList refresh process and notify the user of its completion
+        
+        Parameters
+        ----------
+        parent
+            The parent widget
+        """
         self.refreshBrowsers(parent)
         smart.infoNotify("SmartList refreshed!", "Your SmartList has been successfully refreshed!", parent)
 
+    def initSearchCompleter(self, model: QStandardItemModel, completer: QCompleter, searchEdit: SearchLineEdit):
+        """ :MyBrowsersInterface: Initialize the search completer
+        
+        Parameters
+        ----------
+        model: QStandardItemModel
+            The model for the completer
+        completer: QCompleter
+            The completer to initialize
+        searchEdit: SearchLineEdit
+            The search edit field
+        """
+        for browser in myBrowsList["MyBrowsers"]:
+            item = QStandardItem(browser["name"])
+            item.setData(browser, Qt.ItemDataRole.UserRole)
+            icon = smart.getFileIcon(browser["path"])
+            if icon: item.setIcon(icon)
+            model.appendRow(item)
+        
+        completer = QCompleter(model)
+        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        completer.setFilterMode(Qt.MatchFlag.MatchContains)
+        completer.activated[QModelIndex].connect(self.onBrowserSelect)
+
+        searchEdit.setCompleter(completer)
+    
+    def onBrowserSelect(self, index: QModelIndex):
+        """ :MyBrowsersInterface: Handle the selected browser from the completer
+        
+        Parameters
+        ----------
+        index: QModelIndex
+            The index of the selected browser
+        """
+        browser = index.data(Qt.ItemDataRole.UserRole)
+        if browser:
+            print(f"Selected browser: {browser['name']} ({browser['path']})")
+
     def openNewBrowserDialog(self, parent):
-        """ :MyBrowsersInterface: 'Add a new browser' dialog loader """
+        """ :MyBrowsersInterface: Load the `Add a new browser` dialog
+        
+        Parameters
+        ----------
+        parent
+            The parent of the dialog
+        """
         if not self.browsAddDlg: self.browsAddDlg = NewBrowserDialog(parent)
         if self.browsAddDlg.exec():
             print(f"New browser name: {self.browsAddDlg.nameEdit.text()}")
@@ -217,7 +269,17 @@ class MyBrowsersInterface(QWidget):
             self.addNewBrowserToList(self.browsAddDlg.nameEdit.text(), self.browsAddDlg.pathEdit.text(), parent)
     
     def openEditBrowserDialog(self, path: str, name: str, parent):
-        """ :MyBrowsersInterface: 'Edit a browser' dialog loader """
+        """ :MyBrowsersInterface: Load the `Edit a browser` dialog
+        
+        Parameters
+        ----------
+        path: string
+            The complete path to the browser executable
+        name: string
+            The name of the browser
+        parent
+            The parent of the dialog
+        """
         if not self.browsEditDlg: self.browsEditDlg = EditBrowserDialog(path, name, parent)
         else:
             self.browsEditDlg = None
@@ -232,6 +294,15 @@ class MyBrowsersInterface(QWidget):
             self.updateBrowserOfList(name, path, parent)
 
     def confirmDeleteDialog(self, name: str, parent):
+        """ :MyBrowsersInterface: Load the `Delete a browser` dialog
+        
+        Parameters
+        ----------
+        name: string
+            The name of the browser you want to delete
+        parent
+            The parent of the dialog
+        """
         self.deleteDlg = MessageBox(
             f"Delete {name}",
             f"Do you really want to remove {name} from your SmartList?\n" \
@@ -261,6 +332,13 @@ class MyBrowsersInterface(QWidget):
             smart.successNotify("Removal complete!", f"{name} has been successfully removed from your SmartList!", parent)
 
     def confirmClearDialog(self, parent):
+        """ :MyBrowsersInterface: Load the `Clear the SmartList` dialog 
+        
+        Parameters
+        ----------
+        parent
+            The parent of the dialog
+        """
         self.clearDlg = MessageBox(
             "Clear the SmartList",
             "By doing this, every single browser registered in your SmartList will be erased, " \
@@ -298,7 +376,13 @@ class MyBrowsersInterface(QWidget):
                 smart.managerLog("INFO: The confirmation has been denied. The removal operation has been cancelled by the user.")
 
     def loadLinkDialog(self, parent):
-        """ :MyBrowsersInterface: 'Load link' dialog loader """
+        """ :MyBrowsersInterface: Load the `Load link` dialog
+        
+        Parameters
+        ----------
+        parent
+            The parent of the dialog
+        """
         myBrowsList = smart.loadBrowsers()
         if not self.loadLinkDlg:
             self.loadLinkDlg = LoadLinkDialog(parent)
@@ -354,7 +438,17 @@ class MyBrowsersInterface(QWidget):
                     smart.managerLog(f"ERROR: Failed to load '{self.loadLinkDlg.linkEdit.text()}' into browser at path '{self.loadLinkDlg.otherBrowsEdit.text()}': {e}")
 
     def launchBrowser(self, path: str, name: str, parent):
-        """ :MyBrowsersInterface: Specified browser execution handler """
+        """ :MyBrowsersInterface: Handle the specified browser execution
+        
+        Parameters
+        ----------
+        path: string
+            The complete path to the browser executable
+        name: string
+            The name of the browser
+        parent
+            The parent widget
+        """
         if os.path.exists(path):
             try:
                 subprocess.Popen(path)
@@ -370,13 +464,16 @@ class MyBrowsersInterface(QWidget):
             smart.managerLog(f'WARNING: The executable for {name} cannot be found at the specified location: "{path}"')
 
     def addNewBrowserToList(self, name: str, path: str, parent):
-        """ :MyBrowsersInterface: New browser adding function from 'Add a new browser' dialog
+        """ :MyBrowsersInterface: Load the new browser adding function from the `Add a new browser` dialog
+        
         Parameters
         ----------
         name: string
             The name of the provided browser
         path: string
             The complete path of the provided browser executable
+        parent
+            The parent widget
         """
         print("Pending operation: Adding a new browser to the SmartList...\n" \
               f"Browser name: {name}\nBrowser complete path: {path}")
@@ -397,13 +494,16 @@ class MyBrowsersInterface(QWidget):
         smart.managerLog(f'SUCCESS: "{name}" has been successfully added to the SmartList.')
 
     def updateBrowserOfList(self, name: str, path: str, parent):
-        """ :MyBrowsersInterface: Browser modifying function from 'Edit a browser' dialog
+        """ :MyBrowsersInterface: Load the browser modifying function from the `Edit a browser` dialog
+        
         Parameters
         ----------
         name: string
             The name of the provided browser
         path: string
             The complete path of the provided browser executable
+        parent
+            The parent widget
         """
         if self.browsEditDlg:
             myBrowsList = smart.loadBrowsers()

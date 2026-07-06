@@ -96,8 +96,19 @@ class SmartLinkerGUI(FluentWindow):
             argWarningDlg.cancelButton.setVisible(False)
             argWarningDlg.show()
 
-        self.mybrowsInterface.updateSnackButton.clicked.connect(lambda: self.browserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, True, self))
-        self.mybrowsInterface.updateSnackInstall.clicked.connect(lambda: self.runUpdate(self))
+        self.snackButtons = {
+            "Download": [
+                self.mybrowsInterface.updateSnack.snackButton,
+                self.markdownViewer.updateSnack.snackButton,
+                self.settingInterface.updateSnack.snackButton,
+                self.aboutInterface.updateSnackButton
+            ],
+            "Install": [
+                self.mybrowsInterface.updateSnack.snackInstall,
+                self.markdownViewer.updateSnack.snackInstall,
+                self.settingInterface.updateSnack.snackInstall,
+                self.aboutInterface.updateSnackInstall
+            ]}
         if self.settingInterface.widgetDef.optionMicaEffect:
             self.settingInterface.widgetDef.optionMicaEffect.setEnabled(smart.isSoftwareCompatible(22000))
             self.settingInterface.widgetDef.optionMicaEffect.setVisible(smart.isSoftwareCompatible(22000))
@@ -119,34 +130,24 @@ class SmartLinkerGUI(FluentWindow):
         self.settingInterface.advancedTempClean.button.clicked.connect(lambda: self.cleanTempFiles(self))
         self.settingInterface.advancedRestart.button.clicked.connect(self.confirmRestart)
         self.settingInterface.advancedStop.button.clicked.connect(self.confirmStop)
-        self.settingInterface.updateSnackButton.clicked.connect(lambda: self.browserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, True, self))
-        self.settingInterface.updateSnackInstall.clicked.connect(lambda: self.runUpdate(self))
         self.aboutInterface.aboutVersion.button.clicked.connect(lambda: self.checkForUpdates(self))
-        self.aboutInterface.updateSnackButton.clicked.connect(lambda: self.browserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, True, self))
-        self.aboutInterface.updateSnackInstall.clicked.connect(lambda: self.runUpdate(self))
-        cfg.appTheme.valueChanged.connect(lambda value: (
-            self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smart.getRed(themeColor())}, {smart.getGreen(themeColor())}, {smart.getBlue(themeColor())}, 0.25)}}"), # type: ignore
-            self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smart.getRed(themeColor())}, {smart.getGreen(themeColor())}, {smart.getBlue(themeColor())}, 0.25)}}"), # type: ignore
-            self.aboutInterface.updateSnack.setStyleSheet(f"#ASnackBase {{background-color: rgba({smart.getRed(themeColor())}, {smart.getGreen(themeColor())}, {smart.getBlue(themeColor())}, 0.25); margin: 10px; margin-top: 0; border-radius: 5px}}"), # type: ignore
-            """ self.aboutInterface.aboutResources.pyQtLabel.setTextColor(themeColor(), cfg.get(cfg.accentColor) if cfg.get(cfg.accentMode) == "Custom" else getSystemAccentColor()),
-            self.aboutInterface.aboutResources.qFluentLabel.setTextColor(themeColor(), cfg.get(cfg.accentColor) if cfg.get(cfg.accentMode) == "Custom" else getSystemAccentColor()),
-            self.aboutInterface.aboutResources.flaticonLabel.setTextColor(themeColor(), cfg.get(cfg.accentColor) if cfg.get(cfg.accentMode) == "Custom" else getSystemAccentColor()) """
-        ))
+        for button in self.snackButtons["Download"]:
+            button.clicked.connect(lambda: self.browserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, True, self))
+        for button in self.snackButtons["Install"]:
+            button.setVisible(self.isUpdateDownloaded())
+            button.setEnabled(self.isUpdateDownloaded())
+            button.clicked.connect(lambda: self.runUpdate(self))
         cfg.accentMode.valueChanged.connect(lambda value: (
-            self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smart.getRed(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, {smart.getGreen(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, {smart.getBlue(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, 0.25)}}"),
-            self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smart.getRed(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, {smart.getGreen(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, {smart.getBlue(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, 0.25)}}"),
-            self.aboutInterface.updateSnack.setStyleSheet(f"#ASnackBase {{background-color: rgba({smart.getRed(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, {smart.getGreen(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, {smart.getBlue(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, 0.25); margin: 10px; margin-top: 0; border-radius: 5px}}"),
-            """ self.aboutInterface.aboutResources.pyQtLabel.setTextColor(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor(), cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor()),
-            self.aboutInterface.aboutResources.qFluentLabel.setTextColor(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor(), cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor()),
-            self.aboutInterface.aboutResources.flaticonLabel.setTextColor(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor(), cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor()) """
+            self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smart.convertToRGB(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, 0.25)}}"),
+            self.markdownViewer.updateSnack.setStyleSheet(f"#MDSnackBase {{background-color: rgba({smart.convertToRGB(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, 0.25)}}"),
+            self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smart.convertToRGB(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, 0.25)}}"),
+            self.aboutInterface.updateSnack.setStyleSheet(f"#ASnackBase {{background-color: rgba({smart.convertToRGB(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, 0.25); margin: 10px; border-radius: 5px}}")
         ))
         cfg.accentColor.valueChanged.connect(lambda value: (
-            self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smart.getRed(value)}, {smart.getGreen(value)}, {smart.getBlue(value)}, 0.25)}}"),
-            self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smart.getRed(value)}, {smart.getGreen(value)}, {smart.getBlue(value)}, 0.25)}}"),
-            self.aboutInterface.updateSnack.setStyleSheet(f"#ASnackBase {{background-color: rgba({smart.getRed(value)}, {smart.getGreen(value)}, {smart.getBlue(value)}, 0.25); margin: 10px; margin-top: 0; border-radius: 5px}}"),
-            """ self.aboutInterface.aboutResources.pyQtLabel.setTextColor(QColor(value), QColor(value)),
-            self.aboutInterface.aboutResources.qFluentLabel.setTextColor(QColor(value), QColor(value)),
-            self.aboutInterface.aboutResources.flaticonLabel.setTextColor(QColor(value), QColor(value)) """
+            self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smart.convertToRGB(value)}, 0.25)}}"),
+            self.markdownViewer.updateSnack.setStyleSheet(f"#MDSnackBase {{background-color: rgba({smart.convertToRGB(value)}, 0.25)}}"),
+            self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smart.convertToRGB(value)}, 0.25)}}"),
+            self.aboutInterface.updateSnack.setStyleSheet(f"#ASnackBase {{background-color: rgba({smart.convertToRGB(value)}, 0.25); margin: 10px; border-radius: 5px}}")
         ))
 
     def createSubInterfaces(self):
@@ -157,7 +158,7 @@ class SmartLinkerGUI(FluentWindow):
         self.mybrowsInterface = MyBrowsers(self)
         self.addSubInterface(self.mybrowsInterface, FICO.GLOBE, "My Browsers")
         self.markdownViewer = MDView(self)
-        self.addSubInterface(self.markdownViewer, SegoeSVGIcon.MARKDOWN, "Markdown Viewer")
+        self.addSubInterface(self.markdownViewer, segSVG.MARKDOWN, "Markdown Viewer")
         self.settingInterface = Settings(self)
         self.addSubInterface(self.settingInterface, FICO.SETTING, "Settings", NavigationItemPosition.BOTTOM)
         self.aboutInterface = About(self)
@@ -167,14 +168,28 @@ class SmartLinkerGUI(FluentWindow):
         """ Toggle the interface theme """
         if button.text() == "Use system setting":
             setTheme(Theme.AUTO)
-            self.mybrowsInterface.mybrowsScroll.setStyleSheet(self.mybrowsInterface.lightSheetOnDark if smart.isDarkModeEnabled() else self.mybrowsInterface.darkSheetOnLight)
         elif button.text() == "Dark":
             setTheme(Theme.DARK)
-            self.mybrowsInterface.mybrowsScroll.setStyleSheet(self.mybrowsInterface.lightSheetOnDark)
         else:
             setTheme(Theme.LIGHT)
-            self.mybrowsInterface.mybrowsScroll.setStyleSheet(self.mybrowsInterface.darkSheetOnLight)
-        self.settingInterface.widgetDef.optionMainBrowserCard.iconWidget.setIcon(SegoeSVGIcon.SMARTLINKER_OUTLINE)
+        
+        self.mybrowsInterface.mybrowsScroll.setStyleSheet(
+            self.mybrowsInterface.darkSheetOnLight if theme() == Theme.LIGHT
+            else self.mybrowsInterface.lightSheetOnDark
+        )
+        self.markdownViewer.mdContainer.setStyleSheet(f"""
+            QWidget#Container {{
+                border-top: 1px solid {"#E3E6E9" if theme() == Theme.LIGHT else "#393939"};
+                border-left: 1px solid {"#E3E6E9" if theme() == Theme.LIGHT else "#393939"};
+                {f'border-bottom: 1px solid {"#E3E6E9" if theme() == Theme.LIGHT else "#393939"};'
+                 if cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners) else ""}
+                background: transparent;
+            }}
+        """)
+        self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smart.convertToRGB(themeColor().name())}, 0.25)}}")
+        self.markdownViewer.updateSnack.setStyleSheet(f"#MDSnackBase {{background-color: rgba({smart.convertToRGB(themeColor().name())}, 0.25)}}")
+        self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smart.convertToRGB(themeColor().name())}, 0.25)}}")
+        self.aboutInterface.updateSnack.setStyleSheet(f"#ASnackBase {{background-color: rgba({smart.convertToRGB(themeColor().name())}, 0.25); margin: 10px; margin-top: 0; border-radius: 5px}}")
 
     def checkForUpdates(self, parent):
         """ Connect to the GitHub repository to check for the latest available update """
@@ -209,6 +224,8 @@ class SmartLinkerGUI(FluentWindow):
                 )
                 self.mybrowsInterface.updateSnack.setVisible(True)
                 self.mybrowsInterface.updateSnack.setEnabled(True)
+                self.markdownViewer.updateSnack.setVisible(True)
+                self.markdownViewer.updateSnack.setEnabled(True)
                 self.settingInterface.updateSnack.setVisible(True)
                 self.settingInterface.updateSnack.setEnabled(True)
                 self.aboutInterface.updateSnack.setVisible(True)
@@ -222,6 +239,10 @@ class SmartLinkerGUI(FluentWindow):
                 cfg.set(cfg.updateVersion, "")
                 self.mybrowsInterface.updateSnack.setVisible(False)
                 self.mybrowsInterface.updateSnack.setEnabled(False)
+                self.mybrowsInterface.updateSnack.setVisible(False)
+                self.mybrowsInterface.updateSnack.setEnabled(False)
+                self.markdownViewer.updateSnack.setVisible(False)
+                self.markdownViewer.updateSnack.setEnabled(False)
                 self.settingInterface.updateSnack.setVisible(False)
                 self.settingInterface.updateSnack.setEnabled(False)
                 self.aboutInterface.updateSnack.setVisible(False)
@@ -315,12 +336,10 @@ class SmartLinkerGUI(FluentWindow):
             self.browserDlg.close() if self.browserDlg else None,
             self.downloadDialog(parent) if isDownload else None
         ))
-        if isDownload and os.path.exists(smart.resourcePath(".temp\\SmartLinkerUpdate.exe")) and os.path.exists(smart.resourcePath(".temp\\.metadata")):
-            with open(smart.resourcePath(".temp\\.metadata"), "rb") as metaReader: metaSize = pickle.load(metaReader)
-            if metaSize == os.path.getsize(smart.resourcePath(".temp\\SmartLinkerUpdate.exe")):
-                self.mybrowsInterface.updateSnackLayout.addWidget(self.mybrowsInterface.updateSnackInstall)
-                self.settingInterface.updateSnackLayout.addWidget(self.settingInterface.updateSnackInstall)
-                self.aboutInterface.updateSnackLayout.addWidget(self.aboutInterface.updateSnackInstall)
+        if isDownload:
+            for button in self.snackButtons["Install"]:
+                button.setVisible(self.isUpdateDownloaded())
+                button.setEnabled(self.isUpdateDownloaded())
         if self.browserDlg.exec():
             failedAttempts = 0
             if not self.browserDlg.browserCombo.currentText() == "Other browser":
@@ -412,15 +431,18 @@ class SmartLinkerGUI(FluentWindow):
         if os.path.exists(smart.resourcePath(".temp")):
             try:
                 shutil.rmtree(smart.resourcePath(".temp"))
-                if self.mybrowsInterface.updateSnackInstall:
-                    self.mybrowsInterface.updateSnackInstall.setParent(None)
-                    self.mybrowsInterface.updateSnackLayout.removeWidget(self.mybrowsInterface.updateSnackInstall)
-                if self.settingInterface.updateSnackInstall:
-                    self.settingInterface.updateSnackInstall.setParent(None)
-                    self.settingInterface.updateSnackLayout.removeWidget(self.settingInterface.updateSnackInstall)
-                if self.aboutInterface.updateSnackInstall:
-                    self.aboutInterface.updateSnackInstall.setParent(None)
-                    self.aboutInterface.updateSnackLayout.removeWidget(self.aboutInterface.updateSnackInstall)
+                if self.mybrowsInterface.updateSnack.snackInstall.isVisible():
+                    self.mybrowsInterface.updateSnack.snackInstall.setVisible(False)
+                    self.mybrowsInterface.updateSnack.snackInstall.setEnabled(False)
+                if self.markdownViewer.updateSnack.snackInstall.isVisible():
+                    self.markdownViewer.updateSnack.snackInstall.setVisible(False)
+                    self.markdownViewer.updateSnack.snackInstall.setEnabled(False)
+                if self.settingInterface.updateSnack.snackInstall.isVisible():
+                    self.settingInterface.updateSnack.snackInstall.setVisible(False)
+                    self.settingInterface.updateSnack.snackInstall.setEnabled(False)
+                if self.aboutInterface.updateSnackInstall.isVisible():
+                    self.aboutInterface.updateSnackInstall.setVisible(False)
+                    self.aboutInterface.updateSnackInstall.setEnabled(False)
                 print(f"{Fore.GREEN}Temporary files have been successfully cleaned!{Style.RESET_ALL}")
                 smart.managerLog("SUCCESS: Temporary files successfully cleaned!")
                 smart.successNotify("Clean complete!", "All temporary files have been successfully removed.", parent)
@@ -432,6 +454,16 @@ class SmartLinkerGUI(FluentWindow):
             print(f"{Fore.BLUE}There are no temporary files to be removed...{Style.RESET_ALL}")
             smart.managerLog("INFO: No temporary files to be removed")
             smart.infoNotify("No temporary files", "There are no temporary files to be removed...", parent)
+
+    def isUpdateDownloaded(self) -> bool:
+        if not (os.path.exists(smart.resourcePath(".temp\\SmartLinkerUpdate.exe")) and os.path.exists(smart.resourcePath(".temp\\.metadata"))):
+            return False
+        
+        with open(smart.resourcePath(".temp\\.metadata"), "rb") as metaReader: metaSize = pickle.load(metaReader)
+        if not metaSize == os.path.getsize(smart.resourcePath(".temp\\SmartLinkerUpdate.exe")):
+            return False
+        
+        return True
 
     def runUpdate(self, parent):
         print(f"Opening the latest update installer...\nUpdate installer path: {Fore.BLUE}[{smart.resourcePath(".temp\\SmartLinkerUpdate.exe")}]{Style.RESET_ALL}")

@@ -88,7 +88,7 @@ class SettingsInterface(QWidget):
         layout.addWidget(self.advancedTempClean)
         self.advancedRestart = PushSettingCard(
             "Restart",
-            SegoeFontIcon.fromName("UpdateRestore"),
+            segFont.fromName("UpdateRestore"),
             f"Restart {SmartLinkerName}",
             "If you need for some reason to restart the software, this is the easiest way to proceed."
         )
@@ -103,27 +103,8 @@ class SettingsInterface(QWidget):
 
         layout.addStretch(1)
         
-        self.updateSnack = QWidget()
-        self.updateSnack.setObjectName("SSnackBase")
-        self.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smart.convertToRGB(themeColor().name())}, 0.25)}}")
+        self.updateSnack = UpdateSnack("SSnackBase", smart.convertToRGB(themeColor().name()), self)
         mainSetLayout.addWidget(self.updateSnack)
-        self.updateSnack.setVisible(bool(cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners)))
-        self.updateSnack.setEnabled(bool(cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners)))
-        self.updateSnackLayout = QHBoxLayout(self.updateSnack)
-        self.updateSnackLayout.setContentsMargins(20, 10, 20, 10)
-        self.updateSnackIcon = IconWidget(FICO.IOT)
-        self.updateSnackIcon.setFixedSize(32, 32)
-        self.updateSnackLayout.setSpacing(20)
-        self.updateSnackLayout.addWidget(self.updateSnackIcon)
-        self.updateSnackLabel = StrongBodyLabel("A new update is available for download!")
-        self.updateSnackLayout.addWidget(self.updateSnackLabel)
-        self.updateSnackLayout.addStretch(1)
-        self.updateSnackButton = PrimaryPushButton(FICO.DOWNLOAD, "Download now")
-        self.updateSnackLayout.addWidget(self.updateSnackButton)
-        self.updateSnackInstall = PrimaryPushButton(SegoeFontIcon.fromName("OpenWith"), "Install now")
-        self.updateSnackInstall.setToolTip("The latest update has been found in your system.\nYou can install it right away.")
-        self.updateSnackInstall.installEventFilter(ToolTipFilter(self.updateSnackInstall))
-        self.updateSnackLayout.addWidget(self.updateSnackInstall)
 
     def cardManualSelect(self, parent):
         """ :SettingsInterface: Open a dialog to select main browser from your storage """
@@ -203,7 +184,7 @@ class SettingsInterface(QWidget):
             cfg.set(cfg.mainBrowserPath, "")
             cfg.set(cfg.mainBrowserIsManual, False)
             self.widgetDef.optionMainBrowserCard.removeMainButton.setEnabled(False)
-            self.widgetDef.optionMainBrowserCard.iconWidget.setIcon(QIcon(smart.resourcePath(f"resources/icons/ico/icon_outline{"" if theme() == Theme.DARK else "_black"}.ico")))
+            self.widgetDef.optionMainBrowserCard.iconWidget.setIcon(segSVG.SMARTLINKER_OUTLINE)
             self.widgetDef.optionMainBrowserCard.titleLabel.setText("Configure your main browser")
             self.widgetDef.optionMainBrowserCard.contentLabel.setText("You can either set a browser from your storage or SmartList as your main browser if no one is running.")
             self.widgetDef.optionMainBrowserCard.fromStorageButton.removeEventFilter(self.widgetDef.optionMainBrowserCard.fromStorageToolTip)
@@ -272,7 +253,7 @@ class SettingWidgetDefinition():
 
         # General
         self.optionMainBrowserCard = MainBrowsersCard(
-            smart.getFileIcon(cfg.get(cfg.mainBrowserPath)) if cfg.get(cfg.mainBrowserPath) else SegoeSVGIcon.SMARTLINKER_OUTLINE,
+            smart.getFileIcon(cfg.get(cfg.mainBrowserPath)) if cfg.get(cfg.mainBrowserPath) else segSVG.SMARTLINKER_OUTLINE,
             f"Your main browser has been set {"manually" if cfg.get(cfg.mainBrowserIsManual) else "from your SmartList"}" if cfg.get(cfg.mainBrowserPath) else \
             "Configure your main browser",
             f"{SmartLinkerName} will redirect your web requests to {os.path.basename(cfg.get(cfg.mainBrowserPath)) if cfg.get(cfg.mainBrowserIsManual) else cfg.get(cfg.mainBrowser)} if no browser is running." if cfg.get(cfg.mainBrowserPath) else \
@@ -280,7 +261,7 @@ class SettingWidgetDefinition():
         )
         self.optionMainRefresh = PushSettingCard(
             "Refresh",
-            SegoeFontIcon.fromName("Refresh"),
+            segFont.fromName("Refresh"),
             "Refresh main browser card",
             "In case your main browser card above is not synchronized with some changes, you can make it unified again with this option."
         )

@@ -1,54 +1,55 @@
 """
 SmartUtils
 ==========
-A complete utility module made specifically for SmartLinker basic and technical needs.
+A complete utility module made specifically for SmartLinker global needs.
 
 :Copyright: © 2025-2026 by #theF∆STER™ UN!TY.
 """
-__version__ = "v3.0.0 Alpha #1"
+__version__ = "v3.0.0 Alpha #2"
 __author__ = "#theF∆STER™ CODE&BU!LD"
 
 # NOTE: CODE&BU!LD is actually the software development section of the UN!TY group.
 # (In case you would be wondering...)
 # =========================================================
 
-import argparse, ctypes, darkdetect, datetime, json, magic, markdown, os, pathlib, pickle, platform, psutil, pygame, requests, shutil, socket
-import subprocess, sys, time, typing, threading, webbrowser, win32api, winreg
+import argparse, ctypes, darkdetect, datetime, json, magic, markdown, os, pathlib, pickle, platform, psutil, pygame, re, requests, shutil
+import socket, subprocess, sys, time, typing, threading, webbrowser, win32api, winreg
+from colorama import init, Fore, Back, Style
 from enum import Enum
+from markdown_it import MarkdownIt
+from packaging.version import Version
+from pathlib import Path
+from PyQt6.Qsci import QsciScintilla, QsciLexerMarkdown
 from PyQt6.QtCore import (
-    QCoreApplication, QEvent, QEventLoop, QFileInfo, QObject, QRegularExpression, QSize, Qt, QThread, QTimer, QUrl, pyqtSignal
+    QCoreApplication, QEvent, QEventLoop, QFileInfo, QModelIndex, QObject, QRegularExpression, QSize, Qt, QThread, QTimer, QUrl, pyqtSignal
 )
 from PyQt6.QtGui import (
     QColor, QContextMenuEvent, QDragEnterEvent, QDragLeaveEvent, QDragMoveEvent, QDropEvent, QFont, QFontDatabase, QFontMetrics, QIcon,
-    QKeyEvent, QPainter, QPixmap, QResizeEvent, QSyntaxHighlighter, QTextCharFormat, QTextCursor
-)
-from PyQt6.QtWidgets import (
-    QAbstractItemView, QApplication, QFileDialog, QFileIconProvider, QHBoxLayout, QLayout, QStatusBar, QTableWidgetItem, QTextEdit, QVBoxLayout,
-    QWidget
+    QKeyEvent, QPainter, QPixmap, QResizeEvent, QStandardItem, QStandardItemModel, QSyntaxHighlighter, QTextCharFormat, QTextCursor
 )
 from PyQt6.QtSvg import QSvgRenderer
-from PyQt6.Qsci import QsciScintilla, QsciLexerMarkdown
-from PyQt6.QtWebEngineCore import QWebEngineNavigationRequest
+from PyQt6.QtWebEngineCore import QWebEngineHistoryItem, QWebEngineNavigationRequest, QWebEngineSettings
+from PyQt6.QtWidgets import (
+    QAbstractItemView, QApplication, QCompleter, QFileDialog, QFileIconProvider, QHBoxLayout, QLayout, QScrollBar, QSizePolicy, QStatusBar, QTableWidgetItem,
+    QTextEdit, QVBoxLayout, QWidget
+)
 from qfluentwidgets import (
-    Action, BodyLabel, BoolValidator, CaptionLabel, CardWidget, ColorConfigItem, ColorDialog, ComboBox, CommandBar, ConfigItem,
-    DropDownPushButton, ElevatedCardWidget, ExpandGroupSettingCard, FluentFontIconBase, FluentIcon as FICO, FluentIconBase, FluentWindow,
-    getIconColor, HyperlinkButton, HyperlinkCard, IconInfoBadge, IconWidget, IndeterminateProgressRing, IndicatorPosition, InfoBadgePosition,
-    InfoBar, InfoBarPosition, LineEdit, ListWidget, MessageBox, MessageBoxBase, NavigationItemPosition, OptionsConfigItem, OptionsSettingCard,
-    OptionsValidator, PrimaryPushButton, PrimaryPushSettingCard, ProgressRing, PushButton, PushSettingCard, QConfig, qconfig, RangeConfigItem,
-    RangeValidator, RoundMenu, setFont, setTheme, setThemeColor, ScrollBar, SimpleExpandGroupSettingCard, SingleDirectionScrollArea, SpinBox,
-    SplashScreen, StrongBodyLabel, SubtitleLabel, SwitchButton, SwitchSettingCard, TableWidget, TextEdit, Theme, theme, themeColor, TitleLabel,
-    ToolButton, ToolTipFilter, ToolTipPosition, TransparentDropDownPushButton, TransparentToggleToolButton, TransparentToolButton
+    getIconColor, qconfig, setFont, setTheme, setThemeColor, theme, themeColor, Action, BodyLabel, BoolValidator, CaptionLabel, CardWidget,
+    ColorConfigItem, ColorDialog, ComboBox, CommandBar, ConfigItem,DropDownPushButton, ElevatedCardWidget, ExpandGroupSettingCard,
+    FluentFontIconBase, FluentIcon as FICO, FluentIconBase, FluentWindow, HyperlinkButton, HyperlinkCard, IconInfoBadge, IconWidget,
+    IndeterminateProgressRing, IndicatorPosition, InfoBadgePosition, InfoBar, InfoBarPosition, LargeTitleLabel, LineEdit, ListWidget, MessageBox,
+    MessageBoxBase, NavigationItemPosition, OptionsConfigItem, OptionsSettingCard, OptionsValidator, PrimaryPushButton, PrimaryPushSettingCard,
+    ProgressBar, ProgressRing, PushButton, PushSettingCard, QConfig, RangeConfigItem, RangeValidator, RoundMenu, ScrollBar, SearchLineEdit,
+    SimpleExpandGroupSettingCard, SingleDirectionScrollArea, SpinBox, SplashScreen, StrongBodyLabel, SubtitleLabel, SwitchButton, SwitchSettingCard,
+    TableWidget, TextEdit, Theme, TitleLabel, ToolButton, ToolTipFilter, ToolTipPosition, TransparentDropDownPushButton,
+    TransparentToggleToolButton, TransparentToolButton
 )
 from qframelesswindow import FramelessWindow, StandardTitleBar, TitleBar
 from qframelesswindow.utils import getSystemAccentColor
 from qframelesswindow.webengine import FramelessWebEngineView
-from colorama import init, Fore, Back, Style
-from shiboken6 import isValid
-from packaging.version import Version
-from pathlib import Path
-from urllib.parse import quote, unquote, urlparse
 from rich.progress import Progress
-from markdown_it import MarkdownIt
+from shiboken6 import isValid
+from urllib.parse import quote, unquote, urlparse
 
 # =========================================================
 
@@ -63,46 +64,6 @@ PURPLE = "\x1b[35m"
 init()
 pygame.init()
 pygame.mixer.init()
-configTemplate = {
-	"General": {
-		"MainBrowser": "",
-		"MainBrowserPath": "",
-		"MainBrowserIsManual": False
-	},
-	"Personalization": {
-		"AppTheme": "Auto",
-		"AccentMode": "System",
-		"CustomAccentColorHex": "#ff793bcc",
-		"EnableMicaEffect": True,
-		"ShowCommandBar": False,
-		"ShowSplash": True,
-		"SplashDuration": 3000,
-		"EnableAcrylicOnSidebar": True,
-		"ShowUpdateBanners": True
-	},
-	"Sound": {
-		"EnableSoundEffects": False,
-		"StartupSFXPath": "",
-		"SuccessSFXPath": "",
-		"InfoSFXPath": "",
-		"WarningSFXPath": "",
-		"ErrorSFXPath": "",
-		"QuestionSFXPath": ""
-	},
-	"Selector": {
-		"CloseOnBrowserSelect": False
-	},
-	"About": {
-		"CheckUpdatesOnStart": True,
-		"LastCheckedDate": "",
-		"UpdateAvailable": False,
-		"UpdateVersion": ""
-	},
-	"QFluentWidgets": {
-		"ThemeMode": "",
-		"ThemeColor": ""
-	}
-}
 soundStreamer = None
 
 class Config(QConfig):
@@ -193,7 +154,7 @@ class SegoeSVGIcon(FluentIconBase, Enum):
     TEXT_WRAP = "TextWrap"
 
     def path(self, theme=Theme.AUTO) -> str:
-        return smart.resourcePath(f"resources/icons/ico/svg/{getIconColor(theme)}/{self.value}.svg")
+        return smart.resourcePath(f"resources/icons/svg/{getIconColor(theme)}/{self.value}.svg")
 
 class SmartLogic:
     """ SmartUtils
@@ -437,7 +398,7 @@ class SmartLogic:
             content = content,
             orient = Qt.Orientation.Horizontal,
             isClosable = True,
-            position = InfoBarPosition.TOP,
+            position = InfoBarPosition.BOTTOM_RIGHT,
             duration = 5000,
             parent = parent
         ).show()
@@ -459,9 +420,9 @@ class SmartLogic:
         InfoBar.warning(
             title = title,
             content = content,
-            orient = Qt.Orientation.Horizontal,
+            orient = Qt.Orientation.Vertical,
             isClosable = True,
-            position = InfoBarPosition.BOTTOM,
+            position = InfoBarPosition.BOTTOM_RIGHT,
             duration = 5000,
             parent = parent
         ).show()
@@ -483,7 +444,7 @@ class SmartLogic:
         InfoBar.error(
             title = title,
             content = content,
-            orient = Qt.Orientation.Horizontal,
+            orient = Qt.Orientation.Vertical,
             isClosable = True,
             position = InfoBarPosition.BOTTOM_RIGHT,
             duration = -1,
@@ -1596,6 +1557,36 @@ class DownloadDialog(MessageBoxBase):
             self.downloadThread.wait()
         self.accept()
 
+class UpdateSnack(QWidget):
+    """ SmartUtils
+    ==========
+    Class for the update snack
+    """
+
+    def __init__(self, objName: str, rgbColors: str, parent = None):
+        super().__init__(parent)
+        self.setObjectName(objName)
+        self.setStyleSheet(f"QWidget#{objName} {{background-color: rgba({rgbColors}, 0.25)}}")
+        self.setVisible(bool(cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners)))
+        self.setEnabled(bool(cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners)))
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
+        self.snackLayout = QHBoxLayout(self)
+        self.snackLayout.setContentsMargins(20, 10, 20, 10)
+        self.snackLayout.setSizeConstraint(QLayout.SizeConstraint.SetMaximumSize)
+        self.snackIcon = IconWidget(segFont.fromName("GiftboxOpen"))
+        self.snackIcon.setFixedSize(32, 32)
+        self.snackLayout.setSpacing(20)
+        self.snackLayout.addWidget(self.snackIcon)
+        self.snackLabel = StrongBodyLabel("A new update is available for download!")
+        self.snackLayout.addWidget(self.snackLabel)
+        self.snackLayout.addStretch(1)
+        self.snackButton = PrimaryPushButton(FICO.DOWNLOAD, "Download now")
+        self.snackLayout.addWidget(self.snackButton)
+        self.snackInstall = PrimaryPushButton(segFont.fromName("OpenWith"), "Install now")
+        self.snackInstall.setToolTip("The latest update has been found in your system.\nYou can install it right away.")
+        self.snackInstall.installEventFilter(ToolTipFilter(self.snackInstall))
+        self.snackLayout.addWidget(self.snackInstall)
+
 # Elidable labels ======================================
 
 class ElidableTitleLabel(TitleLabel):
@@ -1683,8 +1674,10 @@ cfg = Config()
 markCfg = MarkdownConfig()
 smart = SmartLogic()
 smIco = SmartIcons()
-cfgFilePath = smart.resourcePath("bin/config.json")
-markCfgFilePath = smart.resourcePath("bin/markdown_config.json")
-browsersCfgFilePath = smart.resourcePath("bin/browsers_config.dat")
+segFont = SegoeFontIcon
+segSVG = SegoeSVGIcon
+cfgFilePath = smart.resourcePath("bin\\config.json")
+markCfgFilePath = smart.resourcePath("bin\\markdown_config.json")
+browsersCfgFilePath = smart.resourcePath("bin\\browsers_config.dat")
 qconfig.load(cfgFilePath, cfg)
 qconfig.load(markCfgFilePath, markCfg)

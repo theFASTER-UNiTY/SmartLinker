@@ -5,7 +5,8 @@ class AboutInterface(QWidget):
 
     def __init__(self, parent = None):
         super().__init__(parent)
-        self.setObjectName("About-SmartLinker")
+        self.setObjectName("AboutSmartLinker")
+        self.applyBackground()
         self.lastChecked = f"Last checked: {cfg.get(cfg.lastCheckedDate)}{f" (Latest version: {cfg.get(cfg.updateVersion)})" if cfg.get(cfg.updateAvailable) else ""}" if cfg.get(cfg.lastCheckedDate) \
                         else "Click on the following button to check for the latest updates."
         self.feedbackBrowserDlg = None
@@ -14,6 +15,7 @@ class AboutInterface(QWidget):
 
         mainAboutLayout = QVBoxLayout(self)
         mainAboutLayout.setContentsMargins(0, 20, 0, 0)
+        mainAboutLayout.setSpacing(0)
         mainTitleLine = QHBoxLayout()
         mainTitleLine.setContentsMargins(40, 0, 0, 0)
         mainAboutLayout.addLayout(mainTitleLine)
@@ -32,19 +34,23 @@ class AboutInterface(QWidget):
         layout = QVBoxLayout(mainAboutScrollContent)
         layout.setSpacing(5)
 
-        aboutMainLine = QHBoxLayout()
-        layout.addLayout(aboutMainLine)
-        aboutLogo = IconWidget(QIcon(smart.resourcePath("resources/icons/ico/icon.ico")))
-        aboutLogo.setFixedSize(64, 64)
-        aboutMainLine.addWidget(aboutLogo)
+        aboutMainBox = QVBoxLayout()
+        layout.addLayout(aboutMainBox)
+        aboutLogo = IconWidget(QIcon(smart.resourcePath("resources/icons/png/icon_shadow.png")))
+        aboutLogo.setFixedSize(192, 192)
+        aboutMainBox.addWidget(aboutLogo, 0, Qt.AlignmentFlag.AlignCenter)
         aboutTextBox = QVBoxLayout()
-        aboutTextBox.setContentsMargins(10, 20, 0, 20)
-        aboutMainLine.addLayout(aboutTextBox)
-        aboutTitle = TitleLabel("SmartLinker - Mastering URL Handling")
-        aboutSubtitle = CaptionLabel(f"© 2025-2026 {SmartLinkerAuthor}")
-        aboutSubtitle.setStyleSheet("color: gray")
-        aboutTextBox.addWidget(aboutTitle)
-        aboutTextBox.addWidget(aboutSubtitle)
+        aboutTextBox.setContentsMargins(0, 0, 0, 0)
+        aboutTextBox.setSpacing(0)
+        aboutMainBox.addLayout(aboutTextBox)
+        aboutTitle = LargeTitleLabel("SmartLinker")
+        aboutSubtitle = SubtitleLabel("Mastering URL Handling")
+        aboutCaption = CaptionLabel(f"© 2025-2026 {SmartLinkerAuthor}")
+        aboutCaption.setStyleSheet("color: gray;")
+        aboutTextBox.addWidget(aboutTitle, 0, Qt.AlignmentFlag.AlignCenter)
+        aboutTextBox.addWidget(aboutSubtitle, 0, Qt.AlignmentFlag.AlignCenter)
+        aboutTextBox.addWidget(aboutCaption, 0, Qt.AlignmentFlag.AlignCenter)
+        layout.addSpacing(20)
         self.aboutVersion = PrimaryPushSettingCard(
             "Check for updates",
             FICO.INFO,
@@ -77,24 +83,25 @@ class AboutInterface(QWidget):
         self.aboutInformation = AboutAppGroup()
         layout.addWidget(self.aboutInformation)
         self.aboutResources = ResourcesGroup()
-        self.aboutResources.pyQtBtn.clicked.connect(lambda: self.linkBrowserSelect("https://www.pythonguis.com/pyqt6/", "Python GUIs", "website", QIcon(smart.resourcePath("resources/icons/ico/pyqt6_icon.ico")), False, parent))
-        self.aboutResources.pyQtBtn2.clicked.connect(lambda: self.linkBrowserSelect("https://doc.qt.io/qtforpython-6/", "Qt Documentation", "website", QIcon(smart.resourcePath("resources/icons/ico/qtforpython_icon.ico")), False, parent))
-        self.aboutResources.qFluentBtn.clicked.connect(lambda: self.linkBrowserSelect("https://www.qfluentwidgets.com/", "QFluentWidgets", "website", QIcon(smart.resourcePath("resources/icons/ico/qfluentwidgets_icon.ico")), False, parent))
-        self.aboutResources.qFluentBtn2.clicked.connect(lambda: self.linkBrowserSelect("https://github.com/zhiyiYo/PyQt-Fluent-Widgets", "QFluentWidgets", "GitHub repository", FICO.GITHUB, False, parent))
-        self.aboutResources.flaticonBtn.clicked.connect(lambda: self.linkBrowserSelect("https://www.flaticon.com/", "Flaticon", "website", QIcon(smart.resourcePath("resources/icons/ico/flaticon_icon.ico")), False, parent))
+        self.aboutResources.pyQtBtn.clicked.connect(lambda: self.linkBrowserSelect("https://www.pythonguis.com/pyqt6/", "Python GUIs", "website", QIcon(smart.resourcePath("resources/icons/ico/pyqt6_icon.ico")), parent))
+        self.aboutResources.pyQtBtn2.clicked.connect(lambda: self.linkBrowserSelect("https://doc.qt.io/qtforpython-6/", "Qt Documentation", "website", QIcon(smart.resourcePath("resources/icons/ico/qtforpython_icon.ico")), parent))
+        self.aboutResources.qFluentBtn.clicked.connect(lambda: self.linkBrowserSelect("https://www.qfluentwidgets.com/", "QFluentWidgets", "website", QIcon(smart.resourcePath("resources/icons/ico/qfluentwidgets_icon.ico")), parent))
+        self.aboutResources.qFluentBtn2.clicked.connect(lambda: self.linkBrowserSelect("https://github.com/zhiyiYo/PyQt-Fluent-Widgets", "QFluentWidgets", "GitHub repository", FICO.GITHUB, parent))
+        self.aboutResources.flaticonBtn.clicked.connect(lambda: self.linkBrowserSelect("https://www.flaticon.com/", "Flaticon", "website", QIcon(smart.resourcePath("resources/icons/ico/flaticon_icon.ico")), parent))
         layout.addWidget(self.aboutResources)
 
         layout.addStretch(1)
 
         self.updateSnack = QWidget()
         self.updateSnack.setObjectName("ASnackBase")
-        self.updateSnack.setStyleSheet(f"#ASnackBase {{background-color: rgba({smart.convertToRGB(themeColor().name())}, 0.25); margin: 10px; margin-top: 0; border-radius: 5px}}")
+        self.updateSnack.setStyleSheet(f"#ASnackBase {{background-color: rgba({smart.convertToRGB(themeColor().name())}, 0.25); margin: 10px; border-radius: 5px}}")
         mainAboutLayout.addWidget(self.updateSnack)
         self.updateSnack.setVisible(bool(cfg.get(cfg.updateAvailable))) 
         self.updateSnack.setEnabled(bool(cfg.get(cfg.updateAvailable))) 
         self.updateSnackLayout = QHBoxLayout(self.updateSnack)
-        self.updateSnackLayout.setContentsMargins(30, 15, 30, 25)
-        self.updateSnackIcon = IconWidget(FICO.IOT)
+        self.updateSnackLayout.setContentsMargins(30, 25, 30, 25)
+        self.updateSnackLayout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.updateSnackIcon = IconWidget(segFont.fromName("GiftboxOpen"))
         self.updateSnackIcon.setFixedSize(40, 40)
         self.updateSnackLayout.setSpacing(20)
         self.updateSnackLayout.addWidget(self.updateSnackIcon)
@@ -110,13 +117,32 @@ class AboutInterface(QWidget):
         self.updateSnackLayout.addStretch(1)
         self.updateSnackButton = PrimaryPushButton(FICO.DOWNLOAD, "Download now")
         self.updateSnackLayout.addWidget(self.updateSnackButton)
-        self.updateSnackInstall = PrimaryPushButton(SegoeFontIcon.fromName("OpenWith"), "Install now")
+        self.updateSnackInstall = PrimaryPushButton(segFont.fromName("OpenWith"), "Install now")
         self.updateSnackInstall.setToolTip("The latest update has been found in your system.\nYou can install it right away.")
         self.updateSnackInstall.installEventFilter(ToolTipFilter(self.updateSnackInstall))
         self.updateSnackLayout.addWidget(self.updateSnackInstall)
 
+    def applyBackground(self):
+        """ :AboutInterface: Apply a translucent background to the widget """
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.setStyleSheet("""
+            #AboutSmartLinker {
+                /* background-color: transparent; */
+                background-image: qlineargradient(
+                    x1: 0, y1: 0,
+                    x2: 0, y2: 1,
+                    
+                    stop: 0.0 #0000FF, 
+                    stop: 0.25 #0000FF, 
+                    stop: 0.50 #800080, 
+                    stop: 1.0 rgba(0, 0, 0, 0)
+                );
+            }
+        """)
+
     def feedbackBrowserSelect(self, parent):
-        """ Open a dialog to select which browser you want to load the feedback page into """
+        """ :AboutInterface: Open a dialog to select which browser you want to load the feedback page into """
         if not self.feedbackBrowserDlg:
             self.feedbackBrowserDlg = BrowserSelectDialog("Send feedback with...", FICO.FEEDBACK, False, parent)
             self.feedbackBrowserDlg.yesButton.setText("Send feedback")
@@ -172,17 +198,16 @@ class AboutInterface(QWidget):
                     print(f"{Fore.RED}An error occured while attempting to open the feedback section of GitHub repository into '{os.path.basename(self.feedbackBrowserDlg.otherBrowsEdit.text())}': {e}{Style.RESET_ALL}")
                     smart.managerLog(f"ERROR: Failed to open the feedback section of GitHub repository into browser at path '{self.feedbackBrowserDlg.otherBrowsEdit.text()}': {e}")
 
-    def linkBrowserSelect(self, url: str, title: str, linkType: str, icon: QIcon | FICO | FluentFontIconBase, isDownload: bool, parent):
-        """ Open a dialog to select which browser you want to load a link into """
+    def linkBrowserSelect(self, url: str, title: str, linkType: str, icon: QIcon | FICO | FluentFontIconBase, parent):
+        """ :AboutInterface: Open a dialog to select which browser you want to load a link into """
         if not self.linkBrowserDlg:
-            self.linkBrowserDlg = BrowserSelectDialog(f"Open {title} with...", icon, isDownload, parent)
+            self.linkBrowserDlg = BrowserSelectDialog(f"Open {title} with...", icon, parent)
         else:
             self.linkBrowserDlg = None
-            self.linkBrowserDlg = BrowserSelectDialog(f"Open {title} with...", icon, isDownload, parent)
+            self.linkBrowserDlg = BrowserSelectDialog(f"Open {title} with...", icon, parent)
         self.linkBrowserDlg.yesButton.setText(f"Open {title}")
         self.linkBrowserDlg.downloadButton.clicked.connect(lambda checked: (
-            self.linkBrowserDlg.close() if self.linkBrowserDlg else None,
-            self.downloadDialog(parent) if isDownload else None
+            self.linkBrowserDlg.close() if self.linkBrowserDlg else None
         ))
         if self.linkBrowserDlg.exec():
             failedAttempts = 0
@@ -235,20 +260,6 @@ class AboutInterface(QWidget):
                     print(f"{Fore.RED}An error occured while attempting to open the {title} {linkType} into '{os.path.basename(self.linkBrowserDlg.otherBrowsEdit.text())}': {e}{Style.RESET_ALL}")
                     smart.managerLog(f"ERROR: Failed to open the {title} {linkType} into browser at path '{self.linkBrowserDlg.otherBrowsEdit.text()}': {e}")
 
-    def downloadDialog(self, parent):
-        #url = "https://www.python.org/ftp/python/3.14/python-3.14-amd64.exe"
-        #filename = smart.resourcePath("python_installer_3.14_amd64.exe")
-        url = "https://cvn33-1.sibnet.ru/57/08/59/5708597.mp4?st=cLDW5ptX9t1saTFyVafzQA&e=1763035000&stor=25&noip=1&cache=16"
-        filename = "G:\\My_Files\\#theHARDSTER\\+ Animates +\\Animepisodes\\Disney_Twisted_Wonderland.mp4"
-        
-        downloadDlg = DownloadDialog(
-            "Initializing...",
-            FICO.DOWNLOAD,
-            url,
-            filename,
-            parent)
-        downloadDlg.exec()
-
 class AboutAppGroup(SimpleExpandGroupSettingCard):
     """ Class for the informative text about SmartLinker in the About section """
 
@@ -291,7 +302,7 @@ class ResourcesGroup(ExpandGroupSettingCard):
     
     def __init__(self, parent = None):
         super().__init__(
-            SegoeFontIcon.fromName("Puzzle"), # type: ignore
+            segFont.fromName("Puzzle"), # type: ignore
             "Resources",
         )
         self.creditsLabel = BodyLabel("For this software to work correctly, the following resources have been used:")

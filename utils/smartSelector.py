@@ -157,10 +157,12 @@ class SmartSelectorGUI(FramelessWindow):
             self.myBrowsLayout.addWidget(browsCard)
         if not myBrowsList["MyBrowsers"] and not cfg.get(cfg.mainBrowserPath): self.myBrowsLayout.addWidget(self.myBrowsEmptyMsg, 0, Qt.AlignmentFlag.AlignCenter)
         print("-----------------------------------------------------\n" \
-             f"{self.runningBrowsers if self.runningBrowsers else "No"} browser{"s are" if self.runningBrowsers != 1 else " is"} currently running.\n" \
+             f"{self.runningBrowsers if self.runningBrowsers else "No"} browser{"s are" if self.runningBrowsers > 1 else " is"} currently running.\n" \
              f"{"NOTE: They may be the same browser.\n" if self.runningBrowsers > 1 else ""}" \
               "-----------------------------------------------------\n")
-        smart.selectorLog(f"Scanning running browsers terminated. {self.runningBrowsers} browser{"s are" if self.runningBrowsers != 1 else " is"} currently running{" (they may be the same browser)" if self.runningBrowsers > 1 else ""}.")
+        smart.selectorLog(
+            f"Scanning running browsers terminated. {self.runningBrowsers if self.runningBrowsers else "No"} browser{"s are" if self.runningBrowsers > 1 else " is"} "
+            f"currently running{" (they may be the same browser)" if self.runningBrowsers > 1 else ""}.")
         
         layout.addStretch(1)
 
@@ -209,7 +211,7 @@ class SmartSelectorGUI(FramelessWindow):
         self.requestLinkCopy = PrimaryPushButton(FICO.COPY, "Copy link")
         self.requestLinkCopy.clicked.connect(self.copyLinkToClip)
         bottomLayout.addWidget(self.requestLinkCopy)
-        self.restartBtn = ToolButton(SegoeFontIcon.fromName("UpdateRestore"))
+        self.restartBtn = ToolButton(segFont.fromName("UpdateRestore"))
         self.restartBtn.setToolTip("Restart the Smart Selector")
         self.restartBtn.installEventFilter(ToolTipFilter(self.restartBtn))
         self.restartBtn.clicked.connect(self.confirmRestart)
@@ -315,7 +317,7 @@ class BrowserCard(ElevatedCardWidget):
         self.statusLabel = CaptionLabel(status)
         self.iconWidget = IconWidget(icon, self)
         self.label = CaptionLabel(name, self)
-        self.selectButton = HyperlinkButton(SegoeFontIcon.fromName("Link"), "", "Load here")
+        self.selectButton = HyperlinkButton(segFont.fromName("Link"), "", "Load here")
 
         self.iconWidget.setFixedSize(56, 56)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)

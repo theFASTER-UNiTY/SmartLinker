@@ -16,14 +16,19 @@ class MarkdownViewer(QWidget):
         with open(smart.resourcePath("resources/assets/github-markdown.css"), encoding="utf-8") as styleReader: self.styleMD = styleReader.read()
 
         mainMDLayout = QVBoxLayout(self)
-        mainMDLayout.setContentsMargins(50, 20, 0, 0)
-        mainMDLayout.setSpacing(10)
+        mainMDLayout.setContentsMargins(0, 20, 0, 0)
+        
+        mdLayout = QVBoxLayout()
+        mdLayout.setContentsMargins(50, 0, 0, 0)
+        mdLayout.setSpacing(10)
+
+        mainMDLayout.addLayout(mdLayout)
 
         mainTopLine = QHBoxLayout()
         mainTopLine.setContentsMargins(0, 0, 40, 10)
         mainTopLine.setSpacing(10)
         
-        mainMDLayout.addLayout(mainTopLine)
+        mdLayout.addLayout(mainTopLine)
         
         mainTitleLine = QVBoxLayout()
         mainTitleLine.setContentsMargins(0, 0, 0, 0)
@@ -76,6 +81,8 @@ class MarkdownViewer(QWidget):
             QWidget#Container {{
                 border-top: 1px solid {"#E3E6E9" if not smart.isDarkMode() else "#393939"};
                 border-left: 1px solid {"#E3E6E9" if not smart.isDarkMode() else "#393939"};
+                {f'border-bottom: 1px solid {"#E3E6E9" if not smart.isDarkMode() else "#393939"};'
+                 if cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners) else ""}
                 background: transparent;
             }}
         """)
@@ -86,10 +93,15 @@ class MarkdownViewer(QWidget):
 
         self.browserMD = MarkWebView(self)
         self.browserMD.setAcceptDrops(True)
-        self.browserMD.setHtml(self.baseMD, QUrl())
+        self.browserMD.setHtml(self.baseMD, QUrl("http://localhost"))
         MDCLayout.addWidget(self.browserMD)
 
-        mainMDLayout.addWidget(self.mdContainer)
+        mdLayout.addWidget(self.mdContainer)
+
+        # mainMDLayout.addStretch(1)
+        
+        self.updateSnack = UpdateSnack("MDSnackBase", smart.convertToRGB(themeColor().name()), self)
+        mainMDLayout.addWidget(self.updateSnack)
     
     def openMDFile(self, parent):
         """ Open a Markdown file from storage """
@@ -106,7 +118,7 @@ class MarkdownViewer(QWidget):
                     self.markUpdate(True, path, parent)
                     with open(path, encoding="utf-8") as mdReader: self.contentMD = self.renderMD.render(mdReader.read())
                     htmlContent = f'<html>\n<head>\n<style>\n{self.styleMD}</style>\n</head>\n\n<body class="markdown-body" style="padding: 20px;">\n{self.contentMD}\n</body>\n</html>'
-                    self.browserMD.setHtml(htmlContent, QUrl())
+                    self.browserMD.setHtml(htmlContent, QUrl("http://localhost"))
                     self.isHome = False
                     print(path)
                     with open("markdownHtml.log", "w", encoding="utf-8") as htmlWriter: htmlWriter.write(htmlContent)
@@ -154,7 +166,7 @@ class MarkdownViewer(QWidget):
         self.subtitle.setText("Your embedded SmartLinker-friendly Markdown viewer")
         self.home.setEnabled(False)
         self.info.setEnabled(False)
-        self.browserMD.setHtml(self.baseMD, QUrl())
+        self.browserMD.setHtml(self.baseMD, QUrl("http://localhost"))
 
     def loadHistory(self):
         try:

@@ -61,8 +61,9 @@ Once the required files are ready, follow these instructions step-by-step:
 
 1. In the SmartLinker directory, create a virtual environment by tapping this command:
 ```shell
-python -m venv .venv
+python -m venv venv
 ```
+  > ***NOTE:** You can name the environment as you wish, but it is recommended to name it `venv` for consistency.*
 2. Then activate the freshly created environment:
 ```shell
 .venv\Scripts\activate

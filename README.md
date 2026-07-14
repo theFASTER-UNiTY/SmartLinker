@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="25%" align="center" src="https://raw.githubusercontent.com/theFASTER-UNiTY/SmartLinker/master/resources/images/icons/png/icon_shadow_1.png" alt="logo">
+  <img width="25%" align="center" src="https://raw.githubusercontent.com/theFASTER-UNiTY/SmartLinker/master/resources/icons/png/icon_shadow_1.png" alt="logo">
 </p>
 <h1 align="center" style="font-size: 32px">
   SmartLinker

@@ -7,6 +7,22 @@ from utils.smartSelector import SmartSelectorGUI
 
 # =============================================================================
 
+class UpdateCheckWorker(QObject):
+    finished = pyqtSignal(str, str, str)
+    error = pyqtSignal(str)
+
+    def run(self):
+        try:
+            checkTime = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
+            if not smart.checkConnectivity():
+                self.finished.emit("offline", "", checkTime)
+                return
+
+            latestVersion = smart.getLatestVersionTag()
+            self.finished.emit("done", latestVersion or "", checkTime)
+        except Exception as exc:
+            self.error.emit(str(exc))
+
 class SmartLinkerGUI(FluentWindow):
     """ Class for the SmartLinker Manager (main) window """
 
@@ -18,7 +34,7 @@ class SmartLinkerGUI(FluentWindow):
         self.resize(1100, 700)
         self.setMinimumWidth(1040)
         self.move(40, 25)
-        self.setStyleSheet('font-family: "Segoe UI Variable", "Segoe UI", sans-serif;')
+        self.setStyleSheet('font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif;')
         if cfg.get(cfg.appTheme) == "Dark": setTheme(Theme.DARK)
         elif cfg.get(cfg.appTheme) == "Light": setTheme(Theme.LIGHT)
         else: setTheme(Theme.AUTO)
@@ -33,6 +49,8 @@ class SmartLinkerGUI(FluentWindow):
         self.aboutIconBadge = None
         self.updateDownloadDlg = None
         self.updateCheckToolTip = None
+        self.updateCheckThread = None
+        self.updateCheckWorker = None
         self.browserDlg = None
 
         if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.startupSFXPath)): smart.playSound(soundStreamer, cfg.get(cfg.startupSFXPath), "startup")
@@ -116,7 +134,7 @@ class SmartLinkerGUI(FluentWindow):
         self.settingInterface.widgetDef.optionMainBrowserCard.fromListButton.clicked.connect(lambda: self.settingInterface.cardSetFromList(self))
         self.settingInterface.widgetDef.optionMainBrowserCard.removeMainButton.clicked.connect(lambda: self.settingInterface.cardRemove(self))
         self.settingInterface.widgetDef.optionTheme.buttonGroup.buttonClicked.connect(lambda button: self.toggleTheme(button))
-        self.settingInterface.optionAccentColor.accentCombo.currentTextChanged.connect(lambda text: self.settingInterface.optionAccentColor.selectButton.setEnabled(bool(text == "Custom accent color")))
+        self.settingInterface.optionAccentColor.accentCombo.currentIndexChanged.connect(lambda index: self.settingInterface.optionAccentColor.selectButton.setEnabled(index == 1))
         self.settingInterface.widgetDef.optionMicaEffect.switchButton.checkedChanged.connect(lambda checked: self.setMicaEffectEnabled(checked))
         self.settingInterface.widgetDef.optionShowCommandBar.switchButton.checkedChanged.connect(lambda checked: (
             self.mybrowsInterface.myBrowsCommandBar.setVisible(checked),
@@ -177,90 +195,125 @@ class SmartLinkerGUI(FluentWindow):
             self.mybrowsInterface.darkSheetOnLight if theme() == Theme.LIGHT
             else self.mybrowsInterface.lightSheetOnDark
         )
+        self.markdownViewer.subtitle.setStyleSheet("color: gray;")
         self.markdownViewer.mdContainer.setStyleSheet(f"""
             QWidget#Container {{
+                background: transparent;
                 border-top: 1px solid {"#E3E6E9" if theme() == Theme.LIGHT else "#393939"};
                 border-left: 1px solid {"#E3E6E9" if theme() == Theme.LIGHT else "#393939"};
                 {f'border-bottom: 1px solid {"#E3E6E9" if theme() == Theme.LIGHT else "#393939"};'
-                 if cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners) else ""}
-                background: transparent;
+                 if bool(cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners)) else ""}
             }}
         """)
-        self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smart.convertToRGB(themeColor().name())}, 0.25)}}")
-        self.markdownViewer.updateSnack.setStyleSheet(f"#MDSnackBase {{background-color: rgba({smart.convertToRGB(themeColor().name())}, 0.25)}}")
-        self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smart.convertToRGB(themeColor().name())}, 0.25)}}")
-        self.aboutInterface.updateSnack.setStyleSheet(f"#ASnackBase {{background-color: rgba({smart.convertToRGB(themeColor().name())}, 0.25); margin: 10px; margin-top: 0; border-radius: 5px}}")
+        self.aboutInterface.aboutCaption.setStyleSheet("color: gray;")
+        self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{ background-color: rgba({smart.convertToRGB(themeColor())}, 0.25); }}")
+        self.markdownViewer.updateSnack.setStyleSheet(f"#MDSnackBase {{ background-color: rgba({smart.convertToRGB(themeColor())}, 0.25); }}")
+        self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{ background-color: rgba({smart.convertToRGB(themeColor())}, 0.25); }}")
+        self.aboutInterface.updateSnack.setStyleSheet(f"#ASnackBase {{ background-color: rgba({smart.convertToRGB(themeColor())}, 0.25); margin: 10px; margin-top: 0; border-radius: 5px; }}")
 
     def checkForUpdates(self, parent):
-        """ Connect to the GitHub repository to check for the latest available update """
+        """Connect to the GitHub repository to check for the latest available update."""
+        if self.updateCheckThread and self.updateCheckThread.isRunning():
+            return
+
         self.lastChecked = self.aboutInterface.aboutVersion.contentLabel.text()
         self.aboutInterface.aboutVersion.iconLabel.setIcon(FICO.SYNC)
         self.aboutInterface.aboutVersion.setTitle("Checking for updates...")
         self.aboutInterface.aboutVersion.setContent("Please wait a moment...")
         self.aboutInterface.aboutVersion.button.setVisible(False)
         self.aboutInterface.aboutVersion.setEnabled(False)
-        isConnected = smart.checkConnectivity()
-        if isConnected:
-            self.latestVersion = smart.getLatestVersionTag()
-            checkTime = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
-            
-            if not self.latestVersion:
-                self.lastChecked = f"Last checked: {checkTime} (Failed to check for updates)"
-                print(f"{Fore.YELLOW}No version tags have been found...{Style.RESET_ALL}")
-                smart.managerLog("WARNING: No version tags have been found...")
-                smart.warningNotify("Warning, be careful!", "The latest version could not be found...", self)
-            
-            elif Version(self.latestVersion) > Version(SmartLinkerVersion):
-                self.lastChecked = f"Last checked: {checkTime} (Latest version: {self.latestVersion})"
-                cfg.set(cfg.updateAvailable, True)
-                cfg.set(cfg.updateVersion, self.latestVersion)
-                self.confirmDownloadUpdate()
-                self.aboutItem = self.navigationInterface.widget(self.aboutInterface.objectName())
-                self.aboutIconBadge = IconInfoBadge.attension(
-                    FICO.SYNC,
-                    self.aboutItem.parent(),
-                    self.aboutItem,
-                    InfoBadgePosition.NAVIGATION_ITEM
-                )
-                self.mybrowsInterface.updateSnack.setVisible(True)
-                self.mybrowsInterface.updateSnack.setEnabled(True)
-                self.markdownViewer.updateSnack.setVisible(True)
-                self.markdownViewer.updateSnack.setEnabled(True)
-                self.settingInterface.updateSnack.setVisible(True)
-                self.settingInterface.updateSnack.setEnabled(True)
-                self.aboutInterface.updateSnack.setVisible(True)
-                self.aboutInterface.updateSnack.setEnabled(True)
-                print(f"{Fore.BLUE}The latest version of {SmartLinkerName} is now available: {self.latestVersion}{Style.RESET_ALL}")
-                smart.managerLog(f"INFO: The latest version of {SmartLinkerName} is now available: {self.latestVersion}")
-            
-            else:
-                self.lastChecked = f"Last checked: {checkTime}"
-                cfg.set(cfg.updateAvailable, False)
-                cfg.set(cfg.updateVersion, "")
-                self.mybrowsInterface.updateSnack.setVisible(False)
-                self.mybrowsInterface.updateSnack.setEnabled(False)
-                self.markdownViewer.updateSnack.setVisible(False)
-                self.markdownViewer.updateSnack.setEnabled(False)
-                self.settingInterface.updateSnack.setVisible(False)
-                self.settingInterface.updateSnack.setEnabled(False)
-                self.aboutInterface.updateSnack.setVisible(False)
-                self.aboutInterface.updateSnack.setEnabled(False)
-                print(f"{Fore.BLUE}{SmartLinkerName} is currently up-to-date.{Style.RESET_ALL}")
-                smart.managerLog(f"INFO: {SmartLinkerName} is currently up-to-date.")
-                smart.infoNotify(f"{SmartLinkerName} is up-to-date", "This is currently the latest update available.", self)
 
-            cfg.set(cfg.lastCheckedDate, checkTime)
-        
-        else:
+        self.updateCheckThread = QThread(self)
+        self.updateCheckWorker = UpdateCheckWorker()
+        self.updateCheckWorker.moveToThread(self.updateCheckThread)
+
+        self.updateCheckThread.started.connect(self.updateCheckWorker.run)
+        self.updateCheckWorker.finished.connect(self.onUpdateCheckFinished)
+        self.updateCheckWorker.error.connect(self.onUpdateCheckError)
+
+        self.updateCheckWorker.finished.connect(lambda *_: self.updateCheckThread.quit())
+        self.updateCheckWorker.finished.connect(lambda *_: self.updateCheckWorker.deleteLater())
+        self.updateCheckThread.finished.connect(lambda *_: self.updateCheckThread.deleteLater())
+
+        self.updateCheckThread.start()
+
+    def onUpdateCheckFinished(self, status, latestVersion, checkTime):
+        self.aboutInterface.aboutVersion.iconLabel.setIcon(FICO.INFO)
+        self.aboutInterface.aboutVersion.setTitle(f"Current version: {SmartLinkerVersion}")
+        self.aboutInterface.aboutVersion.button.setVisible(True)
+        self.aboutInterface.aboutVersion.setEnabled(True)
+
+        if status == "offline":
+            self.lastChecked = f"Last checked: {checkTime} (Failed to check for updates)"
             print(f"{Fore.YELLOW}Please check your internet connection, then try again...{Style.RESET_ALL}")
             smart.managerLog("WARNING: Unable to connect to the Internet...")
             smart.warningNotify("Warning, be careful!", "Please check your internet connection, then try again...", self)
+            self.aboutInterface.aboutVersion.setContent(self.lastChecked)
+            return
+
+        self.latestVersion = latestVersion
+        if not latestVersion:
+            self.lastChecked = f"Last checked: {checkTime} (Failed to check for updates)"
+            print(f"{Fore.YELLOW}No version tags have been found...{Style.RESET_ALL}")
+            smart.managerLog("WARNING: No version tags have been found...")
+            smart.warningNotify("Warning, be careful!", "The latest version could not be found...", self)
+
+        elif Version(latestVersion) > Version(SmartLinkerVersion):
+            self.lastChecked = f"Last checked: {checkTime} (Latest version: {latestVersion})"
+            cfg.set(cfg.updateAvailable, True)
+            cfg.set(cfg.updateVersion, latestVersion)
+            self.confirmDownloadUpdate()
+            self.aboutItem = self.navigationInterface.widget(self.aboutInterface.objectName())
+            self.aboutIconBadge = IconInfoBadge.attension(
+                FICO.SYNC,
+                self.aboutItem.parent(),
+                self.aboutItem,
+                InfoBadgePosition.NAVIGATION_ITEM
+            )
+            self.mybrowsInterface.updateSnack.setVisible(True)
+            self.mybrowsInterface.updateSnack.setEnabled(True)
+            self.markdownViewer.updateSnack.setVisible(True)
+            self.markdownViewer.updateSnack.setEnabled(True)
+            self.settingInterface.updateSnack.setVisible(True)
+            self.settingInterface.updateSnack.setEnabled(True)
+            self.aboutInterface.updateSnack.setVisible(True)
+            self.aboutInterface.updateSnack.setEnabled(True)
+            print(f"{Fore.BLUE}The latest version of {SmartLinkerName} is now available: {latestVersion}{Style.RESET_ALL}")
+            smart.managerLog(f"INFO: The latest version of {SmartLinkerName} is now available: {latestVersion}")
+
+        else:
+            self.lastChecked = f"Last checked: {checkTime}"
+            cfg.set(cfg.updateAvailable, False)
+            cfg.set(cfg.updateVersion, "")
+            self.mybrowsInterface.updateSnack.setVisible(False)
+            self.mybrowsInterface.updateSnack.setEnabled(False)
+            self.markdownViewer.updateSnack.setVisible(False)
+            self.markdownViewer.updateSnack.setEnabled(False)
+            self.settingInterface.updateSnack.setVisible(False)
+            self.settingInterface.updateSnack.setEnabled(False)
+            self.aboutInterface.updateSnack.setVisible(False)
+            self.aboutInterface.updateSnack.setEnabled(False)
+            print(f"{Fore.BLUE}{SmartLinkerName} is currently up-to-date.{Style.RESET_ALL}")
+            smart.managerLog(f"INFO: {SmartLinkerName} is currently up-to-date.")
+            smart.infoNotify(f"{SmartLinkerName} is up-to-date", "This is currently the latest update available.", self)
+
+        cfg.set(cfg.lastCheckedDate, checkTime)
+        self.aboutInterface.aboutVersion.setContent(self.lastChecked)
+
+        if self.updateDownloadDlg and self.updateDownloadDlg.exec():
+            self.browserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, True, self)
+
+    def onUpdateCheckError(self, message):
         self.aboutInterface.aboutVersion.iconLabel.setIcon(FICO.INFO)
         self.aboutInterface.aboutVersion.setTitle(f"Current version: {SmartLinkerVersion}")
-        self.aboutInterface.aboutVersion.setContent(self.lastChecked)
+        self.aboutInterface.aboutVersion.setContent(
+            f"Last checked: {datetime.datetime.now().strftime('%m/%d/%Y %H:%M:%S')} (Failed to check for updates)"
+        )
         self.aboutInterface.aboutVersion.button.setVisible(True)
         self.aboutInterface.aboutVersion.setEnabled(True)
-        if self.updateDownloadDlg and self.updateDownloadDlg.exec(): self.browserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, True, self)
+        print(f"{Fore.RED}An error occurred while checking for updates: {message}{Style.RESET_ALL}")
+        smart.managerLog(f"ERROR: Failed while checking for updates: {message}")
+        smart.errorNotify("Oops! Something went wrong...", f"An error occurred while checking for updates: {message}", self)
 
     def confirmDeleteDialog(self, name: str, parent):
         """ Open a confirmation dialog to remove a browser from the SmartList """
@@ -395,7 +448,7 @@ class SmartLinkerGUI(FluentWindow):
         downloadDlg = DownloadDialog(
             "Initializing...",
             FICO.DOWNLOAD,
-            f"{SmartLinkerGitRepoURL}/releases/download/{cfg.get(cfg.updateVersion)}/SmartLinker-setup-win-{cfg.get(cfg.updateVersion)[1:]}.exe",
+            f"{SmartLinkerGitRepoURL}/releases/download/{cfg.get(cfg.updateVersion)}/SmartLinker-setup-win-{cfg.get(cfg.updateVersion)}.exe",
             filename,
             parent
         )

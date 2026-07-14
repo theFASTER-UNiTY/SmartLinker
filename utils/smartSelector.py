@@ -316,12 +316,27 @@ class BrowserCard(ElevatedCardWidget):
         super().__init__(parent)
         self.statusLabel = CaptionLabel(status)
         self.iconWidget = IconWidget(icon, self)
-        self.label = CaptionLabel(name, self)
-        self.selectButton = HyperlinkButton(segFont.fromName("Link"), "", "Load here")
+        self.label = BodyLabel(name, self)
 
+        if self.statusLabel.text() == "Running":
+            self.statusLabel.setStyleSheet(
+                "padding: 3px; " \
+               f"color: {themeColor().name(QColor.NameFormat.HexRgb)}; " \
+               f"background-color: rgba({smart.convertToRGB(themeColor())}, 0.25); "
+               f"border: 1px solid {themeColor().name(QColor.NameFormat.HexRgb)}; " \
+                "border-radius: 10px;"
+            )
+        elif self.statusLabel.text() == "Embedded":
+            self.statusLabel.setStyleSheet(
+                "padding: 3px; " \
+               f"color: gray; " \
+               f"background-color: rgba({smart.convertToRGB(QColor("gray"))}, 0.25); "
+               f"border: 1px solid gray; " \
+                "border-radius: 10px;"
+            )
         self.iconWidget.setFixedSize(56, 56)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.selectButton.clicked.connect(lambda: self.cardSelect(name, reqURL, parent))
+        self.clicked.connect(lambda: self.cardSelect(name, reqURL, parent))
 
         self.vBoxLayout = QVBoxLayout(self)
         self.vBoxLayout.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -330,7 +345,6 @@ class BrowserCard(ElevatedCardWidget):
         self.vBoxLayout.addWidget(self.iconWidget, 0, Qt.AlignmentFlag.AlignCenter)
         self.vBoxLayout.addStretch(1)
         self.vBoxLayout.addWidget(self.label, 0, Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignBottom)
-        self.vBoxLayout.addWidget(self.selectButton, 0, Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignBottom)
 
         self.setFixedSize(168, 176)
 

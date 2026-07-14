@@ -67,6 +67,13 @@ class SettingsInterface(QWidget):
         self.optionSoundConfig = SoundFxConfigGroup(self)
         layout.addWidget(self.optionSoundConfig)
 
+        # Markdown Viewer
+        markViewerLabel = SubtitleLabel("Markdown Viewer")
+        markViewerLabel.setContentsMargins(0, 40, 0, 0)
+        markViewerLabel.setAlignment(Qt.AlignmentFlag.AlignTop)
+        layout.addWidget(markViewerLabel)
+        layout.addWidget(BodyLabel("Coming soon..."))
+
         # Smart Selector
         selectorLabel = SubtitleLabel("Smart Selector")
         selectorLabel.setContentsMargins(0, 40, 0, 0)
@@ -83,7 +90,7 @@ class SettingsInterface(QWidget):
             "Clean",
             FICO.DELETE,
             f"Clean temporary files",
-            f"Some temporary files have been left over by {SmartLinkerName}. Click here to clean them up."
+            f"Some temporary files might have been left over by {SmartLinkerName}. Click here to clean them up."
         )
         layout.addWidget(self.advancedTempClean)
         self.advancedRestart = PushSettingCard(
@@ -461,6 +468,11 @@ class MainBrowsersCard(CardWidget):
         self.hBoxLayout.addWidget(self.fromStorageButton, 0, Qt.AlignmentFlag.AlignRight)
         self.hBoxLayout.addWidget(self.fromListButton, 0, Qt.AlignmentFlag.AlignRight)
         self.hBoxLayout.addWidget(self.removeMainButton, 0, Qt.AlignmentFlag.AlignRight)
+    
+    def _hoverBackgroundColor(self):
+        return self._normalBackgroundColor()
+    
+    def mousePressEvent(self, e): pass
 
 class SelectFromListDialog(MessageBoxBase):
     """ Class for the main browser selection from SmartList dialog """
@@ -743,3 +755,6 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
             smart.managerLog(f"SUCCESS: The {soundType} sound effect has been successfully removed!")
             smart.successNotify("Removal complete!", f"The {soundType} sound has been successfully removed!", parent)
         else: pass
+
+# Add Markdown Viewer section with settings:
+## CSS & Homepage porpoerties (will use MarkdownConfig)

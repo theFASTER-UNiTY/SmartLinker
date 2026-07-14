@@ -17,6 +17,7 @@ import socket, subprocess, sys, time, typing, threading, webbrowser, win32api, w
 from colorama import init, Fore, Back, Style
 from enum import Enum
 from markdown_it import MarkdownIt
+from mdit_py_plugins.tasklists import tasklists_plugin
 from packaging.version import Version
 from pathlib import Path
 from PyQt6.Qsci import QsciScintilla, QsciLexerMarkdown
@@ -47,6 +48,7 @@ from qfluentwidgets import (
 from qframelesswindow import FramelessWindow, StandardTitleBar, TitleBar
 from qframelesswindow.utils import getSystemAccentColor
 from qframelesswindow.webengine import FramelessWebEngineView
+from rich.console import Console
 from rich.progress import Progress
 from shiboken6 import isValid
 from urllib.parse import quote, unquote, urlparse
@@ -60,6 +62,7 @@ SmartLinkerAuthor: str = __author__
 SmartLinkerOwner: str = "#theF∆STER™ UN!TY"
 SmartLinkerGitRepoURL: str = "https://github.com/theFASTER-UNiTY/SmartLinker"
 SmartLinkerGitRepoAPI: str = "https://api.github.com/repos/theFASTER-UNiTY/SmartLinker"
+RichCLI = Console()
 PURPLE = "\x1b[35m"
 init()
 pygame.init()
@@ -147,8 +150,10 @@ class SegoeSVGIcon(FluentIconBase, Enum):
     """
 
     COLOR_LINE = "ColorLine"
+    LINK = "Link"
     MARKDOWN = "Markdown"
     NUMBER_SYMBOL = "NumberSymbol"
+    REFRESH = "Refresh"
     SMARTLINKER_OUTLINE = "SmartLinkerOutline"
     STYLE_GUIDE = "StyleGuide"
     TEXT_WRAP = "TextWrap"
@@ -687,7 +692,7 @@ class SmartLogic:
         """
         try:
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            with open("SmartSelectorReport.log", 'a', encoding="utf-8") as logger:
+            with open(f"{Path(__file__).parent.parent}\\SmartSelectorReport.log", 'a', encoding="utf-8") as logger:
                 logger.write(f"[{timestamp}] {message}\n")
         except Exception as e:
             print(f"{Fore.RED}An error occured while attempting to log the last event in the Selector log file: {e}{Style.RESET_ALL}")
@@ -712,7 +717,7 @@ class SmartLogic:
         Smart Selector activity log initializing tool
         """
         try:
-            with open("SmartSelectorReport.log", 'w') as clear:
+            with open(f"{Path(__file__).parent.parent}\\SmartSelectorReport.log", 'w') as clear:
                 clear.write("SmartLinker - Smart Selector Activity Report\n" \
                             "--------------------------------------------\n\n")
         except Exception as e:
@@ -1565,6 +1570,7 @@ class UpdateSnack(QWidget):
 
     def __init__(self, objName: str, parent = None):
         super().__init__(parent)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setObjectName(objName)
         self.setVisible(bool(cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners)))
         self.setEnabled(bool(cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners)))
@@ -1581,7 +1587,7 @@ class UpdateSnack(QWidget):
         self.snackLayout.addStretch(1)
         self.snackButton = PrimaryPushButton(FICO.DOWNLOAD, "Download now")
         self.snackLayout.addWidget(self.snackButton)
-        self.snackInstall = PrimaryPushButton(segFont.fromName("OpenWith"), "Install now")
+        self.snackInstall = PrimaryPushButton(segFont.fromName("OpenIn"), "Install now")
         self.snackInstall.setToolTip("The latest update has been found in your system.\nYou can install it right away.")
         self.snackInstall.installEventFilter(ToolTipFilter(self.snackInstall))
         self.snackLayout.addWidget(self.snackInstall)

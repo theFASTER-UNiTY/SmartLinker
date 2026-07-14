@@ -1,4 +1,5 @@
 from utils.SmartUtils import *
+from utils.smartDownMarker import TITLE as SmartDownMarkerTitle
 
 class MarkdownViewer(QWidget):
     """ Main class for the Markdown file/data viewer """
@@ -8,10 +9,11 @@ class MarkdownViewer(QWidget):
         self.setObjectName("MarkdownViewer")
         self.name = "Markdown Viewer"
         self.baseSub = "Your embedded SmartLinker-friendly Markdown viewer"
-        self.renderMD = MarkdownIt().enable("table")
+        self.renderMD = MarkdownIt().use(tasklists_plugin).enable("table")
         self.markHistory = self.loadHistory()
         self.isHome: bool = True
         self.contentMD = None
+        self.htmlContent: str = ""
         with open(smart.resourcePath("resources/assets/markdown-base-content.html")) as htmlReader: self.baseMD = htmlReader.read()
         with open(smart.resourcePath("resources/assets/github-markdown.css"), encoding="utf-8") as styleReader: self.styleMD = styleReader.read()
 
@@ -79,11 +81,11 @@ class MarkdownViewer(QWidget):
         self.mdContainer.setContentsMargins(1, 1, 0, 0)
         self.mdContainer.setStyleSheet(f"""
             QWidget#Container {{
-                border-top: 1px solid {"#E3E6E9" if not smart.isDarkMode() else "#393939"};
-                border-left: 1px solid {"#E3E6E9" if not smart.isDarkMode() else "#393939"};
-                {f'border-bottom: 1px solid {"#E3E6E9" if not smart.isDarkMode() else "#393939"};'
-                 if cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners) else ""}
                 background: transparent;
+                border-top: 1px solid {"#E3E6E9" if theme() == Theme.LIGHT else "#393939"};
+                border-left: 1px solid {"#E3E6E9" if theme() == Theme.LIGHT else "#393939"};
+                {f'border-bottom: 1px solid {"#E3E6E9" if theme() == Theme.LIGHT else "#393939"};'
+                 if bool(cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners)) else ""}
             }}
         """)
         
@@ -98,8 +100,8 @@ class MarkdownViewer(QWidget):
 
         mdLayout.addWidget(self.mdContainer)
         
-        self.updateSnack = UpdateSnack("MDSnackBase", self)
-        self.updateSnack.setStyleSheet(f"#MDSnackBase {{background-color: rgba({smart.convertToRGB(themeColor().name())}, 0.25)}}")
+        self.updateSnack = UpdateSnack("MDSnackBase")
+        self.updateSnack.setStyleSheet(f"#MDSnackBase {{ background-color: rgba({smart.convertToRGB(themeColor())}, 0.25); }}")
         mainMDLayout.addWidget(self.updateSnack)
     
     def openMDFile(self, parent):
@@ -116,11 +118,11 @@ class MarkdownViewer(QWidget):
                 if smart.getFileMimeType(path).startswith("text"):
                     self.markUpdate(True, path, parent)
                     with open(path, encoding="utf-8") as mdReader: self.contentMD = self.renderMD.render(mdReader.read())
-                    htmlContent = f'<html>\n<head>\n<style>\n{self.styleMD}</style>\n</head>\n\n<body class="markdown-body" style="padding: 20px;">\n{self.contentMD}\n</body>\n</html>'
-                    self.browserMD.setHtml(htmlContent, QUrl("http://localhost"))
+                    self.htmlContent = f'<html>\n<head>\n<style>\n{self.styleMD}</style>\n</head>\n\n<body class="markdown-body" style="padding: 20px;">\n{self.contentMD}\n</body>\n</html>'
+                    self.browserMD.setHtml(self.htmlContent, QUrl("http://localhost"))
                     self.isHome = False
                     print(path)
-                    with open("markdownHtml.log", "w", encoding="utf-8") as htmlWriter: htmlWriter.write(htmlContent)
+                    with open("markdownHtml.log", "w", encoding="utf-8") as htmlWriter: htmlWriter.write(self.htmlContent)
                 else:
                     smart.warningNotify("Warning, be careful!", "The format of the provided file is not supported...", parent)
                     smart.managerLog(f"WARNING: Incompatible format of the provided file: {path}")
@@ -202,11 +204,41 @@ class MarkdownViewer(QWidget):
 class MarkWebView(FramelessWebEngineView):
     """ Class for the Markdown viewer webview """
     
-    def __init__(self, parent):
+    def __init__(self, parent: MarkdownViewer):
         super().__init__(parent)
         self.setAcceptDrops(True)
         self.dropParent = parent
+        self.reqUrl: str = ""
+        self.isHome: bool = True
+        self.isCurrentContent: bool = False
+
+        self.settings().setAttribute(QWebEngineSettings.WebAttribute.FullScreenSupportEnabled, True) # type: ignore
+
+        self.page().navigationRequested.connect(self.onNavigationRequested) # type: ignore
     
+    def onNavigationRequested(self, request: QWebEngineNavigationRequest):
+        """ :MarkWebView: Intercept and handle navigation requests based on `openExternalLinks` setting """
+        self.reqUrl = request.url().toString()
+        self.isHome = unquote(self.reqUrl).replace("data:text/html;charset=UTF-8,", "") == self.dropParent.baseMD
+        self.isCurrentContent = unquote(self.reqUrl).replace("data:text/html;charset=UTF-8,", "") == self.dropParent.htmlContent
+
+        self.dropParent.home.setEnabled(not self.isHome)
+
+        if self.reqUrl.startswith("file://") and smart.getFileMimeType(self.reqUrl).startswith("text") and (smart.isMarkdownExtension(self.reqUrl)):
+            request.accept()
+        else:
+            if self.isHome or self.isCurrentContent:
+                request.accept()
+            else:
+                request.reject()
+                smart.warningNotify(
+                    "Warning, be cautious!",
+                    "Access to non-Markdown content from the embedded " \
+                    "Markdown viewer is not allowed...\nBut if you still want to do so, "
+                   f"the option is available via {SmartDownMarkerTitle}.",
+                    self.dropParent.parent()
+                )
+
     def dragEnterEvent(self, e: QDragEnterEvent | None):
         if e.mimeData().hasUrls():                                                  # type: ignore
             e.acceptProposedAction()                                                # type: ignore
@@ -216,10 +248,11 @@ class MarkWebView(FramelessWebEngineView):
         e.accept()                                                                  # type: ignore
         if self.dropParent.isHome: self.page().runJavaScript("onDragLeave()")           # type: ignore
 
-    
     def dropEvent(self, e: QDropEvent | None):
         if e.mimeData().hasUrls():                                                  # type: ignore
             for url in event.mimeData().urls():                                         # type: ignore
                 localPath = url.toLocalFile()
                 if self.dropParent.isHome: self.page().runJavaScript("onDrop()")        # type: ignore
-                self.dropParent.loadMDFile(localPath)
+                self.dropParent.loadMDFile(localPath, self.dropParent.parent())
+
+    # Remplacer le menu contextuel actuel par un RoundMenu

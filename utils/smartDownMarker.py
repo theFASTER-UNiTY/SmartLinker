@@ -62,7 +62,7 @@ class SmartDownMarkerGUI(FramelessWindow):
         self.historyManageDlg = None
         self.customCSSDlg = None
         self.customHomeDlg = None
-        self.renderMD = MarkdownIt().enable("table")
+        self.renderMD = MarkdownIt().use(tasklists_plugin).enable("table")
         self.content = ""
         self.contentMD = None
         self.htmlContent = None
@@ -1029,7 +1029,7 @@ class MarkWebView(FramelessWebEngineView):
         super().__init__(parent)
         self.setAcceptDrops(True)
         self.dropParent = parent
-        self.reqUrl: str = ""
+        self.reqUrl: str
         self.isHome: bool = True
         self.isCurrentContent: bool = False
         self.isLoading: bool = False
@@ -1070,7 +1070,7 @@ class MarkWebView(FramelessWebEngineView):
                 self.dropParent.displayNavBar.navSearch.setText(self.reqUrl)
             else:
                 request.reject()
-                smart.warningNotify("Warning, be cautious!", "You are not allowed to access non-Markdown content...", self)
+                smart.warningNotify("Warning, be cautious!", "Access to non-Markdown content is currently disabled...", self)
 
     def onLoadStarted(self):
         """ :MarkWebView: Handle load started event """

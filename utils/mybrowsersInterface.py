@@ -50,8 +50,8 @@ class MyBrowsersInterface(QWidget):
         layout.addWidget(self.mybrowsSub)
         self.mybrowsSub.setHidden(not myBrowsList["MyBrowsers"])
         self.addCommand = Action(FICO.ADD, "Add a browser", triggered=lambda: self.openNewBrowserDialog(parent))
-        self.refreshCommand = Action(segFont.fromName("Refresh"), "Refresh", triggered=lambda: self.refreshWrapper(parent))
-        self.loadLinkCommand = Action(segFont.fromName("Link"), "Load a link", triggered=lambda: self.loadLinkDialog(parent))
+        self.refreshCommand = Action(segSVG.REFRESH, "Refresh", triggered=lambda: self.refreshWrapper(parent))
+        self.loadLinkCommand = Action(segSVG.LINK, "Load a link", triggered=lambda: self.loadLinkDialog(parent))
         self.clearCommand = Action(FICO.DELETE.colored(QColor("red"), QColor("#F44336")), "Clear SmartList", triggered=lambda: self.confirmClearDialog(parent))
         self.clearCommand.setEnabled(bool(myBrowsList["MyBrowsers"]))
         self.myBrowsCommandBar = CommandBar()
@@ -142,7 +142,7 @@ class MyBrowsersInterface(QWidget):
         layout.addStretch(1)
         
         self.updateSnack = UpdateSnack("BSnackBase", self)
-        self.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smart.convertToRGB(themeColor().name())}, 0.25)}}")
+        self.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smart.convertToRGB(themeColor())}, 0.25)}}")
         mainBrowLayout.addWidget(self.updateSnack)
 
     def loadBrowsers(self, parent):
@@ -817,6 +817,8 @@ class MyBrowsersCard(CardWidget):
         self.hBoxLayout.addWidget(self.openButton, 0, Qt.AlignmentFlag.AlignRight)
         self.hBoxLayout.addWidget(self.editButton, 0, Qt.AlignmentFlag.AlignRight)
         self.hBoxLayout.addWidget(self.deleteButton, 0, Qt.AlignmentFlag.AlignRight)
+    
+    def mousePressEvent(self, e): pass
     
 class LoadLinkDialog(MessageBoxBase):
     """ Class for the 'Open with link' dialog box """

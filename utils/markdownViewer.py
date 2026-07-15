@@ -112,7 +112,7 @@ class MarkdownViewer(QWidget):
         else: self.loadMDFile(path, parent)
 
     def loadMDFile(self, path: str, parent, history: bool = False):
-        path = path.replace("/", "\\")
+        path = os.path.normpath(path)
         if os.path.exists(path):
             if smart.isMarkdownExtension(path):
                 if smart.getFileMimeType(path).startswith("text"):
@@ -186,7 +186,7 @@ class MarkdownViewer(QWidget):
         self.newHistory = {"MarkdownHistory": []}
         for path in self.markHistory["MarkdownHistory"]:
             if path and path["path"] != value:
-                self.newHistory["MarkdownHistory"].append({"path": path["path"].replace("/", "\\")})
+                self.newHistory["MarkdownHistory"].append({"path": os.path.normpath(path["path"])})
         if self.newHistory["MarkdownHistory"]:
             self.historyList = RoundMenu(parent=self)
             for hPath in self.newHistory["MarkdownHistory"]: self.historyList.addAction(Action(FICO.DOCUMENT, hPath["path"], triggered=lambda savedPath=hPath["path"], parent=parent: self.loadMDFile(savedPath, parent, True)))
@@ -232,7 +232,7 @@ class MarkWebView(FramelessWebEngineView):
             else:
                 request.reject()
                 smart.warningNotify(
-                    "Warning, be cautious!",
+                    "Warning, be careful!",
                     "Access to non-Markdown content from the embedded " \
                     "Markdown viewer is not allowed...\nBut if you still want to do so, "
                    f"the option is available via {SmartDownMarkerTitle}.",

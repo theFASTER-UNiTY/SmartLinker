@@ -27,6 +27,7 @@ class SmartDownMarkerGUI(FramelessWindow):
 
     def __init__(self, mdFilePath: str, parent = None):
         super().__init__(parent=parent)
+        RichCLI.print(smart.consoleScript())
         self.mdPath = mdFilePath if mdFilePath else "Untitled"
         self.mdTitleBar = CustomTitleBar(self)
         self.setTitleBar(self.mdTitleBar)
@@ -522,7 +523,7 @@ class SmartDownMarkerGUI(FramelessWindow):
         else: self.loadMDFile(path, parent)
 
     def loadMDFile(self, path: str, parent, history: bool = False):
-        path = path.replace("/", "\\")
+        path = os.path.normpath(path)
         if os.path.exists(path):
             if smart.isMarkdownExtension(path):
                 if smart.getFileMimeType(path).startswith("text"):
@@ -571,7 +572,7 @@ class SmartDownMarkerGUI(FramelessWindow):
     def saveMDFile(self, path: str, content: str, saveAs: bool, parent):
         self.validPath = os.path.exists(self.mdPath)
         if saveAs or not self.validPath:
-            newPath = smart.saveFileDialog(parent, f"Save a Markdown file from {SmartLinkerName}", os.path.dirname(self.mdPath) if self.validPath else "", "Markdown files (*.md; *.markdown)").replace("/", "\\")
+            newPath = os.path.normpath(smart.saveFileDialog(parent, f"Save a Markdown file from {SmartLinkerName}", os.path.dirname(self.mdPath) if self.validPath else "", "Markdown files (*.md; *.markdown)"))
             if newPath:
                 with open(newPath, "w", encoding="utf-8") as mdWriter: mdWriter.write(content)
                 self.mdPath = newPath
@@ -591,12 +592,12 @@ class SmartDownMarkerGUI(FramelessWindow):
                 with open(markCfg.get(markCfg.cssSourcePath), encoding="utf-8") as styleReader: return styleReader.read()
             else:
                 with open(smart.resourcePath("resources/assets/github-markdown.css"), encoding="utf-8") as styleReader: return styleReader.read()
-                smart.warningNotify("Warning, be cautious!", "Your local CSS resource cannot be found in your storage. Applying the default style...", self)
+                smart.warningNotify("Warning, be careful!", "Your local CSS resource cannot be found in your storage. Applying the default style...", self)
         elif markCfg.get(markCfg.cssSource) == "Custom":
             if markCfg.get(markCfg.cssProperties): return markCfg.get(markCfg.cssProperties)
             else:
                 with open(smart.resourcePath("resources/assets/github-markdown.css"), encoding="utf-8") as styleReader: return styleReader.read()
-                smart.warningNotify("Warning, be cautious!", "Your custom CSS properties are currently empty. Applying the default style...", self)
+                smart.warningNotify("Warning, be careful!", "Your custom CSS properties are currently empty. Applying the default style...", self)
         else:
             with open(smart.resourcePath("resources/assets/github-markdown.css"), encoding="utf-8") as styleReader: return styleReader.read()
 
@@ -606,12 +607,12 @@ class SmartDownMarkerGUI(FramelessWindow):
                 with open(markCfg.get(markCfg.homepageSourcePath), encoding="utf-8") as baseReader: return baseReader.read()
             else:
                 with open(smart.resourcePath("resources/assets/markdown-base-content.html"), encoding="utf-8") as baseReader: return (baseReader.read().replace("Markdown Viewer", TITLE)).replace("Open a Markdown file", "Open")
-                smart.warningNotify("Warning, be cautious!", "Your local homepage content cannot be found in your storage. Loading the default homepage...", self)
+                smart.warningNotify("Warning, be careful!", "Your local homepage content cannot be found in your storage. Loading the default homepage...", self)
         elif markCfg.get(markCfg.cssSource) == "Custom":
             if markCfg.get(markCfg.cssProperties): return markCfg.get(markCfg.cssProperties)
             else:
                 with open(smart.resourcePath("resources/assets/markdown-base-content.html"), encoding="utf-8") as baseReader: return (baseReader.read().replace("Markdown Viewer", TITLE)).replace("Open a Markdown file", "Open")
-                smart.warningNotify("Warning, be cautious!", "Your custom homepage properties are currently empty. Loading the default homepage...", self)
+                smart.warningNotify("Warning, be careful!", "Your custom homepage properties are currently empty. Loading the default homepage...", self)
         else:
             with open(smart.resourcePath("resources/assets/markdown-base-content.html"), encoding="utf-8") as baseReader: return (baseReader.read().replace("Markdown Viewer", TITLE)).replace("Open a Markdown file", "Open")
 
@@ -668,7 +669,7 @@ class SmartDownMarkerGUI(FramelessWindow):
         self.newHistory = {"MarkdownHistory":[]}
         for path in self.markHistory["MarkdownHistory"]:
             if path["path"] != value:
-                self.newHistory["MarkdownHistory"].append({"path": path["path"].replace("/", "\\")})
+                self.newHistory["MarkdownHistory"].append({"path": os.path.normpath(path["path"])})
         if self.newHistory["MarkdownHistory"]:
             self.historyList = RoundMenu(parent=self)
             for hPath in self.newHistory["MarkdownHistory"]: self.historyList.addAction(Action(FICO.DOCUMENT, hPath["path"], triggered=lambda savedPath=hPath["path"], parent=parent: self.loadMDFile(savedPath, parent, True)))
@@ -854,7 +855,7 @@ class SmartDownMarkerGUI(FramelessWindow):
             self.setStyleSheet("background: white" if not smart.isDarkMode() else "")
             self.mdTitleBar.titleLabel.setStyleSheet(f"color: {"white" if smart.isDarkMode() else "black"}")
         else:
-            smart.warningNotify("Warning, be cautious!", "Your theme configuration does not follow your system...", self)
+            smart.warningNotify("Warning, be careful!", "Your theme configuration does not follow your system...", self)
 
     def selectLocalCSSSource(self):
         try:
@@ -964,14 +965,14 @@ class SmartDownMarkerGUI(FramelessWindow):
                 with open(markCfg.get(markCfg.homepageSourcePath), encoding="utf-8") as baseReader: self.baseMD = baseReader.read()
             else:
                 with open(smart.resourcePath("resources/assets/markdown-base-content.html"), encoding="utf-8") as baseReader: self.baseMD = (baseReader.read().replace("Markdown Viewer", TITLE)).replace("Open a Markdown file", "Open")
-                smart.warningNotify("Warning, be cautious!", "Your local homepage content cannot be found in your storage, the default homepage will be used...", self)
+                smart.warningNotify("Warning, be careful!", "Your local homepage content cannot be found in your storage, the default homepage will be used...", self)
                 self.homepageConfig.sourceTypeCombo.setCurrentIndex(0)
                 markCfg.set(markCfg.homepageSource, "Default")
         elif markCfg.get(markCfg.cssSource) == "Custom":
             if markCfg.get(markCfg.cssProperties): self.baseMD = markCfg.get(markCfg.cssProperties)
             else:
                 with open(smart.resourcePath("resources/assets/markdown-base-content.html"), encoding="utf-8") as baseReader: self.baseMD = (baseReader.read().replace("Markdown Viewer", TITLE)).replace("Open a Markdown file", "Open")
-                smart.warningNotify("Warning, be cautious!", "Your custom homepage properties are currently empty, the default homepage will be used...", self)
+                smart.warningNotify("Warning, be careful!", "Your custom homepage properties are currently empty, the default homepage will be used...", self)
                 self.homepageConfig.sourceTypeCombo.setCurrentIndex(0)
                 markCfg.set(markCfg.homepageSource, "Default")
         else:
@@ -986,7 +987,7 @@ class SmartDownMarkerGUI(FramelessWindow):
                     smart.infoNotify("Information", "The new style will be applied to the next Markdown files to be loaded.", self)
             else:
                 with open(smart.resourcePath("resources/assets/github-markdown.css"), encoding="utf-8") as styleReader: self.styleMD = styleReader.read()
-                smart.warningNotify("Warning, be cautious!", "Your local CSS resource cannot be found in your storage, the default style will be applied...", self)
+                smart.warningNotify("Warning, be careful!", "Your local CSS resource cannot be found in your storage, the default style will be applied...", self)
                 self.cssPropertiesConfig.sourceTypeCombo.setCurrentIndex(0)
                 markCfg.set(markCfg.cssSource, "Default")
         elif markCfg.get(markCfg.cssSource) == "Custom":
@@ -997,7 +998,7 @@ class SmartDownMarkerGUI(FramelessWindow):
                     smart.infoNotify("Information", "The new style will be applied to the next Markdown files to be loaded.", self)
             else:
                 with open(smart.resourcePath("resources/assets/github-markdown.css"), encoding="utf-8") as styleReader: self.styleMD = styleReader.read()
-                smart.warningNotify("Warning, be cautious!", "Your custom CSS properties are currently empty, the default style will be applied...", self)
+                smart.warningNotify("Warning, be careful!", "Your custom CSS properties are currently empty, the default style will be applied...", self)
                 self.cssPropertiesConfig.sourceTypeCombo.setCurrentIndex(0)
                 markCfg.set(markCfg.cssSource, "Default")
         else:
@@ -1070,7 +1071,7 @@ class MarkWebView(FramelessWebEngineView):
                 self.dropParent.displayNavBar.navSearch.setText(self.reqUrl)
             else:
                 request.reject()
-                smart.warningNotify("Warning, be cautious!", "Access to non-Markdown content is currently disabled...", self)
+                smart.warningNotify("Warning, be careful!", "Access to non-Markdown content is currently disabled...", self)
 
     def onLoadStarted(self):
         """ :MarkWebView: Handle load started event """
@@ -1218,7 +1219,7 @@ class DisplayNavigationBar(QWidget):
         # Alert if invalid URL
         if not isValidUrl:
             smart.warningNotify(
-                "Warning, be cautious!",
+                "Warning, be careful!",
                 "Only URLs are allowed. For general search, please use the browsing interface instead.",
                 self.navParent
             )
@@ -1532,15 +1533,81 @@ class EditorFontConfigGroup(ExpandGroupSettingCard):
             "Customize font settings",
             "Modify the editor's font family, size and weight properties"
         )
+        self.familyList: list[str] = [
+            "Ace Sans",
+            "Agency FB",
+            "Algerian",
+            "Alte DIN 1451 Mittelschrift",
+            "Arial",
+            "Bahnschrift",
+            "BankGothic",
+            "Bauhaus 93",
+            "Berlin Sans FB",
+            "Calibri",
+            "Capriola",
+            "Cascadia Code",
+            "Cascadia Mono",
+            "Chalet",
+            "Clock BoldSerif",
+            "Clock RetroStripe",
+            "Clock Stamp",
+            "Clock2021",
+            "Consolas",
+            "Copperplate Gothic",
+            "Dune Rise",
+            "Figtree",
+            "Forte",
+            "Franklin Gothic",
+            "Franklin Gothic Book",
+            "Gill Sans MT",
+            "Google Sans",
+            "Harlow Solid",
+            "Harrington",
+            "JetBrains Mono",
+            "JK Abode",
+            "Masterpiece",
+            "Mochiy Pop One",
+            "Montserrat",
+            "Montserrat Alternates",
+            "NEON LED Light",
+            "Nexa",
+            "NFS font",
+            "Nikkyou Sans",
+            "Old English Text MT",
+            "Pricedown",
+            "Roboto",
+            "Rockwell",
+            "Samsung Sharp Sans",
+            "Segoe UI",
+            "Segoe UI Variable Display",
+            "SignPainter-HouseScript",
+            "SpecialAlphabets P04",
+            "Stone",
+            "Times New Roman",
+            "Tourner",
+            "Trebuchet MS",
+            "Tw Cen MT",
+            "Varino",
+            "Velocity",
+            "Verdana"
+        ]
+        self.isFamConfigInList: bool = markCfg.get(markCfg.fontFamily) in self.familyList
+        if self.isFamConfigInList:
+            for font in self.familyList:
+                if font == markCfg.get(markCfg.fontFamily):
+                    self.currentFont = font
+                    break
+        else: self.currentFont = self.familyList[0]
         self.fontProp = f"""
-            font-family: "{markCfg.get(markCfg.fontFamily)}";
+            font-family: "{self.currentFont}";
             font-size: {markCfg.get(markCfg.fontSize)};
             font-weight: {markCfg.get(markCfg.fontWeight)};
         """
 
         # Font family
         self.familyCombo = ComboBox()
-        self.familyCombo.addItems([markCfg.get(markCfg.fontFamily)])
+        for font in self.getSystemFonts(): self.familyCombo.addItem(font, segFont.fromName("Font"))
+        self.familyCombo.setCurrentText(self.currentFont)
         self.familyCombo.currentTextChanged.connect(self.updatePreview)
 
         # Font size
@@ -1598,6 +1665,38 @@ class EditorFontConfigGroup(ExpandGroupSettingCard):
         markCfg.set(markCfg.fontSize, self.fontSize)
         markCfg.set(markCfg.fontWeight, self.fontWeight)
         self.configChanged.emit()
+    
+    def getSystemFonts(self, asList: bool = True) -> list[str] | dict[str, str]:
+        """ :EditorFontConfig: Get the system fonts as a list or dictionary
+
+        Parameters
+        ----------
+        asList : bool, optional
+            Whether to return the list of fonts as a list (*if `True`*) or a dictionary (*if `False`*), by default True
+
+        Returns
+        -------
+        `list[str]` | `dict[str, str]`: The list of fonts or a dictionary of font families and their names
+        """
+        fonts = {}
+        paths = [
+            (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts"),
+            (winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts")
+        ]
+
+        for hive, subkey in paths:
+            try:
+                with winreg.OpenKey(hive, subkey) as key:
+                    for i in range(winreg.QueryInfoKey(key)[1]):
+                        name, value, _ = winreg.EnumValue(key, i)
+                        if name and value:
+                            cleanName = name.split("(")[0].strip()
+                            if cleanName: fonts[cleanName] = value
+            except FileNotFoundError: continue
+        
+        if asList: return sorted(list(set(fonts.keys())))
+
+        return dict(sorted(fonts.items()))
 
 class IndentationConfigGroup(ExpandGroupSettingCard):
     """ Class for Smart DownMarker indentation settings in the Editor section """

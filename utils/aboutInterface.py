@@ -36,8 +36,8 @@ class AboutInterface(QWidget):
 
         aboutMainBox = QVBoxLayout()
         layout.addLayout(aboutMainBox)
-        aboutLogo = IconWidget(QIcon(smart.resourcePath("resources/icons/png/icon_shadow.png")))
-        aboutLogo.setFixedSize(192, 192)
+        aboutLogo = ImageLabel(smart.resourcePath("resources/icons/png/icon_shadow.png"))
+        aboutLogo.scaledToWidth(200)
         aboutMainBox.addWidget(aboutLogo, 0, Qt.AlignmentFlag.AlignCenter)
         aboutTextBox = QVBoxLayout()
         aboutTextBox.setContentsMargins(0, 0, 0, 0)
@@ -47,7 +47,7 @@ class AboutInterface(QWidget):
         self.aboutSubtitle = SubtitleLabel("Mastering URL Handling")
         self.aboutCaption = CaptionLabel(f"© 2025-2026 {SmartLinkerAuthor}")
         self.aboutCaption.setAttribute(Qt.WidgetAttribute.WA_StyleSheet, True)
-        self.aboutCaption.setStyleSheet("color: gray;")
+        self.aboutCaption.setTextColor(QColor("gray"), QColor("gray"))
         aboutTextBox.addWidget(self.aboutTitle, 0, Qt.AlignmentFlag.AlignCenter)
         aboutTextBox.addWidget(self.aboutSubtitle, 0, Qt.AlignmentFlag.AlignCenter)
         aboutTextBox.addWidget(self.aboutCaption, 0, Qt.AlignmentFlag.AlignCenter)
@@ -95,7 +95,7 @@ class AboutInterface(QWidget):
 
         self.updateSnack = QWidget()
         self.updateSnack.setObjectName("ASnackBase")
-        self.updateSnack.setStyleSheet(f"#ASnackBase {{background-color: rgba({smart.convertToRGB(themeColor())}, 0.25); margin: 10px; /* margin-top: 10px; */ border-radius: 5px}}")
+        self.updateSnack.setStyleSheet(f"#ASnackBase {{ background-color: rgba({smart.convertToRGB(themeColor())}, 0.25); margin: 10px; border-radius: 5px; }}")
         mainAboutLayout.addWidget(self.updateSnack)
         self.updateSnack.setVisible(bool(cfg.get(cfg.updateAvailable))) 
         self.updateSnack.setEnabled(bool(cfg.get(cfg.updateAvailable))) 
@@ -261,7 +261,7 @@ class AboutInterface(QWidget):
                     print(f"{Fore.RED}An error occured while attempting to open the {title} {linkType} into '{os.path.basename(self.linkBrowserDlg.otherBrowsEdit.text())}': {e}{Style.RESET_ALL}")
                     smart.managerLog(f"ERROR: Failed to open the {title} {linkType} into browser at path '{self.linkBrowserDlg.otherBrowsEdit.text()}': {e}")
 
-class AboutAppGroup(SimpleExpandGroupSettingCard):
+class AboutAppGroup(ExpandGroupSettingCard):
     """ Class for the informative text about SmartLinker in the About section """
 
     def __init__(self, parent = None):

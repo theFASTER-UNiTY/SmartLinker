@@ -28,7 +28,7 @@ class SmartLinkerGUI(FluentWindow):
 
     def __init__(self, args = None, parent = None):
         super().__init__(parent)
-        print(smart.consoleScript())
+        RichCLI.print(smart.consoleScript())
         self.setWindowTitle("SmartLinker - Mastering URL Handling")
         self.setWindowIcon(QIcon(smart.resourcePath("resources/icons/ico/icon.ico")))
         self.resize(1100, 700)
@@ -42,6 +42,7 @@ class SmartLinkerGUI(FluentWindow):
         fontDB = QFontDatabase.addApplicationFont(smart.resourcePath("resources/fonts/SegoeFont.ttf"))
         fontUI = QFontDatabase.applicationFontFamilies(fontDB)[0]
 
+        self.themeCtrl = ThemeController(self)
         self.latestVersion = smart.getLatestVersionTag() if bool(cfg.get(cfg.checkUpdatesOnStart) and smart.checkConnectivity()) else ""
         self.myBrowsers = smart.loadBrowsers()
         self.removeKeysDlg = None
@@ -155,6 +156,7 @@ class SmartLinkerGUI(FluentWindow):
             button.setVisible(self.isUpdateDownloaded())
             button.setEnabled(self.isUpdateDownloaded())
             button.clicked.connect(lambda: self.runUpdate(self))
+        self.themeCtrl.themeChanged.connect(lambda text: self.applyTheme(cfg.get(cfg.appTheme)))
         cfg.accentMode.valueChanged.connect(lambda value: (
             self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smart.convertToRGB(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, 0.25)}}"),
             self.markdownViewer.updateSnack.setStyleSheet(f"#MDSnackBase {{background-color: rgba({smart.convertToRGB(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, 0.25)}}"),
@@ -182,11 +184,11 @@ class SmartLinkerGUI(FluentWindow):
         self.aboutInterface = About(self)
         self.addSubInterface(self.aboutInterface, FICO.INFO, "About", NavigationItemPosition.BOTTOM)
 
-    def toggleTheme(self, button):
-        """ Toggle the interface theme """
-        if button.text() == "Use system setting":
-            setTheme(Theme.AUTO)
-        elif button.text() == "Dark":
+    def applyTheme(self, mode):
+        """ Apply theme automatically according to system and config """
+        if mode == "Auto":
+            setTheme(Theme.DARK if smart.isDarkModeEnabled() else Theme.LIGHT)
+        elif mode == "Dark":
             setTheme(Theme.DARK)
         else:
             setTheme(Theme.LIGHT)
@@ -209,7 +211,16 @@ class SmartLinkerGUI(FluentWindow):
         self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{ background-color: rgba({smart.convertToRGB(themeColor())}, 0.25); }}")
         self.markdownViewer.updateSnack.setStyleSheet(f"#MDSnackBase {{ background-color: rgba({smart.convertToRGB(themeColor())}, 0.25); }}")
         self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{ background-color: rgba({smart.convertToRGB(themeColor())}, 0.25); }}")
-        self.aboutInterface.updateSnack.setStyleSheet(f"#ASnackBase {{ background-color: rgba({smart.convertToRGB(themeColor())}, 0.25); margin: 10px; margin-top: 0; border-radius: 5px; }}")
+        self.aboutInterface.updateSnack.setStyleSheet(f"#ASnackBase {{ background-color: rgba({smart.convertToRGB(themeColor())}, 0.25); margin: 10px; border-radius: 5px; }}")
+
+    def toggleTheme(self, button):
+        """ Toggle the interface theme """
+        if button.text() == "Use system setting":
+            self.applyTheme("Auto")
+        elif button.text() == "Dark":
+            self.applyTheme("Dark")
+        else:
+            self.applyTheme(Theme.LIGHT)
 
     def checkForUpdates(self, parent):
         """Connect to the GitHub repository to check for the latest available update."""
@@ -231,9 +242,9 @@ class SmartLinkerGUI(FluentWindow):
         self.updateCheckWorker.finished.connect(self.onUpdateCheckFinished)
         self.updateCheckWorker.error.connect(self.onUpdateCheckError)
 
-        self.updateCheckWorker.finished.connect(lambda *_: self.updateCheckThread.quit())
-        self.updateCheckWorker.finished.connect(lambda *_: self.updateCheckWorker.deleteLater())
-        self.updateCheckThread.finished.connect(lambda *_: self.updateCheckThread.deleteLater())
+        self.updateCheckWorker.finished.connect(lambda *_: self.updateCheckThread.quit()) # type: ignore
+        self.updateCheckWorker.finished.connect(lambda *_: self.updateCheckWorker.deleteLater()) # type: ignore
+        self.updateCheckThread.finished.connect(lambda *_: self.updateCheckThread.deleteLater()) # type: ignore
 
         self.updateCheckThread.start()
 
@@ -550,6 +561,12 @@ class SmartLinkerGUI(FluentWindow):
                 smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to close SmartLinker: {e}", self)
                 print(f"{Fore.RED}An error occured while attempting to stop process: {e}{Style.RESET_ALL}")
                 smart.managerLog(f"ERROR: Failed to stop process: {e}")
+
+    def closeEvent(self, e):
+        super().closeEvent(e)
+        if isinstance(self.settingInterface.selectorWindow, SmartSelectorGUI):
+            self.settingInterface.selectorWindow.close()
+            self.settingInterface.selectorWindow = None
 
 def isSystemCompatible(minBuild: int) -> bool:
     isCompatible = False

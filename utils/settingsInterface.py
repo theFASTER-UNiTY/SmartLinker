@@ -1,5 +1,7 @@
 from utils.SmartUtils import *
 
+# ===========================================================================================================
+
 myBrowsList = smart.loadBrowsers()
 
 class SettingsInterface(QWidget):
@@ -8,6 +10,7 @@ class SettingsInterface(QWidget):
     def __init__(self, parent = None):
         super().__init__(parent)
         self.setObjectName("Settings")
+        self.selectorWindow = None
 
         mainSetLayout = QVBoxLayout(self)
         mainSetLayout.setContentsMargins(0, 20, 0, 0)
@@ -80,6 +83,9 @@ class SettingsInterface(QWidget):
         selectorLabel.setAlignment(Qt.AlignmentFlag.AlignTop)
         layout.addWidget(selectorLabel)
         layout.addWidget(self.widgetDef.optionCloseOnSelect)
+        layout.addWidget(self.widgetDef.optionShowAddBrowser)
+        layout.addWidget(self.widgetDef.optionPreviewSelector)
+        self.widgetDef.optionPreviewSelector.button.clicked.connect(lambda: self.previewSelector(parent))
 
         # Advanced
         advancedLabel = SubtitleLabel("Advanced")
@@ -243,6 +249,24 @@ class SettingsInterface(QWidget):
         self.optionSoundConfig.selectorPickBtn.setEnabled(checked)
         self.optionSoundConfig.selectorRemoveBtn.setEnabled(checked and bool(cfg.get(cfg.selectorSFXPath)))
 
+    def previewSelector(self, parent):
+        """ :SettingsInterface: Open the Smart Selector from the preview option. """
+        from utils.smartSelector import SmartSelectorGUI as Selector
+        
+        if self.selectorWindow is None or not self.selectorWindow.isVisible():
+            self.selectorWindow = Selector(["", "/AsPreview"])
+            self.selectorWindow.destroyed.connect(lambda: setattr(self, "selectorWindow", None))
+            self.selectorWindow.show()
+        else:
+            smart.warningNotify(
+                "Warning, be careful!",
+                "The Smart Selector is already being previewed. " \
+                "Please close the Selector first.",
+                parent
+            )
+            RichCLI.log("[yellow][b u]WARNING!![/b u] The Smart Selector is already being previewed. " \
+                        "Please close the Selector first.[/]")
+
 class SettingWidgetDefinition():
     """ Declaration class for some of SettingsInterface widgets """
 
@@ -271,7 +295,8 @@ class SettingWidgetDefinition():
             "Refresh",
             segFont.fromName("Refresh"),
             "Refresh main browser card",
-            "In case your main browser card above is not synchronized with some changes, you can make it unified again with this option."
+            "In case your main browser card above is not synchronized with some changes, " \
+            "you can make it unified again with this option."
         )
 
         # Personalization
@@ -291,7 +316,8 @@ class SettingWidgetDefinition():
         self.optionShowCommandBar = SwitchSettingCard(
             FICO.MENU,
             "Display the action bar",
-            "If enabled, the action bar is displayed below the SmartList instead of the standard tiles.",
+            "If enabled, the action bar is displayed below the SmartList instead of " \
+            "the standard tiles.",
             cfg.showCommandBar
         )
 
@@ -299,7 +325,8 @@ class SettingWidgetDefinition():
         self.optionSoundEffects = SwitchSettingCard(
             FICO.MUSIC,
             "Enable sound effects",
-            f"You have the possibility to enhance your auditive experience with {SmartLinkerName}, just by enabling this feature.",
+            f"You have the possibility to enhance your auditive experience with {SmartLinkerName}, " \
+             "just by enabling this feature.",
             cfg.enableSoundEffects
         )
 
@@ -307,8 +334,23 @@ class SettingWidgetDefinition():
         self.optionCloseOnSelect = SwitchSettingCard(
             FICO.EMBED,
             "Close window on browser selection",
-            "If enabled, the Smart Selector window will close once a browser is selected for the forwarded link to be loaded.",
+            "If enabled, the Smart Selector window will close once a browser is selected "
+            "for the forwarded link to be loaded.",
             cfg.closeOnBrowserSelect
+        )
+        self.optionShowAddBrowser = SwitchSettingCard(
+            FICO.ADD_TO,
+            'Display the "Add a browser" card',
+            "If enabled, will be displayed among other browsers a card button to add " \
+            "a new one directly from the Selector.",
+            cfg.showAddBrowserCard
+        )
+        self.optionPreviewSelector = PushSettingCard(
+            "Preview",
+            FICO.VIEW,
+            "Preview the Smart Selector",
+            "For preview purposes, you can open the Smart Selector directly through " \
+            "this option (no link is provided)."
         )
 
 class ThemeColorSelectGroup(ExpandGroupSettingCard):
@@ -425,7 +467,7 @@ class FlagsSettingGroup(ExpandGroupSettingCard):
 
         self.addGroupWidget(w)
 
-class MainBrowsersCard(CardWidget):
+class MainBrowsersCard(SimpleCardWidget):
     """ Class for the the main browser configuration card """
 
     def __init__(self, icon, title, content, parent = None):
@@ -469,11 +511,6 @@ class MainBrowsersCard(CardWidget):
         self.hBoxLayout.addWidget(self.fromListButton, 0, Qt.AlignmentFlag.AlignRight)
         self.hBoxLayout.addWidget(self.removeMainButton, 0, Qt.AlignmentFlag.AlignRight)
     
-    def _hoverBackgroundColor(self):
-        return self._normalBackgroundColor()
-    
-    def mousePressEvent(self, e): pass
-
 class SelectFromListDialog(MessageBoxBase):
     """ Class for the main browser selection from SmartList dialog """
 
@@ -756,5 +793,7 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
             smart.successNotify("Removal complete!", f"The {soundType} sound has been successfully removed!", parent)
         else: pass
 
+# Add in Smart Selector section:
+## Toggle the link preview style
 # Add Markdown Viewer section with settings:
-## CSS & Homepage porpoerties (will use MarkdownConfig)
+## CSS & Homepage properties (will use MarkdownConfig)

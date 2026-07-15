@@ -25,23 +25,23 @@ from PyQt6.QtCore import (
     QCoreApplication, QEvent, QEventLoop, QFileInfo, QModelIndex, QObject, QRegularExpression, QSize, Qt, QThread, QTimer, QUrl, pyqtSignal
 )
 from PyQt6.QtGui import (
-    QColor, QContextMenuEvent, QDragEnterEvent, QDragLeaveEvent, QDragMoveEvent, QDropEvent, QFont, QFontDatabase, QFontMetrics, QIcon,
-    QKeyEvent, QPainter, QPixmap, QResizeEvent, QStandardItem, QStandardItemModel, QSyntaxHighlighter, QTextCharFormat, QTextCursor
+    QColor, QContextMenuEvent, QDragEnterEvent, QDragLeaveEvent, QDragMoveEvent, QDropEvent, QFont, QFontDatabase, QFontMetrics, QGuiApplication,
+    QIcon, QKeyEvent, QPainter, QPixmap, QResizeEvent, QStandardItem, QStandardItemModel, QSyntaxHighlighter, QTextCharFormat, QTextCursor
 )
 from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWebEngineCore import QWebEngineHistoryItem, QWebEngineNavigationRequest, QWebEngineSettings
 from PyQt6.QtWidgets import (
-    QAbstractItemView, QApplication, QCompleter, QFileDialog, QFileIconProvider, QHBoxLayout, QLayout, QScrollBar, QSizePolicy, QStatusBar, QTableWidgetItem,
-    QTextEdit, QVBoxLayout, QWidget
+    QAbstractItemView, QApplication, QCompleter, QFileDialog, QFileIconProvider, QHBoxLayout, QLayout, QScrollBar, QSizePolicy, QStatusBar,
+    QTableWidgetItem, QTextEdit, QVBoxLayout, QWidget
 )
 from qfluentwidgets import (
     getIconColor, qconfig, setFont, setTheme, setThemeColor, theme, themeColor, Action, BodyLabel, BoolValidator, CaptionLabel, CardWidget,
     ColorConfigItem, ColorDialog, ComboBox, CommandBar, ConfigItem,DropDownPushButton, ElevatedCardWidget, ExpandGroupSettingCard,
-    FluentFontIconBase, FluentIcon as FICO, FluentIconBase, FluentWindow, HyperlinkButton, HyperlinkCard, IconInfoBadge, IconWidget,
+    FluentFontIconBase, FluentIcon as FICO, FluentIconBase, FluentWindow, HyperlinkButton, HyperlinkCard, IconInfoBadge, IconWidget, ImageLabel,
     IndeterminateProgressRing, IndicatorPosition, InfoBadgePosition, InfoBar, InfoBarPosition, LargeTitleLabel, LineEdit, ListWidget, MessageBox,
     MessageBoxBase, NavigationItemPosition, OptionsConfigItem, OptionsSettingCard, OptionsValidator, PrimaryPushButton, PrimaryPushSettingCard,
     ProgressBar, ProgressRing, PushButton, PushSettingCard, QConfig, RangeConfigItem, RangeValidator, RoundMenu, ScrollBar, SearchLineEdit,
-    SimpleExpandGroupSettingCard, SingleDirectionScrollArea, SpinBox, SplashScreen, StrongBodyLabel, SubtitleLabel, SwitchButton, SwitchSettingCard,
+    SimpleCardWidget, SimpleExpandGroupSettingCard, SingleDirectionScrollArea, SpinBox, SplashScreen, StrongBodyLabel, SubtitleLabel, SwitchButton, SwitchSettingCard,
     TableWidget, TextEdit, Theme, TitleLabel, ToolButton, ToolTipFilter, ToolTipPosition, TransparentDropDownPushButton,
     TransparentToggleToolButton, TransparentToolButton
 )
@@ -50,6 +50,8 @@ from qframelesswindow.utils import getSystemAccentColor
 from qframelesswindow.webengine import FramelessWebEngineView
 from rich.console import Console
 from rich.progress import Progress
+from rich.theme import Theme as RTheme
+from rich.traceback import install
 from shiboken6 import isValid
 from urllib.parse import quote, unquote, urlparse
 
@@ -62,9 +64,11 @@ SmartLinkerAuthor: str = __author__
 SmartLinkerOwner: str = "#theF∆STER™ UN!TY"
 SmartLinkerGitRepoURL: str = "https://github.com/theFASTER-UNiTY/SmartLinker"
 SmartLinkerGitRepoAPI: str = "https://api.github.com/repos/theFASTER-UNiTY/SmartLinker"
-RichCLI = Console()
-PURPLE = "\x1b[35m"
-init()
+SmartRichTheme = RTheme({"smartpurple": "#793bcc", "smartblue": "#2196f3"})
+RichCLI = Console(theme=SmartRichTheme)
+install()
+PURPLE = "\x1b[35m" # soon deprecated
+init() # soon deprecated
 pygame.init()
 pygame.mixer.init()
 soundStreamer = None
@@ -77,6 +81,7 @@ class Config(QConfig):
     mainBrowser = ConfigItem("General", "MainBrowser", "")
     mainBrowserPath = ConfigItem("General", "MainBrowserPath", "")
     mainBrowserIsManual = ConfigItem("General", "MainBrowserIsManual", False, BoolValidator())
+    
     appTheme = OptionsConfigItem("Personalization", "AppTheme", "Auto", OptionsValidator(["Light", "Dark", "Auto"]))
     accentMode = OptionsConfigItem("Personalization", "AccentMode", "Custom", OptionsValidator(["System", "Custom"]))
     accentColor = ColorConfigItem("Personalization", "CustomAccentColorHex", "")
@@ -85,6 +90,7 @@ class Config(QConfig):
     showSplash = ConfigItem("Personalization", "ShowSplash", True, BoolValidator())
     splashDuration = RangeConfigItem("Personalization", "SplashDuration", 3000, RangeValidator(0, 10000))
     showUpdateBanners = ConfigItem("Personalization", "ShowUpdateBanners", True, BoolValidator(), restart=True)
+    
     enableSoundEffects = ConfigItem("Sound", "EnableSoundEffects", False, BoolValidator())
     startupSFXPath = ConfigItem("Sound", "StartupSFXPath", "")
     successSFXPath = ConfigItem("Sound", "SuccessSFXPath", "")
@@ -93,11 +99,15 @@ class Config(QConfig):
     errorSFXPath = ConfigItem("Sound", "ErrorSFXPath", "")
     questionSFXPath = ConfigItem("Sound", "QuestionSFXPath", "")
     selectorSFXPath = ConfigItem("Sound", "SelectorSFXPath", "")
+    
     closeOnBrowserSelect = ConfigItem("Selector", "CloseOnBrowserSelect", False, BoolValidator())
+    showAddBrowserCard = ConfigItem("Selector", "ShowAddBrowserCard", False, BoolValidator())
+
     checkUpdatesOnStart = ConfigItem("About", "CheckUpdatesOnStart", True, BoolValidator())
     lastCheckedDate = ConfigItem("About", "LastCheckedDate", "")
     updateAvailable = ConfigItem("About", "UpdateAvailable", False)
     updateVersion = ConfigItem("About", "UpdateVersion", "")
+    
     qAccentColor = ColorConfigItem("QFluentWidgets", "ThemeColor", "#ff25d9e6") #ff25d9e6
 
 class MarkdownConfig(QConfig):
@@ -106,6 +116,7 @@ class MarkdownConfig(QConfig):
     Markdown viewer configuration handling class
     """
     startInEditMode = ConfigItem("General", "StartInEditMode", False, BoolValidator())
+    
     fontFamily = ConfigItem("Editor", "FontFamily", "")
     fontSize = ConfigItem("Editor", "FontSize", 12)
     fontWeight = RangeConfigItem("Editor", "FontWeight", 400, RangeValidator(100, 800))
@@ -121,6 +132,7 @@ class MarkdownConfig(QConfig):
     selectionCustomColor = ColorConfigItem("Editor", "SelectionCustomColor", "#7f793bcc") #ff793bcc
     enableSyntaxHighlighting = ConfigItem("Editor", "EnableSyntaxHighlighting", True, BoolValidator())
     # to-do: syntax colors
+    
     openExternalLinks = ConfigItem("Viewer", "OpenExternalLinks", False, BoolValidator())
     cssSource = OptionsConfigItem("Viewer", "CSSSource", "Default", OptionsValidator(["Default", "Local", "Custom"]))
     cssSourcePath = ConfigItem("Viewer", "CSSSourcePath", "Default")
@@ -128,6 +140,7 @@ class MarkdownConfig(QConfig):
     homepageSource = OptionsConfigItem("Viewer", "HomepageSource", "Default", OptionsValidator(["Default", "Local", "Custom"]))
     homepageSourcePath = ConfigItem("Viewer", "HomepageSourcePath", "Default")
     homepageProperties = ConfigItem("Viewer", "HomepageProperties", "")
+    
     qThemeColor = ColorConfigItem("QFluentWidgets", "ThemeColor", "")
 
 class SegoeFontIcon(FluentFontIconBase):
@@ -616,10 +629,10 @@ class SmartLogic:
             if process.info['exe']:
                 isProcessOpen = os.path.basename(process.info['exe']).lower() == browsName
                 if isProcessOpen:
-                    print(f"{Back.GREEN}{browsName} == {os.path.basename(process.info['exe']).lower()}{Style.RESET_ALL}")
+                    RichCLI.print(f"[white on green]{browsName} == {os.path.basename(process.info['exe']).lower()}[/]")
                     break
-                else: print(f"{Back.RED}{browsName} != {os.path.basename(process.info['exe']).lower()}{Style.RESET_ALL}")
-        print(f"\n'{browsName}' is running: {Fore.GREEN if isProcessOpen else Fore.RED}{isProcessOpen}{Style.RESET_ALL}\n")
+                else: RichCLI.print(f"[white on red]{browsName} != {os.path.basename(process.info['exe']).lower()}[/]")
+        RichCLI.print(f"\n'{browsName}' is running: [bold italic {"green]" if isProcessOpen else " red]"}{isProcessOpen}[/]\n")
         return isProcessOpen
     
     def isSoftwareRunning(self, exePath: str) -> bool:
@@ -653,14 +666,14 @@ class SmartLogic:
         -------
         :string: The rendered SmartLinker name
         """
-        return f"{PURPLE}============================{Style.RESET_ALL} {SmartLinkerAuthor} presents {Fore.BLUE}============================{Style.RESET_ALL}\n\n" \
-            f"{PURPLE}███████╗███╗   ███╗ █████╗ ██████╗ ████████╗{Fore.BLUE}██╗     ██╗███╗   ██╗██╗  ██╗███████╗██████╗ {Style.RESET_ALL}\n" \
-            f"{PURPLE}██╔════╝████╗ ████║██╔══██╗██╔══██╗╚══██╔══╝{Fore.BLUE}██║     ██║████╗  ██║██║ ██╔╝██╔════╝██╔══██╗{Style.RESET_ALL}\n" \
-            f"{PURPLE}███████╗██╔████╔██║███████║██████╔╝   ██║   {Fore.BLUE}██║     ██║██╔██╗ ██║█████╔╝ █████╗  ██████╔╝{Style.RESET_ALL}\n" \
-            f"{PURPLE}╚════██║██║╚██╔╝██║██╔══██║██╔══██╗   ██║   {Fore.BLUE}██║     ██║██║╚██╗██║██╔═██╗ ██╔══╝  ██╔══██╗{Style.RESET_ALL}\n" \
-            f"{PURPLE}███████║██║ ╚═╝ ██║██║  ██║██║  ██║   ██║   {Fore.BLUE}███████╗██║██║ ╚████║██║  ██╗███████╗██║  ██║{Style.RESET_ALL}\n" \
-            f"{PURPLE}╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   {Fore.BLUE}╚══════╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝{Style.RESET_ALL}\n\n" \
-            f"{PURPLE}================================={Style.RESET_ALL} Mastering URL Handling {Fore.BLUE}================================{Style.RESET_ALL}\n"
+        return f"[smartpurple]============================[/] {SmartLinkerAuthor} presents [smartblue]============================\n\n" \
+            "[smartpurple]███████╗███╗   ███╗ █████╗ ██████╗ ████████╗[smartblue]██╗     ██╗███╗   ██╗██╗  ██╗███████╗██████╗ \n" \
+            "[smartpurple]██╔════╝████╗ ████║██╔══██╗██╔══██╗╚══██╔══╝[smartblue]██║     ██║████╗  ██║██║ ██╔╝██╔════╝██╔══██╗\n" \
+            "[smartpurple]███████╗██╔████╔██║███████║██████╔╝   ██║   [smartblue]██║     ██║██╔██╗ ██║█████╔╝ █████╗  ██████╔╝\n" \
+            "[smartpurple]╚════██║██║╚██╔╝██║██╔══██║██╔══██╗   ██║   [smartblue]██║     ██║██║╚██╗██║██╔═██╗ ██╔══╝  ██╔══██╗\n" \
+            "[smartpurple]███████║██║ ╚═╝ ██║██║  ██║██║  ██║   ██║   [smartblue]███████╗██║██║ ╚████║██║  ██╗███████╗██║  ██║\n" \
+            "[smartpurple]╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   [smartblue]╚══════╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝\n\n" \
+           f"[smartpurple]=================================[/] {"Mastering URL Handling"} [smartblue]================================[/]\n"
 
     def managerLog(self, message):
         """ SmartUtils
@@ -1264,6 +1277,20 @@ class SmartIcons:
             painter.end()
             return QIcon(pixmap)
         except: return QIcon()
+
+class ThemeController(QObject):
+    themeChanged = pyqtSignal(str)
+
+    def __init__(self, parent = None):
+        super().__init__(parent)
+        self._connect()
+    
+    def _connect(self):
+        hints = QGuiApplication.styleHints()
+        if hints: hints.colorSchemeChanged.connect(self._onSystemThemeChanged)
+    
+    def _onSystemThemeChanged(self):
+        self.themeChanged.emit("Auto")
 
 class DownloadWorker(QObject):
     """ SmartUtils

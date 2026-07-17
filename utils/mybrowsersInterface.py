@@ -42,7 +42,7 @@ class MyBrowsersInterface(QWidget):
         mainBrowScroll.setWidgetResizable(True)
         mainBrowScroll.setContentsMargins(0, 0, 0, 0)
         mainBrowScroll.enableTransparentBackground()
-        mainBrowScroll.setStyleSheet("background-color: rgba(0, 0, 0, 0); border: 0px solid #FFFFFF")
+        mainBrowScroll.setStyleSheet("border: 0px solid #FFFFFF")
         mainBrowScrollContent = QWidget()
         mainBrowScroll.setWidget(mainBrowScrollContent)
         mainBrowScrollContent.setContentsMargins(40, 0, 40, 0)
@@ -58,7 +58,7 @@ class MyBrowsersInterface(QWidget):
         self.refreshCommand = Action(segSVG.REFRESH, "Refresh", triggered=lambda: self.refreshWrapper(parent))
         self.loadLinkCommand = Action(segSVG.LINK, "Load a link", triggered=lambda: self.loadLinkDialog(parent))
         self.clearCommand = Action(FICO.DELETE.colored(QColor("red"), QColor("#F44336")), "Clear SmartList", triggered=lambda: self.confirmClearDialog(parent))
-        self.clearCommand.setEnabled(bool(myBrowsList["MyBrowsers"]))
+        self.clearCommand.setDisabled(not myBrowsList["MyBrowsers"])
         self.myBrowsCommandBar = CommandBar()
         self.myBrowsCommandBar.setVisible(bool(cfg.get(cfg.showCommandBar)))
         self.myBrowsCommandBar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
@@ -260,7 +260,8 @@ class MyBrowsersInterface(QWidget):
         self.searchBar.setText("")
         browser = index.data(Qt.ItemDataRole.UserRole)
         if browser:
-            if self.searchResultDlg: self.searchResultDlg = None
+            if self.searchResultDlg:
+                self.searchResultDlg = None
             self.searchResultDlg = SearchResultDialog(browser["name"], browser["path"], parent)
             self.searchResultDlg.loadLinkBtn.clicked.connect(lambda: (
                 self.searchResultDlg.close() if self.searchResultDlg else None,
@@ -286,7 +287,8 @@ class MyBrowsersInterface(QWidget):
         parent
             The parent of the dialog
         """
-        if not self.browsAddDlg: self.browsAddDlg = NewBrowserDialog(parent)
+        if not self.browsAddDlg:
+            self.browsAddDlg = NewBrowserDialog(parent)
         if self.browsAddDlg.exec():
             print(f"New browser name: {self.browsAddDlg.nameEdit.text()}")
             print(f"New browser path: {self.browsAddDlg.pathEdit.text()}")
@@ -998,12 +1000,11 @@ class SearchResultDialog(MessageBoxBase):
 
         topLayout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         topLayout.setSpacing(20)
-        titleLayout.setHorizontalSizeConstraint(QLayout.SizeConstraint.SetMaximumSize)
         titleLayout.setSpacing(5)
         buttonLayout.setSpacing(10)
         self.browsIcon.setFixedSize(96, 96)
         self.browsIcon.setIcon(smart.getFileIcon(path))
-        self.browsSubtitle.setStyleSheet("color: grey;")
+        self.browsSubtitle.setTextColor(QColor("grey"))
 
         self.moreBtn.addHiddenActions([
             Action(FICO.FOLDER, "Open location", triggered=lambda checked, parent = parent: self.openParentDirectory(parent)),
@@ -1017,7 +1018,7 @@ class SearchResultDialog(MessageBoxBase):
         # add widget to view layout
         self.viewLayout.addLayout(topLayout)
         topLayout.addWidget(self.browsIcon)
-        topLayout.addLayout(titleLayout)
+        topLayout.addLayout(titleLayout, 1)
         titleLayout.addStretch()
         titleLayout.addWidget(self.browsTitle)
         titleLayout.addWidget(self.browsSubtitle)

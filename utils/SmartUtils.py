@@ -12,6 +12,7 @@ __author__ = "#theF∆STER™ CODE&BU!LD"
 # (In case you would be wondering...)
 # =========================================================
 
+from bs4 import BeautifulSoup
 import argparse, ctypes, darkdetect, datetime, json, magic, markdown, os, pathlib, pickle, platform, psutil, pygame, re, requests, shutil
 import socket, subprocess, sys, time, typing, threading, webbrowser, win32api, winreg
 from colorama import init, Fore, Back, Style
@@ -102,6 +103,7 @@ class Config(QConfig):
     
     closeOnBrowserSelect = ConfigItem("Selector", "CloseOnBrowserSelect", False, BoolValidator())
     showAddBrowserCard = ConfigItem("Selector", "ShowAddBrowserCard", False, BoolValidator())
+    showLinkPreview = ConfigItem("Selector", "ShowLinkPreview", False, BoolValidator())
 
     checkUpdatesOnStart = ConfigItem("About", "CheckUpdatesOnStart", True, BoolValidator())
     lastCheckedDate = ConfigItem("About", "LastCheckedDate", "")
@@ -167,6 +169,7 @@ class SegoeSVGIcon(FluentIconBase, Enum):
     MARKDOWN = "Markdown"
     NUMBER_SYMBOL = "NumberSymbol"
     REFRESH = "Refresh"
+    SMARTLINKER_FILL = "SmartLinkerFill"
     SMARTLINKER_OUTLINE = "SmartLinkerOutline"
     STYLE_GUIDE = "StyleGuide"
     TEXT_WRAP = "TextWrap"
@@ -292,6 +295,27 @@ class SmartLogic:
                 print(f"{Fore.RED}Something went wrong while attempting to restart {SmartLinkerName} with 'os.execv': {ee}\nFailed to restart {SmartLinkerName}, please try again...{Style.RESET_ALL}")
                 self.managerLog(f"ERROR: Failed to restart {SmartLinkerName} with 'os.execv': {ee}")
 
+    def centerWindow(self, window):
+        """ SmartUtils
+        ==========
+        Center the window
+
+        Parameters
+        ----------
+        window: QWidget
+            The window you want to center
+        """
+        screen = QApplication.primaryScreen()
+        
+        if screen:
+            screenGeometry = screen.availableGeometry()
+            windowGeometry = window.frameGeometry()
+            screenCenter = screenGeometry.center()
+            
+            windowGeometry.moveCenter(screenCenter)
+            
+            window.move(windowGeometry.topLeft())
+
     def isDarkModeEnabled(self) -> bool:
         """ SmartUtils
         ==========
@@ -375,6 +399,30 @@ class SmartLogic:
             print(f"{Fore.RED}Something went wrong while attempting to establish connection: {e}{Style.RESET_ALL}")
             self.managerLog(f"ERROR: Failed to establish connection: {e}")
         finally: return isConnected
+
+    def isWebLink(self, url: str) -> bool:
+        """ SmartUtils
+        ==========
+        Check if the provided URL is a web link
+
+        Parameters
+        ----------
+        url: string
+            The URL you want to check
+
+        Returns
+        -------
+        isWebLink: boolean
+            Whether the provided URL is a web link
+        """
+        isWebLink = False
+        try:
+            parsedUrl = urlparse(url)
+            isWebLink = parsedUrl.scheme in ["http", "https"]
+        except Exception as e:
+            RichCLI.log(f"[red][b u]ERROR[/b u]: Failed to check if the provided URL is a web link: {e}[/]")
+            self.managerLog(f"ERROR: Failed to check if the provided URL is a web link: {e}")
+        finally: return isWebLink
 
     def isDarkMode(self) -> bool:
         """ SmartUtils
@@ -1618,6 +1666,55 @@ class UpdateSnack(QWidget):
         self.snackInstall.setToolTip("The latest update has been found in your system.\nYou can install it right away.")
         self.snackInstall.installEventFilter(ToolTipFilter(self.snackInstall))
         self.snackLayout.addWidget(self.snackInstall)
+
+class LinkScraperThread(QThread):
+    dataFetched = pyqtSignal(dict)
+    errorOccurred = pyqtSignal(str)
+
+    def __init__(self, url) -> None:
+        super().__init__()
+        self.url = url
+    
+    def run(self):
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/114.0.0.0 Safari/537.36"
+        }
+
+        try:
+            # Fetching the webpage
+            response = requests.get(self.url, headers=headers, timeout=5)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            def extractMeta(propertyName, nameFallback=None):
+                tag = soup.find("meta", property=propertyName)
+                if not tag and nameFallback:
+                    tag = soup.find("meta", attrs={"name": nameFallback})
+                return tag["content"] if tag and tag.get("content") else ""
+            
+            title = extractMeta("og:title") or (soup.title.string if soup.title else "Title not found")
+            description = extractMeta("og:description", "description") or "No description"
+            imageUrl = extractMeta("og:image")
+
+            # Downloading the image (in bare bytes)
+            imgBytes = None
+            if imageUrl:
+                try:
+                    imgResponse = requests.get(imageUrl, timeout=10) # type: ignore
+                    imgResponse.raise_for_status()
+                    imgBytes = imgResponse.content
+                except Exception: pass
+
+            # Sending data through the signal
+            self.dataFetched.emit({
+                "title": title.strip(), # type: ignore
+                "description": description.strip(), # type: ignore
+                "url": self.url,
+                "imgBytes": imgBytes
+            })
+
+        except Exception as e:
+            self.errorOccurred.emit(f"Failed loading: {str(e)}")
 
 # Elidable labels ======================================
 

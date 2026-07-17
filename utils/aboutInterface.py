@@ -467,5 +467,3 @@ class BrowserSelectDialog(MessageBoxBase):
                 self.warningLabel.setText("The other browser path is not valid.")
                 self.warningLabel.setHidden(False)
                 return False
-
-# HTML icon attribution - <a href="https://www.flaticon.com/free-icons/development" title="development icons">Development icons created by Bharat Icons - Flaticon</a>

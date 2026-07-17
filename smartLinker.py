@@ -31,9 +31,9 @@ class SmartLinkerGUI(FluentWindow):
         RichCLI.print(smart.consoleScript())
         self.setWindowTitle("SmartLinker - Mastering URL Handling")
         self.setWindowIcon(QIcon(smart.resourcePath("resources/icons/ico/icon.ico")))
-        self.resize(1100, 700)
         self.setMinimumWidth(1040)
-        self.move(40, 25)
+        self.resize(1100, 700)
+        smart.centerWindow(self)
         self.setStyleSheet('font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif;')
         if cfg.get(cfg.appTheme) == "Dark": setTheme(Theme.DARK)
         elif cfg.get(cfg.appTheme) == "Light": setTheme(Theme.LIGHT)
@@ -459,7 +459,7 @@ class SmartLinkerGUI(FluentWindow):
         downloadDlg = DownloadDialog(
             "Initializing...",
             FICO.DOWNLOAD,
-            f"{SmartLinkerGitRepoURL}/releases/download/{cfg.get(cfg.updateVersion)}/SmartLinker-setup-win-{cfg.get(cfg.updateVersion)}.exe",
+            f"{SmartLinkerGitRepoURL}/releases/download/{cfg.get(cfg.updateVersion)}/SmartLinker-setup-win-{cfg.get(cfg.updateVersion)[1:]}.exe",
             filename,
             parent
         )

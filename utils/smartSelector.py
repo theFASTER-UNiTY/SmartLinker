@@ -1,5 +1,6 @@
 from utils.SmartUtils import *
 from utils.smartDownMarker import SmartDownMarkerGUI as DownMarker
+from utils.mybrowsersInterface import NewBrowserDialog
 
 # ===========================================================================================================
 
@@ -57,9 +58,14 @@ class SmartSelectorGUI(FramelessWindow):
         
         self.themeCtrl = ThemeController(self)
         self.titleHeight = self.titleBar.height()
-        self.lightSheetOnDark: str = "SingleDirectionScrollArea {background-color: rgba(242, 242, 242, 0.05); border: 1px solid rgba(242, 242, 242, 0.25)}"
-        self.darkSheetOnLight: str = "SingleDirectionScrollArea {background-color: rgba(32, 32, 32, 0.05); border: 1px solid rgba(32, 32, 32, 0.25)}"
-        self.runningBrowsers = 0
+        self.isConnected: bool = smart.checkConnectivity()
+        self.lightSheetOnDark: str = "SingleDirectionScrollArea { " \
+            "background-color: rgba(242, 242, 242, 0.05); border: 1px solid rgba(242, 242, 242, 0.25) }"
+        self.darkSheetOnLight: str = "SingleDirectionScrollArea { " \
+            "background-color: rgba(32, 32, 32, 0.05); border: 1px solid rgba(32, 32, 32, 0.25) }"
+        self.runningBrowsers: int = 0
+        self.browsCards: list[BrowserCard] = []
+        self.browsAddDlg = None
         self.bottomLightSheet: str = "background-color: #F3F3F3; border: 1px solid #E5E5E5"
         self.bottomDarkSheet: str = "background-color: #161616; border: 1px solid #000000" # original: #202020, #1D1D1D
         self.requestURL = requestArgs[1]
@@ -70,8 +76,8 @@ class SmartSelectorGUI(FramelessWindow):
         mainTitleLine.setContentsMargins(80, 0, 80, 0)
         mainTitleLine.setAlignment(Qt.AlignmentFlag.AlignCenter)
         mainLayout.addLayout(mainTitleLine)
-        mainIcon = IconWidget(QIcon(smart.resourcePath("resources/icons/ico/icon.ico")))
-        mainIcon.setFixedSize(56, 56)
+        mainIcon = ImageLabel(smart.resourcePath("resources/icons/png/icon_shadow_1.png"))
+        mainIcon.scaledToHeight(64)
         mainTitleLine.addWidget(mainIcon, 0, Qt.AlignmentFlag.AlignCenter)
         mainTitleBox = QVBoxLayout()
         mainTitleBox.setContentsMargins(10, 20, 0, 20)
@@ -96,13 +102,18 @@ class SmartSelectorGUI(FramelessWindow):
         self.myBrowsScroll = SingleDirectionScrollArea(self, Qt.Orientation.Horizontal)
         self.myBrowsScroll.setWidgetResizable(True)
         self.myBrowsScroll.setContentsMargins(0, 0, 0, 0)
-        self.myBrowsScroll.setStyleSheet(self.lightSheetOnDark if theme() == Theme.DARK else self.darkSheetOnLight)
+        self.myBrowsScroll.setStyleSheet(
+            self.lightSheetOnDark if theme() == Theme.DARK else self.darkSheetOnLight
+        )
         layout.addWidget(self.myBrowsScroll)
         self.myBrowsScrollContent = QWidget()
         self.myBrowsScroll.setWidget(self.myBrowsScrollContent)
         self.myBrowsLayout = QHBoxLayout(self.myBrowsScrollContent)
         self.myBrowsLayout.setSpacing(10)
-        self.myBrowsEmptyMsg = BodyLabel("No web browsers have been added yet... You can still load your URL into a browser selected from your storage.")
+        self.myBrowsEmptyMsg = BodyLabel(
+            "No web browsers have been added yet... You can still load your URL into a browser selected " \
+            "from your storage."
+        )
         self.myBrowsEmptyMsg.setContentsMargins(0, 30, 0, 30)
         self.myBrowsEmptyMsg.setWordWrap(True)
         self.myBrowsEmptyMsg.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -110,59 +121,9 @@ class SmartSelectorGUI(FramelessWindow):
                "Scanning running processes...\n" \
                "=============================\n")
         smart.selectorLog("Scanning running browsers...")
-        if smart.isMarkdownExtension(self.requestURL) and smart.getFileMimeType(self.requestURL).startswith("text"):
-            browsCard = BrowserCard(
-                smIco.renderIcon(smIco.MARKDOWN, 56),
-                "Smart DownMarker",
-                "Embedded",
-                self.requestURL,
-                self
-            )
-            self.myBrowsLayout.addWidget(browsCard)
-        if myBrowsList["MyBrowsers"]:
-            for browser in myBrowsList["MyBrowsers"]:
-                RichCLI.print(f"Browser in queue: [u]{os.path.basename(browser["path"])}[/]\n" \
-                        "------------------------------------")
-                smart.selectorLog(f"Browser in queue: {os.path.basename(browser["path"])}")
-                if smart.isBrowserOpen(browser["path"]):
-                    self.isRunning = True
-                    self.runningBrowsers += 1
-                    smart.selectorLog(f"'{os.path.basename(browser["path"])}' is running.")
-                else:
-                    self.isRunning = False
-                    smart.selectorLog(f"'{os.path.basename(browser["path"])}' is not running.")
-                browsCard = BrowserCard(
-                    smart.getFileIcon(browser["path"]),
-                    browser["name"],
-                    "Running" if self.isRunning else "",
-                    self.requestURL,
-                    self
-                )
-                self.myBrowsLayout.addWidget(browsCard)
-        if (cfg.get(cfg.mainBrowserPath) and cfg.get(cfg.mainBrowserIsManual)):
-            print(f"Browser in queue: [u]{os.path.basename(cfg.get(cfg.mainBrowserPath))}[/]\n" \
-                   "------------------------------------")
-            smart.selectorLog(f"Browser in queue: {os.path.basename(cfg.get(cfg.mainBrowserPath))}")
-            if smart.isBrowserOpen(cfg.get(cfg.mainBrowserPath)):
-                self.isRunning = True
-                self.runningBrowsers += 1
-            else: self.isRunning = False
-            browsCard = BrowserCard(
-                smart.getFileIcon(cfg.get(cfg.mainBrowserPath)),
-                os.path.basename(cfg.get(cfg.mainBrowserPath)),
-                "Manual - Running" if self.isRunning else "Manual",
-                self.requestURL,
-                self
-            )
-            self.myBrowsLayout.addWidget(browsCard)
-        if cfg.get(cfg.showAddBrowserCard):
-            browsCard = BrowserCard(
-                FICO.ADD.qicon(),
-                "Add a browser", "", "",
-                self
-            )
-            self.myBrowsLayout.addWidget(browsCard)
-        if not myBrowsList["MyBrowsers"] and not cfg.get(cfg.mainBrowserPath) and not cfg.get(cfg.showAddBrowserCard): self.myBrowsLayout.addWidget(self.myBrowsEmptyMsg, 0, Qt.AlignmentFlag.AlignCenter)
+        self.addBrowserCards(self.browsCards)
+        if not myBrowsList["MyBrowsers"] and not cfg.get(cfg.mainBrowserPath) and not cfg.get(cfg.showAddBrowserCard):
+            self.myBrowsLayout.addWidget(self.myBrowsEmptyMsg, 0, Qt.AlignmentFlag.AlignCenter)
         RichCLI.print("-----------------------------------------------------\n" \
               f"[bold]{self.runningBrowsers if self.runningBrowsers else "No"} browser{"s[/] are" if self.runningBrowsers > 1 else "[/] is"} currently running.\n" \
               f"{"[bold blue]NOTE: [/b][italic]They may be the same browser.[/]\n" if self.runningBrowsers > 1 else ""}" \
@@ -196,14 +157,24 @@ class SmartSelectorGUI(FramelessWindow):
         self.otherBrowsLoad.clicked.connect(self.loadToOtherBrowser)
         otherBrowserLine.addWidget(self.otherBrowsLoad)
         layout.addSpacing(10)
-        self.previewInfoBar = InformationBar(
-            "info",
-            "The Smart Selector is currently in Preview Mode, so many features " \
-            "are unavailable. You can only see what the Selector looks like, " \
-            "based on its current configuration.",
-            self
-        )
-        if self.isPreviewMode(): layout.addWidget(self.previewInfoBar)
+        if self.isLinkPreviewAvailable() and not self.isConnected:
+            self.noLinkPrevErrorBar = InformationBar(
+                "warning",
+                "Unfortunately, here is no available internet connection on your device, " \
+                "the link you want to access cannot be previewed. Please check " \
+                "your internet connection, then open the Smart Selector again.",
+                self
+            )
+            layout.addWidget(self.noLinkPrevErrorBar)
+        if self.isPreviewMode():
+            self.previewInfoBar = InformationBar(
+                "info",
+                "The Smart Selector is currently in Preview Mode, so many features " \
+                "are unavailable. You can only see what the Selector looks like, " \
+                "based on its current configuration.",
+                self
+            )
+            layout.addWidget(self.previewInfoBar)
 
         layout.addStretch(1)
 
@@ -214,29 +185,51 @@ class SmartSelectorGUI(FramelessWindow):
         bottomLayout = QHBoxLayout(self.bottomContainer)
         bottomLayout.setContentsMargins(40, 30, 40, 30)
         bottomLayout.setSpacing(15)
+        self.bottomBox = QWidget()
+        self.bottomBox.setContentsMargins(0, 0, 0, 0)
+        self.bottomBox.setStyleSheet("background: transparent;")
+        bottomBoxLayout = QHBoxLayout(self.bottomBox)
+        bottomBoxLayout.setContentsMargins(0, 0, 0, 0)
+        bottomBoxLayout.setSpacing(15)
         self.requestLinkEdit = LineEdit()
         self.requestLinkEdit.setText(
             self.requestURL if not self.isPreviewMode() else "Smart Selector in Preview mode"
         )
         self.requestLinkEdit.setReadOnly(True)
-        bottomLayout.addWidget(self.requestLinkEdit)
+        bottomBoxLayout.addWidget(self.requestLinkEdit)
         self.requestLinkCopy = PrimaryPushButton(FICO.COPY, "Copy link")
         self.requestLinkCopy.clicked.connect(self.copyLinkToClip)
-        bottomLayout.addWidget(self.requestLinkCopy)
+        bottomBoxLayout.addWidget(self.requestLinkCopy)
         self.restartBtn = ToolButton(segFont.fromName("UpdateRestore"))
         self.restartBtn.setToolTip("Restart the Smart Selector")
         self.restartBtn.installEventFilter(ToolTipFilter(self.restartBtn))
         self.restartBtn.clicked.connect(self.confirmRestart)
-        bottomLayout.addWidget(self.restartBtn)
-        self.managerBtn = ToolButton(smart.resourcePath("resources/icons/ico/icon.ico"))
+        bottomBoxLayout.addWidget(self.restartBtn)
+        self.managerBtn = ToolButton(segSVG.SMARTLINKER_FILL)
         self.managerBtn.setToolTip("Open the Smart Manager")
         self.managerBtn.installEventFilter(ToolTipFilter(self.managerBtn))
         self.managerBtn.clicked.connect(self.openManager)
-        bottomLayout.addWidget(self.managerBtn)
+        bottomBoxLayout.addWidget(self.managerBtn)
+        bottomLayout.addWidget(self.bottomBox)
+        if self.isLinkPreviewAvailable() and self.isConnected:
+            self.bottomBox.setVisible(False)
+            self.linkPreview = LinkPreviewCard(self)
+            self.linkPreview.setVisible(True)
+            self.linkPreview.loadUrl(self.requestURL)
+            bottomLayout.addWidget(self.linkPreview)
         
         self.titleBar.raise_()
-        self.setMinimumSize(750, 550 if not self.isPreviewMode() else 650)
-        self.resize(750, 550 if not self.isPreviewMode() else 650)
+        self.setMinimumSize(
+            800,
+            650 if self.isPreviewMode() or self.isLinkPreviewAvailable()
+            else 550
+        )
+        self.resize(
+            800,
+            650 if self.isPreviewMode() or self.isLinkPreviewAvailable()
+            else 550
+        )
+        smart.centerWindow(self)
         self.requestLinkEdit.setEnabled(not self.isPreviewMode())
         self.requestLinkCopy.setEnabled(not self.isPreviewMode())
         self.restartBtn.setEnabled(not self.isPreviewMode())
@@ -246,6 +239,7 @@ class SmartSelectorGUI(FramelessWindow):
             f"Loading {f"'[u i]{self.requestURL}[/]'" if not self.isPreviewMode() else "the Smart Selector in [smartpurple][b i]Preview Mode[/]"}...\n"
         )
         smart.selectorLog(f"Loading {f"'{self.requestURL}'" if not self.isPreviewMode() else "the Smart Selector in Preview Mode"}...")
+        if not self.isConnected: print("No internet connection...")
         if self.runningBrowsers:
             self.show()
             if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.selectorSFXPath)): smart.playSound(soundStreamer, cfg.get(cfg.selectorSFXPath), "Smart Selector launch")
@@ -263,7 +257,7 @@ class SmartSelectorGUI(FramelessWindow):
     def previewNote(self):
             """ Send notifications if the Selector is in ***Preview** mode* while an action is performed """
             smart.infoNotify("Action unavailable", "The Smart Selector is currently in Preview mode.", self)
-            RichCLI.log("[smartblue][b u]NOTE[/b u]: The Smart Selector is currently in [skyblue]Preview mode[/skyblue], the action is [#777777]unavailable[/#777777].[/]")
+            RichCLI.log("[smartblue][b u]NOTE[/b u]: [i]The Smart Selector is currently in [bold smartpurple]Preview mode[/bold smartpurple], this action is [#777777]unavailable[/#777777].[/]")
             smart.selectorLog("INFO: The Smart Selector is currently in Preview mode, the action is unavailable.")
 
     def applyTheme(self, mode):
@@ -289,6 +283,77 @@ class SmartSelectorGUI(FramelessWindow):
         self.bottomContainer.setStyleSheet(
             self.bottomDarkSheet if theme() == Theme.DARK else self.bottomLightSheet
         )
+
+    def addBrowserCards(self, cards: list["BrowserCard"]):
+        """ :SmartSelectorGUI: Add browser cards to the SmartList """
+        if smart.isMarkdownExtension(self.requestURL) and smart.getFileMimeType(self.requestURL).startswith("text"):
+            browsCard = BrowserCard(
+                smIco.renderIcon(smIco.MARKDOWN, 56),
+                "Smart DownMarker",
+                "Embedded",
+                self.requestURL,
+                self
+            )
+            self.myBrowsLayout.addWidget(browsCard)
+            cards.append(browsCard)
+        if myBrowsList["MyBrowsers"]:
+            for browser in myBrowsList["MyBrowsers"]:
+                RichCLI.print(f"Browser in queue: [u]{os.path.basename(browser["path"])}[/]\n" \
+                        "------------------------------------")
+                smart.selectorLog(f"Browser in queue: {os.path.basename(browser["path"])}")
+                if smart.isBrowserOpen(browser["path"]):
+                    self.isRunning = True
+                    self.runningBrowsers += 1
+                    smart.selectorLog(f"'{os.path.basename(browser["path"])}' is running.")
+                else:
+                    self.isRunning = False
+                    smart.selectorLog(f"'{os.path.basename(browser["path"])}' is not running.")
+                browsCard = BrowserCard(
+                    smart.getFileIcon(browser["path"]),
+                    browser["name"],
+                    "Running" if self.isRunning else "",
+                    self.requestURL,
+                    self
+                )
+                self.myBrowsLayout.addWidget(browsCard)
+                cards.append(browsCard)
+        if (cfg.get(cfg.mainBrowserPath) and cfg.get(cfg.mainBrowserIsManual)):
+            print(f"Browser in queue: [u]{os.path.basename(cfg.get(cfg.mainBrowserPath))}[/]\n" \
+                   "------------------------------------")
+            smart.selectorLog(f"Browser in queue: {os.path.basename(cfg.get(cfg.mainBrowserPath))}")
+            if smart.isBrowserOpen(cfg.get(cfg.mainBrowserPath)):
+                self.isRunning = True
+                self.runningBrowsers += 1
+            else: self.isRunning = False
+            browsCard = BrowserCard(
+                smart.getFileIcon(cfg.get(cfg.mainBrowserPath)),
+                os.path.basename(cfg.get(cfg.mainBrowserPath)),
+                "Manual - Running" if self.isRunning else "Manual",
+                self.requestURL,
+                self
+            )
+            self.myBrowsLayout.addWidget(browsCard)
+            cards.append(browsCard)
+        if cfg.get(cfg.showAddBrowserCard):
+            browsCard = BrowserCard(
+                FICO.ADD.qicon(),
+                "Add a browser", "", "",
+                self
+            )
+            self.myBrowsLayout.addWidget(browsCard)
+            cards.append(browsCard)
+
+    def isLinkPreviewAvailable(self):
+        """ Check if the link preview is available """
+        return cfg.get(cfg.showLinkPreview) and smart.isWebLink(self.requestURL)
+
+    def openNewBrowserDialog(self, parent):
+        """ Load the `Add a new browser` dialog """
+        if not self.browsAddDlg:
+            self.browsAddDlg = NewBrowserDialog(parent)
+        if self.browsAddDlg.exec():
+            print(f"New browser name: {self.browsAddDlg.nameEdit.text()}")
+            print(f"New browser path: {self.browsAddDlg.pathEdit.text()}")
 
     def otherBrowsPathChanged(self, text):
         """ Enable/disable the 'Load link' button depending on the text entry content """
@@ -428,7 +493,8 @@ class BrowserCard(ElevatedCardWidget):
                 if bool(cfg.get(cfg.closeOnBrowserSelect)): parent.close() # type: ignore
             
             elif name == "Add a browser":
-                RichCLI.print("[#777][b u]NOTE[/b u]: [i]This feature is coming soon to your Smart Selector...[/]")
+                # RichCLI.print("[#777][b u]NOTE[/b u]: [i]This feature is coming soon to your Smart Selector...[/]")
+                self.cardParent.openNewBrowserDialog(parent)
 
             elif myBrowsList["MyBrowsers"]:
                 for browser in myBrowsList["MyBrowsers"]:
@@ -611,3 +677,112 @@ class InformationBar(QWidget):
                     QColor(self.styles[self.barType]["primary"])
                 )
             )
+
+class LinkPreviewCard(SimpleCardWidget):
+    """ Class for the link preview card """
+
+    def __init__(self, parent: SmartSelectorGUI):
+        super().__init__(parent)
+        self.cardParent = parent
+        self.imageWidget = QWidget()
+        self.imageLabel = ImageLabel(self)
+        self.iconLabel = IconWidget(self)
+        self.titleLabel = SubtitleLabel(self)
+        self.contentLabel = CaptionLabel(self)
+        self.urlLabel = CaptionLabel(self)
+
+        self.scraperThread = None
+        self.onDarkScheme: str = f"border-radius: 5px; background-color: #444444;"
+        self.onLightScheme: str = f"border-radius: 5px; background-color: #CCCCCC;"
+
+        self.hBoxLayout = QHBoxLayout(self)
+        imgBox = QHBoxLayout(self.imageWidget)
+        textBox = QVBoxLayout()
+        btnBox = QVBoxLayout()
+        toolBtnBox = QHBoxLayout()
+
+        self.imageLabel.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.iconLabel.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.titleLabel.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.contentLabel.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.urlLabel.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        
+        self.setFixedHeight(120)
+        self.setClickEnabled(False)
+        self.imageWidget.setContentsMargins(0, 0, 0, 0)
+        self.imageWidget.setFixedSize(180, 100)
+        self.imageWidget.setStyleSheet(self.onDarkScheme if theme() == Theme.DARK else self.onLightScheme)
+        self.imageLabel.setFixedSize(180, 100)
+        self.imageLabel.setBorderRadius(5, 5, 5, 5)
+        self.iconLabel.setFixedSize(48, 48)
+        self.contentLabel.setWordWrap(True)
+        self.contentLabel.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.urlLabel.setTextColor(QColor("grey"), QColor("grey"))
+
+        imgBox.setContentsMargins(0, 0, 0, 0)
+        imgBox.setSpacing(0)
+        imgBox.addWidget(self.imageLabel)
+        imgBox.addWidget(self.iconLabel, 0, Qt.AlignmentFlag.AlignCenter)
+
+        textBox.setContentsMargins(0, 0, 0, 0)
+        textBox.setSpacing(2)
+        textBox.addWidget(self.titleLabel)
+        textBox.addWidget(self.contentLabel, 0, Qt.AlignmentFlag.AlignTop)
+        textBox.addWidget(self.urlLabel)
+
+        btnBox.setContentsMargins(0, 0, 0, 0)
+        btnBox.setSpacing(10)
+        btnBox.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        btnBox.addWidget(self.cardParent.requestLinkCopy)
+        btnBox.addLayout(toolBtnBox)
+
+        toolBtnBox.setContentsMargins(0, 0, 0, 0)
+        toolBtnBox.setSpacing(10)
+        toolBtnBox.addWidget(self.cardParent.restartBtn)
+        toolBtnBox.addWidget(self.cardParent.managerBtn)
+
+        self.hBoxLayout.setContentsMargins(10, 10, 20, 10)
+        self.hBoxLayout.setSpacing(15)
+        self.hBoxLayout.addWidget(self.imageWidget)
+        self.hBoxLayout.addLayout(textBox, 1)
+        self.hBoxLayout.addLayout(btnBox)
+    
+    def loadUrl(self, url: str):
+        """ :LinkPreviewCard: Load the URL whose data will be fetched. """
+        self.titleLabel.setText("Loading data...")
+        self.contentLabel.setText("Fetching information from the given link's page...")
+        self.urlLabel.setText(url)
+        self.imageLabel.clear()
+        self.imageLabel.setVisible(False)
+        self.iconLabel.setIcon(FICO.GLOBE)
+        self.iconLabel.setVisible(True)
+
+        self.scraperThread = LinkScraperThread(url)
+        self.scraperThread.dataFetched.connect(self.onDataFetched)
+        self.scraperThread.errorOccurred.connect(self.onError)
+        self.scraperThread.start()
+    
+    def onDataFetched(self, data):
+        self.titleLabel.setText(data["title"])
+        self.contentLabel.setText(data["description"])
+
+        if data["imgBytes"]:
+            pixmap = QPixmap()
+            pixmap.loadFromData(data["imgBytes"])
+
+            self.imageLabel.setImage(pixmap)
+            if pixmap.width() > pixmap.height():
+                self.imageLabel.scaledToWidth(178)
+            else:
+                self.imageLabel.scaledToHeight(98)
+            self.imageLabel.setVisible(True)
+            self.iconLabel.setVisible(False)
+    
+    def onError(self, message: str):
+        self.titleLabel.setText("Failed fetching information...")
+        self.contentLabel.setText("An error occured while attempting to fetch metadata from the given link...")
+        smart.errorNotify(
+            "Oops! Something went wrong...",
+            f"An error occured while attempting to fetch metadata from the given link:\n{message}",
+            self.cardParent
+        )

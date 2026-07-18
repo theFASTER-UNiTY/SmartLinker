@@ -228,6 +228,11 @@ class ArgumentsProcessor:
         smartBrowser = self.args.smart_list
         externalBrowser = self.args.external_browser
 
+        if url.lower() in ["as-preview", "/aspreview"]:
+            if smartBrowser or externalBrowser:
+                print(f"{Fore.RED}[SmartCommands - Error] The arguments '--smart-list' and '--external-browser' cannot be used for the Preview Mode.{Style.RESET_ALL}")
+            return
+
         if smartBrowser:
             browserPath = None
             try: browsers = smart.loadBrowsers()["MyBrowsers"]

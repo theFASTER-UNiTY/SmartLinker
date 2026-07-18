@@ -42,8 +42,8 @@ from qfluentwidgets import (
     IndeterminateProgressRing, IndicatorPosition, InfoBadgePosition, InfoBar, InfoBarPosition, LargeTitleLabel, LineEdit, ListWidget, MessageBox,
     MessageBoxBase, NavigationItemPosition, OptionsConfigItem, OptionsSettingCard, OptionsValidator, PrimaryPushButton, PrimaryPushSettingCard,
     ProgressBar, ProgressRing, PushButton, PushSettingCard, QConfig, RangeConfigItem, RangeValidator, RoundMenu, ScrollBar, SearchLineEdit,
-    SimpleCardWidget, SimpleExpandGroupSettingCard, SingleDirectionScrollArea, SpinBox, SplashScreen, StrongBodyLabel, SubtitleLabel, SwitchButton, SwitchSettingCard,
-    TableWidget, TextEdit, Theme, TitleLabel, ToolButton, ToolTipFilter, ToolTipPosition, TransparentDropDownPushButton,
+    SimpleCardWidget, SimpleExpandGroupSettingCard, SingleDirectionScrollArea, SpinBox, SplashScreen, StateToolTip, StrongBodyLabel, SubtitleLabel,
+    SwitchButton, SwitchSettingCard, TableWidget, TextEdit, Theme, TitleLabel, ToolButton, ToolTipFilter, ToolTipPosition, TransparentDropDownPushButton,
     TransparentToggleToolButton, TransparentToolButton
 )
 from qframelesswindow import FramelessWindow, StandardTitleBar, TitleBar
@@ -435,19 +435,7 @@ class SmartLogic:
         """
         return bool(darkdetect.isDark())
 
-    def openURL(self, requestURL: str):
-        """ SmartUtils
-        ==========
-        Specified URL loader
-        
-        Parameters
-        ----------
-        requestURL: string
-            The URL you want a browser to load
-        """
-        webbrowser.open(requestURL)
-
-    def successNotify(self, title: str, content: typing.Optional[str], parent = None):
+    def successNotify(self, title: str, content: str = "", parent = None):
         """ SmartUtils
         ==========
         Success notification bar
@@ -471,7 +459,7 @@ class SmartLogic:
         if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.successSFXPath)):
             self.playSound(soundStreamer, cfg.get(cfg.successSFXPath), "success notification")
 
-    def warningNotify(self, title: str, content: typing.Optional[str], parent = None):
+    def warningNotify(self, title: str, content: str = "", parent = None):
         """ SmartUtils
         ==========
         Warning notification bar
@@ -495,7 +483,7 @@ class SmartLogic:
         if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.warningSFXPath)):
             self.playSound(soundStreamer, cfg.get(cfg.warningSFXPath), "warning notification")
 
-    def errorNotify(self, title: str, content: typing.Optional[str], parent = None):  
+    def errorNotify(self, title: str, content: str = "", parent = None, canCopy: bool = True):
         """ SmartUtils
         ==========
         Error notification bar
@@ -506,8 +494,15 @@ class SmartLogic:
             The title of the error notification bar
         content: string
             The message you want the error notification bar to display (optional)
+        parent
+            The parent widget
+        canCopy: boolean
+            Whether the error can be copied to the clipboard
         """
-        InfoBar.error(
+        copyBtn = PushButton(FICO.COPY, "Copy error")
+        copyBtn.clicked.connect(lambda: self.copyToClipboard(content))
+
+        bar = InfoBar.error(
             title = title,
             content = content,
             orient = Qt.Orientation.Vertical,
@@ -515,11 +510,13 @@ class SmartLogic:
             position = InfoBarPosition.BOTTOM_RIGHT,
             duration = -1,
             parent = parent
-        ).show()
+        )
+        if canCopy: bar.addWidget(copyBtn)
+        bar.show()
         if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.errorSFXPath)):
             self.playSound(soundStreamer, cfg.get(cfg.errorSFXPath), "error notification")
 
-    def infoNotify(self, title: str, content: typing.Optional[str], parent = None): 
+    def infoNotify(self, title: str, content: str = "", parent = None): 
         """ SmartUtils
         ==========
         Informative notification bar
@@ -560,7 +557,7 @@ class SmartLogic:
         if filePath: return QFileIconProvider().icon(QFileInfo(filePath))
         return QIcon()
 
-    def browseFileDialog(self, parent: typing.Optional[QWidget], dialogTitle: typing.Optional[str], mainDir: typing.Optional[str], typeFilter: typing.Optional[str]) -> str:
+    def browseFileDialog(self, parent: typing.Optional[QWidget], dialogTitle: str = "", mainDir: str = "", typeFilter: str = "") -> str:
         """ SmartUtils
         ==========
         Specified type file provider through file picker dialog
@@ -573,7 +570,7 @@ class SmartLogic:
             The file picker dialog title (optional but preferred)
         mainDir: string
             The main directory you want the dialog to open into (optional)
-        typeFilter: string | list[string]
+        typeFilter: string
             All the different file types you want to filter in the dialog (optional)
         
         Returns
@@ -590,7 +587,7 @@ class SmartLogic:
         if filePath: return filePath
         return ""
 
-    def saveFileDialog(self, parent: typing.Optional[QWidget], dialogTitle: typing.Optional[str], mainDir: typing.Optional[str], typeFilter: typing.Optional[str]) -> str:
+    def saveFileDialog(self, parent: typing.Optional[QWidget], dialogTitle: str = "", mainDir: str = "", typeFilter: str = "") -> str:
         """ SmartUtils
         ==========
         Specified type file saver through file picker dialog
@@ -603,7 +600,7 @@ class SmartLogic:
             The file picker dialog title (optional but preferred)
         mainDir: string
             The main directory you want the dialog to open into (optional)
-        typeFilter: string | list[string]
+        typeFilter: string
             All the different file types you want to filter in the dialog (optional)
         
         Returns
@@ -619,6 +616,29 @@ class SmartLogic:
         )
         if filePath: return filePath
         return ""
+
+    def copyToClipboard(self, text: str):
+        """ SmartUtils
+        ==========
+        Copy the forwarded link to the system's clipboard
+
+        Parameters
+        ----------
+        text: string
+            The link you want to copy
+        """
+        app = QApplication.instance()
+        if app is None:
+            app = QApplication(sys.argv)
+
+        if isinstance(app, QApplication):
+            clipboard = app.clipboard()
+
+        if clipboard:
+            clipboard.setText(text)
+            print(f"Copied to clipboard: {Fore.BLUE}'{clipboard.text()}'{Style.RESET_ALL}")
+        else:
+            self.copyToClipboard(text)
 
     def isSystemDefault(self, appID: str) -> bool:
         """ SmartUtils
@@ -818,6 +838,30 @@ class SmartLogic:
                 item.widget().show()
             elif item.layout():
                 self.showLayoutWidgets(item.layout())
+
+    def emptyLayout(self, layout: QLayout, childLayout: bool = False):
+        """
+        SmartUtils
+        ==========
+        Layout clearing (child widget removing) tool
+
+        Parameters
+        ----------
+        layout: QLayout
+            The layout you want to clear
+        childLayout: boolean
+            Whether to clean the child layout(s) of the current one
+        """
+        while layout.count():
+            item = layout.takeAt(0)
+            if item is not None:
+                widget = item.widget()
+                subLayout = item.layout()
+                if widget is not None:
+                    widget.setParent(None)
+                    layout.removeWidget(widget)
+                if childLayout and subLayout is not None:
+                    self.emptyLayout(subLayout)
 
     def getLatestVersionTagLocal(self) -> str:
         """ SmartUtils
@@ -1340,6 +1384,37 @@ class ThemeController(QObject):
     def _onSystemThemeChanged(self):
         self.themeChanged.emit("Auto")
 
+class BrowserScanWorker(QObject):
+    """ SmartUtils
+    ==========
+    SmartLinker's browser scanning processor
+    """
+    finished = pyqtSignal(list)
+    error = pyqtSignal(str)
+
+    def __init__(self, requestURL: str):
+        super().__init__()
+        self.requestURL = requestURL
+    
+    def run(self):
+        try:
+            results = []
+            myBrowsers = smart.loadBrowsers()
+            if smart.isMarkdownExtension(self.requestURL) and smart.getFileMimeType(self.requestURL).startswith("text"):
+                results.append({"type": "markdown", "name": "Smart DownMarker", "path": "", "status": "Embedded"})
+            if myBrowsers["MyBrowsers"]:
+                for browser in myBrowsers["MyBrowsers"]:
+                    isRunning = smart.isBrowserOpen(browser["path"])
+                    results.append({"type": "browser", "name": browser["name"], "path": browser["path"], "status": "Running" if isRunning else ""})
+            if cfg.get(cfg.mainBrowserPath) and cfg.get(cfg.mainBrowserIsManual):
+                isRunning = smart.isBrowserOpen(cfg.get(cfg.mainBrowserPath))
+                results.append({"type": "browser", "name": os.path.basename(cfg.get(cfg.mainBrowserPath)), "path": cfg.get(cfg.mainBrowserPath), "status": "Manual - Running" if isRunning else "Manual"})
+            if cfg.get(cfg.showAddBrowserCard):
+                results.append({"type": "add", "name": "Add a browser", "path": "", "status": ""})
+            self.finished.emit(results)
+        except Exception as e:
+            self.error.emit(str(e))
+
 class DownloadWorker(QObject):
     """ SmartUtils
     ==========
@@ -1682,7 +1757,7 @@ class LinkScraperThread(QThread):
 
         try:
             # Fetching the webpage
-            response = requests.get(self.url, headers=headers, timeout=5)
+            response = requests.get(self.url, headers=headers, timeout=10)
             response.raise_for_status()
             soup = BeautifulSoup(response.text, "html.parser")
 

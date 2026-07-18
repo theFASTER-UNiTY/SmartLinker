@@ -41,7 +41,7 @@ class MarkdownViewer(QWidget):
         mainTitleLine.addWidget(self.title)
         
         self.subtitle = CaptionLabel(self.baseSub)
-        self.subtitle.setStyleSheet("color: gray")
+        self.subtitle.setTextColor(QColor("gray"), QColor("gray"))
         mainTitleLine.addWidget(self.subtitle)
         
         mainTopLine.addStretch()

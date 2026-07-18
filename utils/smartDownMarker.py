@@ -1917,7 +1917,7 @@ class HomePageConfigGroup(ExpandGroupSettingCard):
             f"Current source path: {markCfg.get(markCfg.homepageSourcePath).replace('/', '\\')}{" (Inaccessible)" if not os.path.exists(markCfg.get(markCfg.homepageSourcePath)) else ""}"
             if markCfg.get(markCfg.homepageSourcePath) else "No path has been defined yet"
         )
-        self.storagePathSublabel.setStyleSheet("color: gray;")
+        self.storagePathSublabel.setTextColor(QColor("gray"), QColor("gray"))
         self.storagePathSublabel.setVisible(bool(markCfg.get(markCfg.homepageSourcePath)) and markCfg.get(markCfg.homepageSourcePath) != "Default")
         storagePathBox.addWidget(self.storagePathSublabel)
         self.storageSelectButton = PushButton(FICO.FOLDER, "Browse")

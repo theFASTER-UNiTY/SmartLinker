@@ -51,20 +51,24 @@ class SmartSelectorGUI(FramelessWindow):
         self.setTitleBar(CustomTitleBar(self))
         self.setWindowIcon(QIcon(smart.resourcePath("resources/icons/ico/icon.ico")))
         self.setWindowTitle(f"Smart Selector | {SmartLinkerName}")
-        self.setStyleSheet(
+        """ self.setStyleSheet(
             f"{"background: white;" if theme() == Theme.LIGHT else ""} " \
              "font-family: 'Segoe UI Variable Display', 'Segoe UI', sans-serif;"
-        )
+        ) """
         
         self.themeCtrl = ThemeController(self)
         self.titleHeight = self.titleBar.height()
         self.isConnected: bool = smart.checkConnectivity()
         self.lightSheetOnDark: str = "SingleDirectionScrollArea { " \
-            "background-color: rgba(242, 242, 242, 0.05); border: 1px solid rgba(242, 242, 242, 0.25) }"
+            "background-color: rgba(242, 242, 242, 0.15); border: 1px solid rgba(242, 242, 242, 0.25) }"
         self.darkSheetOnLight: str = "SingleDirectionScrollArea { " \
-            "background-color: rgba(32, 32, 32, 0.05); border: 1px solid rgba(32, 32, 32, 0.25) }"
+            "background-color: rgba(32, 32, 32, 0.15); border: 1px solid rgba(32, 32, 32, 0.25) }"
         self.runningBrowsers: int = 0
         self.browsCards: list[BrowserCard] = []
+        self.browsScanWorker = None
+        self.browsScanThread = None
+        self.browsRefreshStatus = None
+        self.newBrowserName: str = ""
         self.browsAddDlg = None
         self.bottomLightSheet: str = "background-color: #F3F3F3; border: 1px solid #E5E5E5"
         self.bottomDarkSheet: str = "background-color: #161616; border: 1px solid #000000" # original: #202020, #1D1D1D
@@ -121,7 +125,7 @@ class SmartSelectorGUI(FramelessWindow):
                "Scanning running processes...\n" \
                "=============================\n")
         smart.selectorLog("Scanning running browsers...")
-        self.addBrowserCards(self.browsCards)
+        self.loadBrowserCards(self.browsCards)
         if not myBrowsList["MyBrowsers"] and not cfg.get(cfg.mainBrowserPath) and not cfg.get(cfg.showAddBrowserCard):
             self.myBrowsLayout.addWidget(self.myBrowsEmptyMsg, 0, Qt.AlignmentFlag.AlignCenter)
         RichCLI.print("-----------------------------------------------------\n" \
@@ -157,7 +161,7 @@ class SmartSelectorGUI(FramelessWindow):
         self.otherBrowsLoad.clicked.connect(self.loadToOtherBrowser)
         otherBrowserLine.addWidget(self.otherBrowsLoad)
         layout.addSpacing(10)
-        if self.isLinkPreviewAvailable() and not self.isConnected:
+        if not self.isPreviewMode() and self.isLinkPreviewAvailable() and not self.isConnected:
             self.noLinkPrevErrorBar = InformationBar(
                 "warning",
                 "Unfortunately, here is no available internet connection on your device, " \
@@ -187,7 +191,7 @@ class SmartSelectorGUI(FramelessWindow):
         bottomLayout.setSpacing(15)
         self.bottomBox = QWidget()
         self.bottomBox.setContentsMargins(0, 0, 0, 0)
-        self.bottomBox.setStyleSheet("background: transparent;")
+        self.bottomBox.setStyleSheet("background: transparent; border: none;")
         bottomBoxLayout = QHBoxLayout(self.bottomBox)
         bottomBoxLayout.setContentsMargins(0, 0, 0, 0)
         bottomBoxLayout.setSpacing(15)
@@ -224,11 +228,6 @@ class SmartSelectorGUI(FramelessWindow):
             650 if self.isPreviewMode() or self.isLinkPreviewAvailable()
             else 550
         )
-        self.resize(
-            800,
-            650 if self.isPreviewMode() or self.isLinkPreviewAvailable()
-            else 550
-        )
         smart.centerWindow(self)
         self.requestLinkEdit.setEnabled(not self.isPreviewMode())
         self.requestLinkCopy.setEnabled(not self.isPreviewMode())
@@ -252,7 +251,7 @@ class SmartSelectorGUI(FramelessWindow):
 
     def isPreviewMode(self) -> bool:
         """ Check if the Selector is in ***Preview** mode* """
-        return self.requestURL == "/AsPreview"
+        return self.requestURL.lower() in ["/aspreview", "as-preview"]
 
     def previewNote(self):
             """ Send notifications if the Selector is in ***Preview** mode* while an action is performed """
@@ -273,7 +272,7 @@ class SmartSelectorGUI(FramelessWindow):
         self.titleBar.closeBtn.setNormalColor(QColor("white" if theme() == Theme.DARK else "black"))
 
         self.setStyleSheet(
-            f"{"background: white;" if theme() == Theme.LIGHT else ""} " \
+            f"{"background: white; " if theme() == Theme.LIGHT else ""}" \
              "font-family: 'Segoe UI Variable Display', 'Segoe UI', sans-serif;"
         )
         self.mainScroll.enableTransparentBackground()
@@ -283,9 +282,10 @@ class SmartSelectorGUI(FramelessWindow):
         self.bottomContainer.setStyleSheet(
             self.bottomDarkSheet if theme() == Theme.DARK else self.bottomLightSheet
         )
+        self.bottomBox.setStyleSheet("background: transparent; border: none;")
 
-    def addBrowserCards(self, cards: list["BrowserCard"]):
-        """ :SmartSelectorGUI: Add browser cards to the SmartList """
+    def loadBrowserCards(self, cards: list["BrowserCard"]):
+        """ Add browser cards to the SmartList """
         if smart.isMarkdownExtension(self.requestURL) and smart.getFileMimeType(self.requestURL).startswith("text"):
             browsCard = BrowserCard(
                 smIco.renderIcon(smIco.MARKDOWN, 56),
@@ -296,6 +296,7 @@ class SmartSelectorGUI(FramelessWindow):
             )
             self.myBrowsLayout.addWidget(browsCard)
             cards.append(browsCard)
+        myBrowsList = smart.loadBrowsers()
         if myBrowsList["MyBrowsers"]:
             for browser in myBrowsList["MyBrowsers"]:
                 RichCLI.print(f"Browser in queue: [u]{os.path.basename(browser["path"])}[/]\n" \
@@ -343,17 +344,117 @@ class SmartSelectorGUI(FramelessWindow):
             self.myBrowsLayout.addWidget(browsCard)
             cards.append(browsCard)
 
+    def removeBrowserCards(self, cards: list["BrowserCard"]):
+        """ Remove the browser cards """
+        smart.emptyLayout(self.myBrowsLayout)
+        cards.clear()
+        RichCLI.log("[green][b u]SUCCESS[/b u]: All the existing browser cards have been removed.[/]")
+        smart.selectorLog("SUCCESS: All the browsers have been successfully removed!")
+
+    def addNewBrowserToList(self, name: str, path: str, parent):
+        """ :MyBrowsersInterface: Load the new browser adding function from the `Add a new browser` dialog
+        
+        Parameters
+        ----------
+        name: string
+            The name of the provided browser
+        path: string
+            The complete path of the provided browser executable
+        parent
+            The parent widget
+        """
+        RichCLI.log("OPERATION: Adding a new browser to the SmartList...\n" \
+              f"Browser name: [italic smartblue]{name}[/]\nBrowser complete path: [italic underline smartpurple]{path}[/]")
+        smart.selectorLog(f"Adding a new browser to the SmartList...\nBrowser name: {name}\nBrowser path: {path}")
+        
+        if self.browsRefreshStatus:
+            self.browsRefreshStatus = None
+        self.browsRefreshStatus = StateToolTip(
+            "Please wait...",
+           f'Your new browser, "{name}" is being added to the SmartList...',
+           self
+        )
+        self.browsRefreshStatus.move(
+            self.frameGeometry().width() - self.browsRefreshStatus.width() - 10,
+            self.titleBar.height() + 10
+        )
+        self.browsRefreshStatus.show()
+
+        for browser in myBrowsList["MyBrowsers"]:
+            if browser["exec"] == os.path.basename(path):
+                smart.warningNotify("Warning, be careful!", f"The new browser has the same executable name as {browser["name"]}.\nIt is not really an issue, but it might be confusing for {SmartLinkerName}...", parent)
+                break
+        myBrowsList["MyBrowsers"].append({
+            "name": name,
+            "path": path,
+            "exec": os.path.basename(path)
+        })
+        self.newBrowserName = name
+        
+        smart.writeBrowsers(myBrowsList)
+        self.refreshBrowsers()
+        # smart.successNotify("Adding complete!", f"{name} has been succesfully added to your SmartList!", parent)
+        RichCLI.log(f"[green][b u]SUCCESS[/b u]: '[b i]{name}[/b i]' has been successfully added to your SmartList![/]")
+        smart.managerLog(f'SUCCESS: "{name}" has been successfully added to the SmartList.')
+
+    def refreshBrowsers(self):
+        """ Handle the SmartList refresh process """
+        self.removeBrowserCards(self.browsCards)
+
+        self.browsScanThread = QThread()
+        self.browsScanWorker = BrowserScanWorker(self.requestURL)
+        self.browsScanWorker.moveToThread(self.browsScanThread)
+        self.browsScanThread.started.connect(self.browsScanWorker.run)
+        self.browsScanWorker.finished.connect(lambda results: self.onBrowserScanFinished(results, self.browsCards))
+        self.browsScanWorker.error.connect(self.onBrowserScanError)
+        self.browsScanWorker.finished.connect(self.browsScanThread.quit)
+        self.browsScanWorker.finished.connect(self.browsScanWorker.deleteLater)
+        self.browsScanThread.finished.connect(self.browsScanThread.deleteLater)
+        self.browsScanThread.start()
+        
+    def onBrowserScanFinished(self, results: list, cards: list["BrowserCard"]):
+        """ Handle the SmartList refresh process once the scan is finished """
+        icon: QIcon | str = ""
+        requestURL: str = ""
+
+        for item in results:
+            if item["type"] == "markdown":
+                icon = smIco.renderIcon(smIco.MARKDOWN, 56)
+                requestURL = self.requestURL
+            elif item["type"] == "browser":
+                icon = smart.getFileIcon(item["path"])
+                requestURL = self.requestURL
+            elif item["type"] == "add":
+                icon = FICO.ADD.qicon()
+                requestURL = ""
+            browsCard = BrowserCard(icon, item["name"], item["status"], requestURL, self)
+            self.myBrowsLayout.addWidget(browsCard)
+            cards.append(browsCard)
+        
+        if self.browsRefreshStatus:
+            self.browsRefreshStatus.setTitle("Process complete!")
+            self.browsRefreshStatus.setContent(f"{self.newBrowserName} has been successfully added to your SmartList!")
+            self.browsRefreshStatus.setState(True)
+            self.browsRefreshStatus = None
+
+    def onBrowserScanError(self, message: str):
+        """ Handle the SmartList refresh process error """
+        RichCLI.log(f"[red][b u]ERROR[/b u]: An error occurred while refreshing the SmartList: [i]{message}[/]", log_locals=True)
+        smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to refresh the SmartList:\n{message}", self)
+
     def isLinkPreviewAvailable(self):
         """ Check if the link preview is available """
         return cfg.get(cfg.showLinkPreview) and smart.isWebLink(self.requestURL)
 
     def openNewBrowserDialog(self, parent):
         """ Load the `Add a new browser` dialog """
-        if not self.browsAddDlg:
-            self.browsAddDlg = NewBrowserDialog(parent)
+        if self.browsAddDlg:
+            self.browsAddDlg = None
+        self.browsAddDlg = NewBrowserDialog(parent)
         if self.browsAddDlg.exec():
             print(f"New browser name: {self.browsAddDlg.nameEdit.text()}")
             print(f"New browser path: {self.browsAddDlg.pathEdit.text()}")
+            self.addNewBrowserToList(self.browsAddDlg.nameEdit.text(), self.browsAddDlg.pathEdit.text(), parent)
 
     def otherBrowsPathChanged(self, text):
         """ Enable/disable the 'Load link' button depending on the text entry content """
@@ -395,16 +496,9 @@ class SmartSelectorGUI(FramelessWindow):
     def copyLinkToClip(self):
         """ Copy the forwarded link to the system's clipboard """
         if not self.isPreviewMode():
-            app = QApplication.instance()
-            if app is None: app = QApplication(sys.argv)
-            if type(app) == QApplication: clipboard = app.clipboard()
-            if clipboard:
-                clipboard.setText(self.requestLinkEdit.text())
-                print(f"Copied to clipboard: {Fore.BLUE}'{clipboard.text()}'{Style.RESET_ALL}")
-                smart.selectorLog(f"INFO: Copied link to clipboard: {clipboard.text()}")
-                smart.successNotify("Copying complete!", "The forwarded link has been successfully copied to the clipboard!", self)
-            else: self.copyLinkToClip()
-        
+            smart.copyToClipboard(self.requestLinkEdit.text())
+            smart.selectorLog(f"INFO: Copied link to clipboard: {self.requestLinkEdit.text()}")
+            smart.successNotify("Copying complete!", "The forwarded link has been successfully copied to the clipboard!", self)
         else: self.previewNote()
 
     def openManager(self):
@@ -451,22 +545,27 @@ class BrowserCard(ElevatedCardWidget):
         self.iconWidget = IconWidget(icon, self)
         self.label = BodyLabel(name, self)
 
-        if self.statusLabel.text() == "Running":
-            self.statusLabel.setStyleSheet(
-                "padding: 3px; " \
-               f"color: {themeColor().name(QColor.NameFormat.HexRgb)}; " \
-               f"background-color: rgba({smart.convertToRGB(themeColor())}, 0.25); "
-               f"border: 1px solid {themeColor().name(QColor.NameFormat.HexRgb)}; " \
-                "border-radius: 10px;"
-            )
-        elif self.statusLabel.text() == "Embedded":
-            self.statusLabel.setStyleSheet(
-                "padding: 3px; " \
-               f"color: gray; " \
-               f"background-color: rgba({smart.convertToRGB(QColor("gray"))}, 0.25); "
-               f"border: 1px solid gray; " \
-                "border-radius: 10px;"
-            )
+        self.statusStyles = {
+            "Manual": {
+                "color": "#793bcc;",
+                "background-color": f"rgba({smart.convertToRGB('#793BCC')}, 0.25);"
+            },
+            "Running": {
+                "color": f"{themeColor().name(QColor.NameFormat.HexRgb)};",
+                "background-color": f"rgba({smart.convertToRGB(themeColor())}, 0.25);"
+            },
+            "Manual - Running": {
+                "color": f"{themeColor().name(QColor.NameFormat.HexRgb)};",
+                "background-color": f"rgba({smart.convertToRGB(themeColor())}, 0.25);"
+            },
+            "Embedded": {
+                "color": "gray;",
+                "background-color": f"rgba({smart.convertToRGB('gray')}, 0.25);"
+            }
+        }
+
+        if status:
+            self.styleStatus(status)
         self.iconWidget.setFixedSize(56, 56)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.clicked.connect(lambda: self.cardSelect(name, reqURL, parent))
@@ -480,6 +579,15 @@ class BrowserCard(ElevatedCardWidget):
         self.vBoxLayout.addWidget(self.label, 0, Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignBottom)
 
         self.setFixedSize(168, 176)
+
+    def styleStatus(self, name: str):
+        self.statusLabel.setStyleSheet(
+            "padding: 3px 5px; "
+           f"{f"color: {self.statusStyles[name]["color"]} " if name else ""}"
+           f"{f"background-color: {self.statusStyles[name]["background-color"]} " if name else ""}"
+           f"{f"border: 1px solid {self.statusStyles[name]["color"]} " if name else ""}"
+            "border-radius: 5px;"
+        )
 
     def cardSelect(self, name, link, parent):
         if not self.cardParent.isPreviewMode():
@@ -717,7 +825,7 @@ class LinkPreviewCard(SimpleCardWidget):
         self.iconLabel.setFixedSize(48, 48)
         self.contentLabel.setWordWrap(True)
         self.contentLabel.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.urlLabel.setTextColor(QColor("grey"), QColor("grey"))
+        self.urlLabel.setTextColor(QColor("gray"), QColor("gray"))
 
         imgBox.setContentsMargins(0, 0, 0, 0)
         imgBox.setSpacing(0)

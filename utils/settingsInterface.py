@@ -793,7 +793,5 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
             smart.successNotify("Removal complete!", f"The {soundType} sound has been successfully removed!", parent)
         else: pass
 
-# Add in Smart Selector section:
-## Toggle the link preview style
 # Add Markdown Viewer section with settings:
 ## CSS & Homepage properties (will use MarkdownConfig)

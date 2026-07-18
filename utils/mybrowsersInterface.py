@@ -17,7 +17,7 @@ class MyBrowsersInterface(QWidget):
         self.loadedBrowser: str = ""
         self.loadedLink: str = ""
         self.loadedFromList: bool = True
-        self.myBrowsCards = []
+        self.myBrowsCards: list[MyBrowsersCard] = []
         self.searchComp = QCompleter()
         self.searchModel = QStandardItemModel()
         self.searchResultDlg = None
@@ -200,13 +200,8 @@ class MyBrowsersInterface(QWidget):
         """
         print("Refreshing the SmartList...")
         smart.managerLog("Refreshing the SmartList...")
-        while self.mybrowsLayout.count():
-            item = self.mybrowsLayout.takeAt(0)
-            if item is not None:
-                widget = item.widget()
-                if widget is not None:
-                    widget.setParent(None)
-                    self.mybrowsLayout.removeWidget(widget)
+        smart.emptyLayout(self.mybrowsLayout)
+        self.myBrowsCards.clear()
         print(f"{Fore.GREEN}All the browsers have been successfully removed!{Style.RESET_ALL}")
         smart.managerLog("SUCCESS: All the browsers have been successfully removed!")
         self.loadBrowsers(parent)
@@ -287,8 +282,9 @@ class MyBrowsersInterface(QWidget):
         parent
             The parent of the dialog
         """
-        if not self.browsAddDlg:
-            self.browsAddDlg = NewBrowserDialog(parent)
+        if self.browsAddDlg:
+            self.browsAddDlg = None
+        self.browsAddDlg = NewBrowserDialog(parent)
         if self.browsAddDlg.exec():
             print(f"New browser name: {self.browsAddDlg.nameEdit.text()}")
             print(f"New browser path: {self.browsAddDlg.pathEdit.text()}")
@@ -306,7 +302,8 @@ class MyBrowsersInterface(QWidget):
         parent
             The parent of the dialog
         """
-        if self.browsEditDlg: self.browsEditDlg = None
+        if self.browsEditDlg:
+            self.browsEditDlg = None
         self.browsEditDlg = EditBrowserDialog(path, name, parent)
         if self.browsEditDlg.exec():
             print(f"{Fore.GREEN}The changes have been successfully applied!{Style.RESET_ALL}\n" \
@@ -327,7 +324,8 @@ class MyBrowsersInterface(QWidget):
         parent
             The parent of the dialog
         """
-        if self.deleteDlg: self.deleteDlg = None
+        if self.deleteDlg:
+            self.deleteDlg = None
         self.deleteDlg = MessageBox(
             f"Delete {name}",
             f"Do you really want to remove {name} from your SmartList?\n" \
@@ -412,7 +410,8 @@ class MyBrowsersInterface(QWidget):
         myBrowsList = smart.loadBrowsers()
         comboBrowsers: list[str] = []
         
-        if self.loadLinkDlg: self.loadLinkDlg = None
+        if self.loadLinkDlg:
+            self.loadLinkDlg = None
         self.loadLinkDlg = LoadLinkDialog(parent)
         
         for item in self.loadLinkDlg.browserCombo.items:
@@ -1004,7 +1003,7 @@ class SearchResultDialog(MessageBoxBase):
         buttonLayout.setSpacing(10)
         self.browsIcon.setFixedSize(96, 96)
         self.browsIcon.setIcon(smart.getFileIcon(path))
-        self.browsSubtitle.setTextColor(QColor("grey"))
+        self.browsSubtitle.setTextColor(QColor("gray"), QColor("gray"))
 
         self.moreBtn.addHiddenActions([
             Action(FICO.FOLDER, "Open location", triggered=lambda checked, parent = parent: self.openParentDirectory(parent)),

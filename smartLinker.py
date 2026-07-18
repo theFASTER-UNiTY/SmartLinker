@@ -197,7 +197,6 @@ class SmartLinkerGUI(FluentWindow):
             self.mybrowsInterface.darkSheetOnLight if theme() == Theme.LIGHT
             else self.mybrowsInterface.lightSheetOnDark
         )
-        self.markdownViewer.subtitle.setStyleSheet("color: gray;")
         self.markdownViewer.mdContainer.setStyleSheet(f"""
             QWidget#Container {{
                 background: transparent;
@@ -207,7 +206,6 @@ class SmartLinkerGUI(FluentWindow):
                  if bool(cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners)) else ""}
             }}
         """)
-        self.aboutInterface.aboutCaption.setStyleSheet("color: gray;")
         self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{ background-color: rgba({smart.convertToRGB(themeColor())}, 0.25); }}")
         self.markdownViewer.updateSnack.setStyleSheet(f"#MDSnackBase {{ background-color: rgba({smart.convertToRGB(themeColor())}, 0.25); }}")
         self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{ background-color: rgba({smart.convertToRGB(themeColor())}, 0.25); }}")
@@ -324,7 +322,7 @@ class SmartLinkerGUI(FluentWindow):
         self.aboutInterface.aboutVersion.setEnabled(True)
         print(f"{Fore.RED}An error occurred while checking for updates: {message}{Style.RESET_ALL}")
         smart.managerLog(f"ERROR: Failed while checking for updates: {message}")
-        smart.errorNotify("Oops! Something went wrong...", f"An error occurred while checking for updates: {message}", self)
+        smart.errorNotify("Oops! Something went wrong...", f"An error occurred while checking for updates:\n{message}", self)
 
     def confirmDeleteDialog(self, name: str, parent):
         """ Open a confirmation dialog to remove a browser from the SmartList """
@@ -388,11 +386,9 @@ class SmartLinkerGUI(FluentWindow):
 
     def browserSelect(self, url: str, title: str, linkType: str, icon: QIcon | FICO | FluentFontIconBase, isDownload: bool, parent):
         """ Open a dialog to select the browser you would want to load a link into """
-        if not self.browserDlg:
-            self.browserDlg = BrowserSelectDialog(f"Open {title} with...", icon, isDownload, parent)
-        else:
+        if self.browserDlg:
             self.browserDlg = None
-            self.browserDlg = BrowserSelectDialog(f"Open {title} with...", icon, isDownload, parent)
+        self.browserDlg = BrowserSelectDialog(f"Open {title} with...", icon, isDownload, parent)
         self.browserDlg.yesButton.setText(f"Open {title}")
         self.browserDlg.downloadButton.clicked.connect(lambda checked: (
             self.browserDlg.close() if self.browserDlg else None,

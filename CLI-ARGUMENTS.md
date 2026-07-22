@@ -65,6 +65,21 @@ Well... Not really, because this simple method ***still*** uses the Smart Select
 
     > [!Warning]
     > You must enter the **absolute path** (*the path should start with a drive letter, like `C:\`*) to the browser you would want to load a URL into. Otherwise, SmartLinker will look into **its own directory** and won't find it. Also, the command does not support shortcuts yet, but it is already planned for the future updates.
+  
+- `as-preview` (or `/AsPreview`) is the command you can use to open the Smart Selector in **Preview Mode**, a featureless mode that only displays the Smart Selector's interface, for you to see what it looks like based on your configuration (*for `3.0.0` and above*).
+
+  For example:
+  ```powershell
+  SmartLinker.exe load as-preview
+  ```
+  or simply
+  ```powershell
+  SmartLinker.exe /AsPreview
+  ```
+  will open the Smart Selector in **Preview Mode**.
+
+  > [!Warning]
+  > The command does not support the `--smart-list` and `--external-browser` arguments, since they are not applicable in Preview Mode.
 
 ## -II- `core` or *"Configure SmartLinker like a pro"*
 

@@ -15,7 +15,7 @@ class AboutInterface(QWidget):
 
         mainAboutLayout = QVBoxLayout(self)
         mainAboutLayout.setContentsMargins(0, 20, 0, 0)
-        mainAboutLayout.setSpacing(0)
+        mainAboutLayout.setSpacing(10)
         mainTitleLine = QHBoxLayout()
         mainTitleLine.setContentsMargins(40, 0, 0, 0)
         mainAboutLayout.addLayout(mainTitleLine)
@@ -36,7 +36,7 @@ class AboutInterface(QWidget):
 
         aboutMainBox = QVBoxLayout()
         layout.addLayout(aboutMainBox)
-        aboutLogo = ImageLabel(smart.resourcePath("resources/icons/png/icon_shadow.png"))
+        aboutLogo = ImageLabel("C:\\Users\\#theFASTER\\Downloads\\wan2.7-image-pro_a_A_highly_detailed,_p..png")
         aboutLogo.scaledToWidth(200)
         aboutMainBox.addWidget(aboutLogo, 0, Qt.AlignmentFlag.AlignCenter)
         aboutTextBox = QVBoxLayout()
@@ -268,7 +268,7 @@ class AboutAppGroup(ExpandGroupSettingCard):
         super().__init__(
             FICO.QUESTION,
             "What exactly is SmartLinker?",
-            "If you ever want to know about SmartLinker itself, just check out our little resume."
+            # "If you ever want to know about SmartLinker itself, just check out our little resume."
         )
 
         # Information
@@ -285,9 +285,9 @@ class AboutAppGroup(ExpandGroupSettingCard):
         self.viewLayout.setContentsMargins(0, 0, 0, 0)
         self.viewLayout.setSpacing(0)
 
-        self.add_group(self.aboutInfo)
+        self.addGroup(self.aboutInfo)
 
-    def add_group(self, label):
+    def addGroup(self, label):
         """ :AboutApp: Add informative text to the group. """
         wid = QWidget()
         wid.setFixedHeight(self.aboutInfo.sizeHint().height())
@@ -352,9 +352,9 @@ class ResourcesGroup(ExpandGroupSettingCard):
         self.viewLayout.setContentsMargins(0, 0, 0, 0)
         self.viewLayout.setSpacing(0)
 
-        self.add_group()
+        self.addGroup()
 
-    def add_group(self):
+    def addGroup(self):
         """ :Resources: Add resources elements to the group. """
         wid = QWidget()
         # wid.setFixedHeight(60)

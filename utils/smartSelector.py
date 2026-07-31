@@ -7,26 +7,24 @@ from utils.mybrowsersInterface import NewBrowserDialog
 myBrowsList = smart.loadBrowsers()
 setThemeColor(QColor(cfg.get(cfg.accentColor)) if cfg.get(cfg.accentMode) == "Custom" else getSystemAccentColor())
 
-class CustomTitleBar(TitleBar):
+class CustomTitleBar(FluentWidgetTitleBar):
     """ Custom title bar """
 
     def __init__(self, parent):
         super().__init__(parent)
 
-        """ Can only be used with StandardTitleBar
+        # Can only be used with StandardTitleBar or FluentWidgetTitleBar
         self.iconLabel.hide()
-        self.titleLabel.hide() """
+        self.titleLabel.hide()
         self.maxBtn.hide()
         self._isDoubleClickEnabled = False
 
         # customize the style of title bar button
         self.minBtn.setNormalColor(QColor("white" if theme() == Theme.DARK else "black"))
         self.closeBtn.setNormalColor(QColor("white" if theme() == Theme.DARK else "black"))
-        # self.minBtn.setHoverColor(QColor("white"))
-        self.minBtn.setHoverBackgroundColor(QColor(cfg.get(cfg.accentColor)) if cfg.get(cfg.accentMode) == "Custom" else QColor(cfg.get(cfg.qAccentColor)))
+        self.minBtn.setHoverBackgroundColor(QColor(cfg.get(cfg.accentColor)) if cfg.get(cfg.accentMode) == "Custom" else getSystemAccentColor())
         self.minBtn.setPressedColor(QColor("white"))
-        # self.minBtn.setPressedBackgroundColor(QColor(54, 57, 65))
-        self.closeBtn.setHoverBackgroundColor(QColor(cfg.get(cfg.accentColor)) if cfg.get(cfg.accentMode) == "Custom" else QColor(cfg.get(cfg.qAccentColor)))
+        self.closeBtn.setHoverBackgroundColor(QColor(cfg.get(cfg.accentColor)) if cfg.get(cfg.accentMode) == "Custom" else getSystemAccentColor())
 
         # use qss to customize title bar button
         """ self.maxBtn.setStyleSheet(
@@ -38,11 +36,12 @@ class CustomTitleBar(TitleBar):
             }
         ) """
 
-class SmartSelectorGUI(FramelessWindow):
+class SmartSelectorGUI(FluentWidget):
     """ Class for the Smart Selector window """
 
     def __init__(self, requestArgs: list[str], parent = None):
         super().__init__(parent)
+        smart.clearCLI()
         RichCLI.print(smart.consoleScript())
         smart.emptySelectorLog()
         if cfg.get(cfg.appTheme) == "Dark": setTheme(Theme.DARK)
@@ -51,18 +50,19 @@ class SmartSelectorGUI(FramelessWindow):
         self.setTitleBar(CustomTitleBar(self))
         self.setWindowIcon(QIcon(smart.resourcePath("resources/icons/ico/icon.ico")))
         self.setWindowTitle(f"Smart Selector | {SmartLinkerName}")
-        """ self.setStyleSheet(
-            f"{"background: white;" if theme() == Theme.LIGHT else ""} " \
-             "font-family: 'Segoe UI Variable Display', 'Segoe UI', sans-serif;"
-        ) """
+        fontDB = QFontDatabase.addApplicationFont(smart.resourcePath("resources/fonts/Interface.ttf"))
+        fontUI = QFontDatabase.applicationFontFamilies(fontDB)[24]
+        self.setStyleSheet(
+            f"font-family: '{fontUI}', 'Segoe UI', sans-serif;"
+        )
         
         self.themeCtrl = ThemeController(self)
         self.titleHeight = self.titleBar.height()
         self.isConnected: bool = smart.checkConnectivity()
         self.lightSheetOnDark: str = "SingleDirectionScrollArea { " \
-            "background-color: rgba(242, 242, 242, 0.15); border: 1px solid rgba(242, 242, 242, 0.25) }"
+            "background: rgba(242, 242, 242, 0.05); border: 1px solid rgba(242, 242, 242, 0.25); border-radius: 10px }"
         self.darkSheetOnLight: str = "SingleDirectionScrollArea { " \
-            "background-color: rgba(32, 32, 32, 0.15); border: 1px solid rgba(32, 32, 32, 0.25) }"
+            "background: rgba(32, 32, 32, 0.05); border: 1px solid rgba(32, 32, 32, 0.25); border-radius: 10px }"
         self.runningBrowsers: int = 0
         self.browsCards: list[BrowserCard] = []
         self.browsScanWorker = None
@@ -106,9 +106,7 @@ class SmartSelectorGUI(FramelessWindow):
         self.myBrowsScroll = SingleDirectionScrollArea(self, Qt.Orientation.Horizontal)
         self.myBrowsScroll.setWidgetResizable(True)
         self.myBrowsScroll.setContentsMargins(0, 0, 0, 0)
-        self.myBrowsScroll.setStyleSheet(
-            self.lightSheetOnDark if theme() == Theme.DARK else self.darkSheetOnLight
-        )
+        self.myBrowsScroll.enableTransparentBackground()
         layout.addWidget(self.myBrowsScroll)
         self.myBrowsScrollContent = QWidget()
         self.myBrowsScroll.setWidget(self.myBrowsScrollContent)
@@ -185,13 +183,11 @@ class SmartSelectorGUI(FramelessWindow):
         # Bottom area
         self.bottomContainer = QWidget()
         mainLayout.addWidget(self.bottomContainer)
-        self.bottomContainer.setStyleSheet(self.bottomDarkSheet if theme() == Theme.DARK else self.bottomLightSheet)
         bottomLayout = QHBoxLayout(self.bottomContainer)
         bottomLayout.setContentsMargins(40, 30, 40, 30)
         bottomLayout.setSpacing(15)
         self.bottomBox = QWidget()
         self.bottomBox.setContentsMargins(0, 0, 0, 0)
-        self.bottomBox.setStyleSheet("background: transparent; border: none;")
         bottomBoxLayout = QHBoxLayout(self.bottomBox)
         bottomBoxLayout.setContentsMargins(0, 0, 0, 0)
         bottomBoxLayout.setSpacing(15)
@@ -229,13 +225,14 @@ class SmartSelectorGUI(FramelessWindow):
             else 550
         )
         smart.centerWindow(self)
+        self.applyTheme(cfg.get(cfg.appTheme))
         self.requestLinkEdit.setEnabled(not self.isPreviewMode())
         self.requestLinkCopy.setEnabled(not self.isPreviewMode())
         self.restartBtn.setEnabled(not self.isPreviewMode())
         self.managerBtn.setEnabled(not self.isPreviewMode())
         self.themeCtrl.themeChanged.connect(lambda text: self.applyTheme(cfg.get(cfg.appTheme)))
         RichCLI.print(
-            f"Loading {f"'[u i]{self.requestURL}[/]'" if not self.isPreviewMode() else "the Smart Selector in [smartpurple][b i]Preview Mode[/]"}...\n"
+            f"Loading {f"'[u i]{self.requestURL}[/]'" if not self.isPreviewMode() else "the Smart Selector in [smpurple][b i]Preview Mode[/]"}...\n"
         )
         smart.selectorLog(f"Loading {f"'{self.requestURL}'" if not self.isPreviewMode() else "the Smart Selector in Preview Mode"}...")
         if not self.isConnected: print("No internet connection...")
@@ -244,7 +241,7 @@ class SmartSelectorGUI(FramelessWindow):
             if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.selectorSFXPath)): smart.playSound(soundStreamer, cfg.get(cfg.selectorSFXPath), "Smart Selector launch")
         elif cfg.get(cfg.mainBrowserPath):
             subprocess.Popen([cfg.get(cfg.mainBrowserPath), self.requestURL])
-            sys.exit()
+            smart.stopApp()
         else:
             self.show()
             if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.selectorSFXPath)): smart.playSound(soundStreamer, cfg.get(cfg.selectorSFXPath), "Smart Selector launch")
@@ -256,10 +253,10 @@ class SmartSelectorGUI(FramelessWindow):
     def previewNote(self):
             """ Send notifications if the Selector is in ***Preview** mode* while an action is performed """
             smart.infoNotify("Action unavailable", "The Smart Selector is currently in Preview mode.", self)
-            RichCLI.log("[smartblue][b u]NOTE[/b u]: [i]The Smart Selector is currently in [bold smartpurple]Preview mode[/bold smartpurple], this action is [#777777]unavailable[/#777777].[/]")
+            RichCLI.log("[smblue][b u]NOTE[/b u]: [i]The Smart Selector is currently in [bold smpurple]Preview mode[/bold smpurple], this action is [#777777]unavailable[/#777777].[/]")
             smart.selectorLog("INFO: The Smart Selector is currently in Preview mode, the action is unavailable.")
 
-    def applyTheme(self, mode):
+    def applyTheme(self, mode: str):
         """ Apply theme automatically according to system and config """
         if mode == "Auto":
             setTheme(Theme.DARK if smart.isDarkModeEnabled() else Theme.LIGHT)
@@ -267,22 +264,30 @@ class SmartSelectorGUI(FramelessWindow):
             setTheme(Theme.DARK)
         else:
             setTheme(Theme.LIGHT)
+
+        self.setMicaEffectEnabled(cfg.get(cfg.micaEffect))
         
         self.titleBar.minBtn.setNormalColor(QColor("white" if theme() == Theme.DARK else "black"))
+        self.titleBar.minBtn.setHoverBackgroundColor(QColor(cfg.get(cfg.accentColor) if cfg.get(cfg.accentMode) == "Custom" else getSystemAccentColor()))
         self.titleBar.closeBtn.setNormalColor(QColor("white" if theme() == Theme.DARK else "black"))
+        self.titleBar.closeBtn.setHoverBackgroundColor(QColor(cfg.get(cfg.accentColor) if cfg.get(cfg.accentMode) == "Custom" else getSystemAccentColor()))
 
-        self.setStyleSheet(
-            f"{"background: white; " if theme() == Theme.LIGHT else ""}" \
-             "font-family: 'Segoe UI Variable Display', 'Segoe UI', sans-serif;"
-        )
         self.mainScroll.enableTransparentBackground()
         self.myBrowsScroll.setStyleSheet(
             self.lightSheetOnDark if theme() == Theme.DARK else self.darkSheetOnLight
         )
+        if self.browsCards:
+            for card in self.browsCards:
+                if card.statusLabel.text():
+                    card.styleStatus(card.statusLabel.text())
         self.bottomContainer.setStyleSheet(
             self.bottomDarkSheet if theme() == Theme.DARK else self.bottomLightSheet
         )
         self.bottomBox.setStyleSheet("background: transparent; border: none;")
+        if hasattr(self, "linkPreview"):
+            self.linkPreview.imageWidget.setStyleSheet(
+                self.linkPreview.onDarkScheme if theme() == Theme.DARK else self.linkPreview.onLightScheme
+            )
 
     def loadBrowserCards(self, cards: list["BrowserCard"]):
         """ Add browser cards to the SmartList """
@@ -364,7 +369,7 @@ class SmartSelectorGUI(FramelessWindow):
             The parent widget
         """
         RichCLI.log("OPERATION: Adding a new browser to the SmartList...\n" \
-              f"Browser name: [italic smartblue]{name}[/]\nBrowser complete path: [italic underline smartpurple]{path}[/]")
+              f"Browser name: [italic smblue]{name}[/]\nBrowser complete path: [italic underline smpurple]{path}[/]")
         smart.selectorLog(f"Adding a new browser to the SmartList...\nBrowser name: {name}\nBrowser path: {path}")
         
         if self.browsRefreshStatus:
@@ -475,6 +480,7 @@ class SmartSelectorGUI(FramelessWindow):
                 if os.path.exists(otherPath):
                     try:
                         subprocess.Popen([otherPath, self.requestURL])
+                        if cfg.get(cfg.closeOnBrowserSelect): self.close()
                         print(f"{Fore.BLUE}Selected external browser at path: '{otherPath}'{Style.RESET_ALL}")
                         smart.selectorLog(f"Selected external browser at path: '{otherPath}'")
                     except Exception as e:
@@ -612,7 +618,7 @@ class BrowserCard(ElevatedCardWidget):
                                 subprocess.Popen([browser["path"], link])
                                 print(f"{Fore.GREEN}Successfully loaded '{link}' into: {name}{Style.RESET_ALL}")
                                 smart.selectorLog(f"SUCCESS: '{link}' has been successfully loaded into {name}.")
-                                if bool(cfg.get(cfg.closeOnBrowserSelect)): sys.exit()
+                                if bool(cfg.get(cfg.closeOnBrowserSelect)): smart.stopApp()
                             except Exception as e:
                                 smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to load your link into {name}:\n{e}", parent)
                                 print(f"{Fore.RED}Something went wrong when attempting to load your link into {name}:\n{e}{Style.RESET_ALL}")
@@ -631,7 +637,7 @@ class BrowserCard(ElevatedCardWidget):
                                 subprocess.Popen([cfg.get(cfg.mainBrowserPath), link])
                                 print(f"{Fore.GREEN}Successfully loaded '{link}' into: {os.path.basename(cfg.get(cfg.mainBrowserPath))}{Style.RESET_ALL}")
                                 smart.selectorLog(f"SUCCESS: '{link}' has been successfully loaded into {name}.")
-                                if bool(cfg.get(cfg.closeOnBrowserSelect)): sys.exit()
+                                if bool(cfg.get(cfg.closeOnBrowserSelect)): smart.stopApp()
                             except Exception as e:
                                 smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(cfg.get(cfg.mainBrowserPath))}:\n{e}", parent)
                                 print(f"{Fore.RED}Something went wrong when attempting to load {link} into {os.path.basename(cfg.get(cfg.mainBrowserPath))}:\n{e}{Style.RESET_ALL}")
@@ -819,7 +825,7 @@ class LinkPreviewCard(SimpleCardWidget):
         self.setClickEnabled(False)
         self.imageWidget.setContentsMargins(0, 0, 0, 0)
         self.imageWidget.setFixedSize(180, 100)
-        self.imageWidget.setStyleSheet(self.onDarkScheme if theme() == Theme.DARK else self.onLightScheme)
+        # self.imageWidget.setStyleSheet(self.onDarkScheme if theme() == Theme.DARK else self.onLightScheme)
         self.imageLabel.setFixedSize(180, 100)
         self.imageLabel.setBorderRadius(5, 5, 5, 5)
         self.iconLabel.setFixedSize(48, 48)

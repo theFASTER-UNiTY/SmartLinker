@@ -1,8 +1,8 @@
 from utils.SmartCLIHandler import *
-from utils.settingsInterface import SettingsInterface as Settings
 from utils.mybrowsersInterface import MyBrowsersInterface as MyBrowsers
+from utils.historyInterface import HistoryInterface as History
+from utils.settingsInterface import SettingsInterface as Settings
 from utils.aboutInterface import AboutInterface as About, BrowserSelectDialog
-from utils.markdownViewer import MarkdownViewer as MDView
 from utils.smartSelector import SmartSelectorGUI
 
 # =============================================================================
@@ -28,19 +28,22 @@ class SmartLinkerGUI(FluentWindow):
 
     def __init__(self, args = None, parent = None):
         super().__init__(parent)
+        smart.clearCLI()
         RichCLI.print(smart.consoleScript())
         self.setWindowTitle("SmartLinker - Mastering URL Handling")
         self.setWindowIcon(QIcon(smart.resourcePath("resources/icons/ico/icon.ico")))
         self.setMinimumWidth(1040)
         self.resize(1100, 700)
         smart.centerWindow(self)
-        self.setStyleSheet('font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif;')
         if cfg.get(cfg.appTheme) == "Dark": setTheme(Theme.DARK)
         elif cfg.get(cfg.appTheme) == "Light": setTheme(Theme.LIGHT)
         else: setTheme(Theme.AUTO)
         smart.emptyManagerLog()
-        fontDB = QFontDatabase.addApplicationFont(smart.resourcePath("resources/fonts/SegoeFont.ttf"))
-        fontUI = QFontDatabase.applicationFontFamilies(fontDB)[0]
+        fontDB = QFontDatabase.addApplicationFont(smart.resourcePath("resources/fonts/Interface.ttf"))
+        fontUI = QFontDatabase.applicationFontFamilies(fontDB)[24]
+        self.setStyleSheet(f'font-family: "{fontUI}", "Segoe UI", sans-serif;')
+        # fontEd = QFontDatabase.addApplicationFont(smart.resourcePath("resources/fonts/Code.ttf"))
+        # for i, font in enumerate(QFontDatabase.applicationFontFamilies(fontEd)): print(f"{i}: {font}")
 
         self.themeCtrl = ThemeController(self)
         self.latestVersion = smart.getLatestVersionTag() if bool(cfg.get(cfg.checkUpdatesOnStart) and smart.checkConnectivity()) else ""
@@ -63,9 +66,9 @@ class SmartLinkerGUI(FluentWindow):
             self.splash.finish()
         else:
             self.mybrowsInterface = MyBrowsers(self)
-            self.addSubInterface(self.mybrowsInterface, FICO.GLOBE, "My Browsers")
-            self.markdownViewer = MDView(self)
-            self.addSubInterface(self.markdownViewer, smIco.renderIcon(smIco.MARKDOWN), "Markdown Viewer")
+            self.addSubInterface(self.mybrowsInterface, segSVG.SMARTLINKER_FILL, "My SmartList")
+            self.histInterface = History(self)
+            self.addSubInterface(self.histInterface, FICO.HISTORY, "My history")
             self.settingInterface = Settings(self)
             self.addSubInterface(self.settingInterface, FICO.SETTING, "Settings", NavigationItemPosition.BOTTOM)
             self.aboutInterface = About(self)
@@ -118,13 +121,13 @@ class SmartLinkerGUI(FluentWindow):
         self.snackButtons = {
             "Download": [
                 self.mybrowsInterface.updateSnack.snackButton,
-                self.markdownViewer.updateSnack.snackButton,
+                self.histInterface.updateSnack.snackButton,
                 self.settingInterface.updateSnack.snackButton,
                 self.aboutInterface.updateSnackButton
             ],
             "Install": [
                 self.mybrowsInterface.updateSnack.snackInstall,
-                self.markdownViewer.updateSnack.snackInstall,
+                self.histInterface.updateSnack.snackInstall,
                 self.settingInterface.updateSnack.snackInstall,
                 self.aboutInterface.updateSnackInstall
             ]}
@@ -159,16 +162,15 @@ class SmartLinkerGUI(FluentWindow):
         self.themeCtrl.themeChanged.connect(lambda text: self.applyTheme(cfg.get(cfg.appTheme)))
         cfg.accentMode.valueChanged.connect(lambda value: (
             self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smart.convertToRGB(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, 0.25)}}"),
-            self.markdownViewer.updateSnack.setStyleSheet(f"#MDSnackBase {{background-color: rgba({smart.convertToRGB(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, 0.25)}}"),
             self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smart.convertToRGB(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, 0.25)}}"),
             self.aboutInterface.updateSnack.setStyleSheet(f"#ASnackBase {{background-color: rgba({smart.convertToRGB(cfg.get(cfg.accentColor) if value == "Custom" else getSystemAccentColor())}, 0.25); margin: 10px; border-radius: 5px}}")
         ))
         cfg.accentColor.valueChanged.connect(lambda value: (
             self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{background-color: rgba({smart.convertToRGB(value)}, 0.25)}}"),
-            self.markdownViewer.updateSnack.setStyleSheet(f"#MDSnackBase {{background-color: rgba({smart.convertToRGB(value)}, 0.25)}}"),
             self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{background-color: rgba({smart.convertToRGB(value)}, 0.25)}}"),
             self.aboutInterface.updateSnack.setStyleSheet(f"#ASnackBase {{background-color: rgba({smart.convertToRGB(value)}, 0.25); margin: 10px; border-radius: 5px}}")
         ))
+        smart.historyChanged.connect(self.histInterface.refreshHistory)
 
     def createSubInterfaces(self):
         """ Initialize sub-interfaces when splash screen is enabled """
@@ -176,9 +178,9 @@ class SmartLinkerGUI(FluentWindow):
         QTimer.singleShot(cfg.get(cfg.splashDuration), loop.quit)
         loop.exec()
         self.mybrowsInterface = MyBrowsers(self)
-        self.addSubInterface(self.mybrowsInterface, FICO.GLOBE, "My Browsers")
-        self.markdownViewer = MDView(self)
-        self.addSubInterface(self.markdownViewer, segSVG.MARKDOWN, "Markdown Viewer")
+        self.addSubInterface(self.mybrowsInterface, segSVG.SMARTLINKER_FILL, "My SmartList")
+        self.histInterface = History(self)
+        self.addSubInterface(self.histInterface, FICO.HISTORY, "My history")
         self.settingInterface = Settings(self)
         self.addSubInterface(self.settingInterface, FICO.SETTING, "Settings", NavigationItemPosition.BOTTOM)
         self.aboutInterface = About(self)
@@ -197,17 +199,7 @@ class SmartLinkerGUI(FluentWindow):
             self.mybrowsInterface.darkSheetOnLight if theme() == Theme.LIGHT
             else self.mybrowsInterface.lightSheetOnDark
         )
-        self.markdownViewer.mdContainer.setStyleSheet(f"""
-            QWidget#Container {{
-                background: transparent;
-                border-top: 1px solid {"#E3E6E9" if theme() == Theme.LIGHT else "#393939"};
-                border-left: 1px solid {"#E3E6E9" if theme() == Theme.LIGHT else "#393939"};
-                {f'border-bottom: 1px solid {"#E3E6E9" if theme() == Theme.LIGHT else "#393939"};'
-                 if bool(cfg.get(cfg.updateAvailable) and cfg.get(cfg.showUpdateBanners)) else ""}
-            }}
-        """)
         self.mybrowsInterface.updateSnack.setStyleSheet(f"#BSnackBase {{ background-color: rgba({smart.convertToRGB(themeColor())}, 0.25); }}")
-        self.markdownViewer.updateSnack.setStyleSheet(f"#MDSnackBase {{ background-color: rgba({smart.convertToRGB(themeColor())}, 0.25); }}")
         self.settingInterface.updateSnack.setStyleSheet(f"#SSnackBase {{ background-color: rgba({smart.convertToRGB(themeColor())}, 0.25); }}")
         self.aboutInterface.updateSnack.setStyleSheet(f"#ASnackBase {{ background-color: rgba({smart.convertToRGB(themeColor())}, 0.25); margin: 10px; border-radius: 5px; }}")
 
@@ -281,8 +273,6 @@ class SmartLinkerGUI(FluentWindow):
             )
             self.mybrowsInterface.updateSnack.setVisible(True)
             self.mybrowsInterface.updateSnack.setEnabled(True)
-            self.markdownViewer.updateSnack.setVisible(True)
-            self.markdownViewer.updateSnack.setEnabled(True)
             self.settingInterface.updateSnack.setVisible(True)
             self.settingInterface.updateSnack.setEnabled(True)
             self.aboutInterface.updateSnack.setVisible(True)
@@ -296,8 +286,6 @@ class SmartLinkerGUI(FluentWindow):
             cfg.set(cfg.updateVersion, "")
             self.mybrowsInterface.updateSnack.setVisible(False)
             self.mybrowsInterface.updateSnack.setEnabled(False)
-            self.markdownViewer.updateSnack.setVisible(False)
-            self.markdownViewer.updateSnack.setEnabled(False)
             self.settingInterface.updateSnack.setVisible(False)
             self.settingInterface.updateSnack.setEnabled(False)
             self.aboutInterface.updateSnack.setVisible(False)
@@ -536,7 +524,8 @@ class SmartLinkerGUI(FluentWindow):
         restartDlg.yesButton.setText(f"Restart {SmartLinkerName}")
         if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.questionSFXPath)): smart.playSound(soundStreamer, cfg.get(cfg.questionSFXPath), "confirmation dialog")
         if restartDlg.exec():
-            try: smart.restartAppPlus()
+            try:
+                smart.restartApp()
             except Exception as e:
                 print(f"{Fore.RED}An error occured while trying to restart the app: {e}{Style.RESET_ALL}")
                 smart.managerLog(f"ERROR: Failed to restart the app: {e}")
@@ -561,18 +550,22 @@ class SmartLinkerGUI(FluentWindow):
     def closeEvent(self, e):
         super().closeEvent(e)
         if isinstance(self.settingInterface.selectorWindow, SmartSelectorGUI):
+            if isinstance(self.settingInterface.selectorPreviewStatus, StateToolTip):
+                self.settingInterface.selectorPreviewStatus = None
+                
             self.settingInterface.selectorWindow.close()
             self.settingInterface.selectorWindow = None
 
-def isSystemCompatible(minBuild: int) -> bool:
-    isCompatible = False
-    try:
-        if not platform.system() == "Windows": isCompatible = False
-        else: isCompatible = sys.getwindowsversion().build >= minBuild 
-    except Exception as e:
-        print(f"{Fore.RED}An error occured while attempting to check system compatibility: {e}{Style.RESET_ALL}")
-        smart.managerLog(f"ERROR: Failed to check system compatibility: {e}")
-    finally: return isCompatible
+    def resizeEvent(self, e):
+        super().resizeEvent(e)
+
+        if hasattr(self, "settingInterface"):
+            if self.settingInterface.selectorPreviewStatus:
+                self.settingInterface.selectorPreviewStatus.move(
+                    self.width() // 2
+                    - self.settingInterface.selectorPreviewStatus.width() // 2,
+                    10
+                )
 
 # =============================================================================
 
@@ -586,12 +579,32 @@ def smartMain():
     # Basic platform / compatibility checks before attempting any GUI or CLI handling
     if not platform.system() == "Windows":
         print(f"{Fore.RED}CRITICAL: Only Windows systems are supported by {SmartLinkerName}...\nThe software process is stopping...{Style.RESET_ALL}")
-        sys.exit()
-    if not isSystemCompatible(19042):
+        smart.stopApp()
+    if not smart.isSoftwareCompatible(19042):
         print(f"{Fore.RED}CRITICAL: {smart.getSystemInformation()["osName"]} {smart.getSystemInformation()["osVersion"]} build {smart.getSystemInformation()["osBuildNumber"]}"
             f" is not supported by {SmartLinkerName}...\nThe software process is stopping...{Style.RESET_ALL}")
-        sys.exit()
+        smart.stopApp()
 
+    # From any version lower than 3.0.0 to 3.0.0 and above
+    # If the "_internal" folder exists, move its "bin" folder to the root directory.
+    if Path.exists(ROOT_PATH / "_internal" / "bin"):
+        qapp = QApplication(sys.argv)
+        qapp.setApplicationName(f"{SmartLinkerName} - Mastering URL Handling")
+        setTheme(Theme.AUTO)
+        setThemeColor(getSystemAccentColor())
+        parent = FramelessWindow()
+        parent.setWindowIcon(QIcon(smart.resourcePath("resources/icons/ico/icon.ico")))
+        parent.resize(960, 540)
+        smart.centerWindow(parent)
+        parent.show()
+        migrationDlg = MigrationDialog(parent)
+        if migrationDlg.exec():
+            if migrationDlg.isSuccess:
+                smart.restartApp(True)
+            else:
+                smart.stopApp()
+            return
+    
     # If command-line arguments provided, hand them to ArgumentsProcessor first.
     # Show the SmartSelector GUI only when the parsed command is 'load' and
     # both smart_list and external_browser are not provided (i.e. user expects selector).

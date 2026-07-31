@@ -1,15 +1,22 @@
 from utils.SmartUtils import *
 
+# ===========================================================================================================
+
 myBrowsList = smart.loadBrowsers()
+myHistory = smart.loadHistory()
 
 class MyBrowsersInterface(QWidget):
-    """ Main class for the 'My Browsers' interface """
+    """ Main class for the 'My SmartList' interface """
 
     def __init__(self, parent = None):
         super().__init__(parent)
-        self.setObjectName("My-Browsers")
-        self.lightSheetOnDark: str = "SingleDirectionScrollArea {background: rgba(242, 242, 242, 0.05); border-radius: 10px; border: 1px solid rgba(242, 242, 242, 0.1)}"
-        self.darkSheetOnLight: str = "SingleDirectionScrollArea {background: rgba(32, 32, 32, 0.05); border-radius: 10px; border: 1px solid rgba(32, 32, 32, 0.1)}"
+        self.setObjectName("My-SmartList")
+        self.lightSheetOnDark: str = (
+            "SingleDirectionScrollArea {background: rgba(242, 242, 242, 0.05); border-radius: 10px; border: 1px solid rgba(242, 242, 242, 0.1)}"
+        )
+        self.darkSheetOnLight: str = (
+            "SingleDirectionScrollArea {background: rgba(32, 32, 32, 0.05); border-radius: 10px; border: 1px solid rgba(32, 32, 32, 0.1)}"
+        )
         self.browsAddDlg = None
         self.browsEditDlg = None
         self.loadLinkDlg = None
@@ -24,12 +31,13 @@ class MyBrowsersInterface(QWidget):
 
         mainBrowLayout = QVBoxLayout(self)
         mainBrowLayout.setContentsMargins(0, 20, 0, 0)
+        mainBrowLayout.setSpacing(10)
         mainTitleLine = QHBoxLayout()
         mainTitleLine.setContentsMargins(40, 0, 40, 0)
         mainBrowLayout.addLayout(mainTitleLine)
-        self.title = TitleLabel("My Browsers", self)
+        self.title = TitleLabel("My SmartList", self)
         self.title.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.searchBar = SearchLineEdit()
+        self.searchBar = SearchLineEdit(self)
         self.searchBar.setPlaceholderText("Search from your SmartList")
         self.searchBar.setEnabled(bool(myBrowsList["MyBrowsers"]))
         self.searchBar.setVisible(bool(myBrowsList["MyBrowsers"]))
@@ -37,12 +45,12 @@ class MyBrowsersInterface(QWidget):
         mainTitleLine.addWidget(self.title)
         mainTitleLine.addStretch()
         mainTitleLine.addWidget(self.searchBar)
-        mainBrowScroll = SingleDirectionScrollArea(self, Qt.Orientation.Vertical)
+        mainBrowScroll = SingleDirectionScrollArea(self)
         mainBrowLayout.addWidget(mainBrowScroll)
         mainBrowScroll.setWidgetResizable(True)
         mainBrowScroll.setContentsMargins(0, 0, 0, 0)
         mainBrowScroll.enableTransparentBackground()
-        mainBrowScroll.setStyleSheet("border: 0px solid #FFFFFF")
+        mainBrowScroll.setStyleSheet("border: none")
         mainBrowScrollContent = QWidget()
         mainBrowScroll.setWidget(mainBrowScrollContent)
         mainBrowScrollContent.setContentsMargins(40, 0, 40, 0)
@@ -137,12 +145,14 @@ class MyBrowsersInterface(QWidget):
         self.actionTable.resizeColumnsToContents()
         self.actionTable.setEnabled(False)
         self.actionTable.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
-        self.actionTableVH = self.actionTable.verticalHeader()
-        self.actionTableVH.setHidden(True) if self.actionTableVH else None
+        if self.actionTable.verticalHeader():
+            self.actionTable.verticalHeader().setHidden(True) # type: ignore
         layout.addWidget(self.actionTable)
         self.actionTable.setVisible(cfg.get(cfg.showCommandBar))
-        if myBrowsList["MyBrowsers"]: self.loadBrowsers(parent)
-        else: self.mybrowsLayout.addWidget(self.mybrowsEmptyMsg, alignment=Qt.AlignmentFlag.AlignCenter)
+        if myBrowsList["MyBrowsers"]:
+            self.loadBrowsers(parent)
+        else:
+            self.mybrowsLayout.addWidget(self.mybrowsEmptyMsg, alignment=Qt.AlignmentFlag.AlignCenter)
 
         layout.addStretch(1)
         
@@ -258,6 +268,10 @@ class MyBrowsersInterface(QWidget):
             if self.searchResultDlg:
                 self.searchResultDlg = None
             self.searchResultDlg = SearchResultDialog(browser["name"], browser["path"], parent)
+            self.searchResultDlg.openLocationBtn.clicked.connect(lambda checked, dialog=self.searchResultDlg: (
+                self.searchResultDlg.close() if self.searchResultDlg else None,
+                dialog.openParentDirectory(parent)
+            ))
             self.searchResultDlg.loadLinkBtn.clicked.connect(lambda: (
                 self.searchResultDlg.close() if self.searchResultDlg else None,
                 self.loadLinkDialog(parent, browser["name"])
@@ -271,7 +285,7 @@ class MyBrowsersInterface(QWidget):
                 self.confirmDeleteDialog(browser["name"], parent)
             ))
             if self.searchResultDlg.exec():
-                RichCLI.log(f"Selected browser:\n\tName: [smartblue]{browser['name']}[/]\n\tPath: [italic smartpurple]{browser['path']}[/]")
+                RichCLI.log(f"Selected browser:\n\tName: [smblue]{browser['name']}[/]\n\tPath: [italic smpurple]{browser['path']}[/]")
                 self.launchBrowser(browser["path"], browser["name"], parent)
 
     def openNewBrowserDialog(self, parent):
@@ -433,8 +447,9 @@ class MyBrowsersInterface(QWidget):
             failedAttempts = 0
             
             if not self.loadLinkDlg.browserCombo.currentIndex() == self.loadLinkDlg.browserCombo.count() - 1:
-                RichCLI.log(f"Loading [smartblue]'[u i]{self.loadLinkDlg.linkEdit.text()}[/u i]'[/] into [bold smartpurple]{self.loadLinkDlg.browserCombo.currentText()}[/]...")
+                RichCLI.log(f"Loading [smblue]'[u i]{self.loadLinkDlg.linkEdit.text()}[/u i]'[/] into [bold smpurple]{self.loadLinkDlg.browserCombo.currentText()}[/]...")
                 smart.managerLog(f"Loading '{self.loadLinkDlg.linkEdit.text()}' into {self.loadLinkDlg.browserCombo.currentText()}...")
+
                 for browser in myBrowsList["MyBrowsers"]:
                     if browser["name"] == self.loadLinkDlg.browserCombo.currentText():
                         if browser["path"]:
@@ -443,18 +458,20 @@ class MyBrowsersInterface(QWidget):
                                 self.loadedFromList = True
                                 self.loadedBrowser = browser["name"]
                                 self.loadedLink = self.loadLinkDlg.linkEdit.text()
+                                smart.registerEntryToHistory(myHistory, browser["name"], self.loadLinkDlg.linkEdit.text())
                                 RichCLI.log(f"[green]'[u i]{self.loadLinkDlg.linkEdit.text()}[/u i]' has been successfully loaded into [b]{browser["name"]}[/b]![/]")
                                 smart.managerLog(f"SUCCESS: '{self.loadLinkDlg.linkEdit.text()}' has been successfully loaded into {browser["name"]}.")
                             except Exception as e:
                                 smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to load your link into {browser["name"]}:\n{e}", parent)
                                 RichCLI.log(f"[red]An error occured while attempting to load [u i]{self.loadLinkDlg.linkEdit.text()}[/u i] into [b]{browser["name"]}[/b]: [i]{e}[/]", log_locals=True)
                                 smart.managerLog(f"ERROR: Failed while loading '{self.loadLinkDlg.linkEdit.text()}' into {browser["name"]}: {e}")
-                            break
+                            return
+
                         else:
                             smart.warningNotify("Warning, be careful!", f"The path to {browser["name"]} as registered in your SmartList is empty...", parent)
                             RichCLI.log(f"[b u yellow]WARNING!![/b u] The path to [b]{browser["name"]}[/b] as registered in your SmartList is empty...[/]")
                             smart.managerLog(f"WARNING: The path to {browser["name"]} as registered in the SmartList is empty...")
-                            break
+                            return
                     
                     elif cfg.get(cfg.mainBrowserPath) and cfg.get(cfg.mainBrowserIsManual):
                         if os.path.basename(cfg.get(cfg.mainBrowserPath)) == self.loadLinkDlg.browserCombo.currentText():
@@ -469,7 +486,7 @@ class MyBrowsersInterface(QWidget):
                                 smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(cfg.get(cfg.mainBrowserPath))}: {e}", parent)
                                 RichCLI.log(f"[red]An error occured while attempting to load [u i]{self.loadLinkDlg.linkEdit.text()}[/u i] into [b u]{cfg.get(cfg.mainBrowserPath)}[/b u]: [i]{e}[/]", log_locals=True)
                                 smart.managerLog(f"ERROR: Failed while loading '{self.loadLinkDlg.linkEdit.text()}' into {cfg.get(cfg.mainBrowserPath)}: {e}")
-                            break
+                            return
                     
                     else:
                         failedAttempts += 1
@@ -479,7 +496,7 @@ class MyBrowsersInterface(QWidget):
                             smart.managerLog(f"WARNING: The name '{self.loadLinkDlg.browserCombo.currentText()}' is not registered into the SmartList, or {self.loadLinkDlg.browserCombo.currentText()} cannot be found in the SmartList...")
             
             else:
-                RichCLI.log(f"Loading [smartblue]'[u i]{self.loadLinkDlg.linkEdit.text()}[/u i]'[/] into [i smartpurple]{os.path.basename(self.loadLinkDlg.otherBrowsEdit.text())}[/]...")
+                RichCLI.log(f"Loading [smblue]'[u i]{self.loadLinkDlg.linkEdit.text()}[/u i]'[/] into [i smpurple]{os.path.basename(self.loadLinkDlg.otherBrowsEdit.text())}[/]...")
                 smart.managerLog(f"Loading '{self.loadLinkDlg.linkEdit.text()}' into {os.path.basename(self.loadLinkDlg.otherBrowsEdit.text())}...")
                 try:
                     subprocess.Popen([self.loadLinkDlg.otherBrowsEdit.text(), self.loadLinkDlg.linkEdit.text()])
@@ -988,11 +1005,11 @@ class SearchResultDialog(MessageBoxBase):
         self.path = path
         topLayout = QHBoxLayout()
         titleLayout = QVBoxLayout()
-        buttonLayout = QHBoxLayout()
+        buttonBox = QHBoxLayout()
         self.browsIcon = IconWidget(FICO.GLOBE)
         self.browsTitle = TitleLabel(name)
         self.browsSubtitle = CaptionLabel(path)
-        self.moreBtn = CommandBar()
+        self.openLocationBtn = ToolButton(FICO.FOLDER)
         self.loadLinkBtn = PushButton(segFont.fromName("Link"), "Load a link")
         self.editBtn = PushButton(FICO.EDIT, "Edit")
         self.deleteBtn = PushButton(FICO.DELETE.colored(QColor("red"), QColor("#F44336")), "Delete")
@@ -1000,18 +1017,16 @@ class SearchResultDialog(MessageBoxBase):
         topLayout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         topLayout.setSpacing(20)
         titleLayout.setSpacing(5)
-        buttonLayout.setSpacing(10)
+        buttonBox.setSpacing(10)
         self.browsIcon.setFixedSize(96, 96)
         self.browsIcon.setIcon(smart.getFileIcon(path))
         self.browsSubtitle.setTextColor(QColor("gray"), QColor("gray"))
-
-        self.moreBtn.addHiddenActions([
-            Action(FICO.FOLDER, "Open location", triggered=lambda checked, parent = parent: self.openParentDirectory(parent)),
-        ])
+        self.openLocationBtn.setToolTip("Open location")
+        self.openLocationBtn.installEventFilter(ToolTipFilter(self.openLocationBtn))
 
         self.widget.setMinimumWidth(500)
         self.viewLayout.setSpacing(30)
-        self.yesButton.setText(f"Open {name}")
+        self.yesButton.setText(f"Launch {name}")
         self.cancelButton.setText("OK")
 
         # add widget to view layout
@@ -1022,16 +1037,15 @@ class SearchResultDialog(MessageBoxBase):
         titleLayout.addWidget(self.browsTitle)
         titleLayout.addWidget(self.browsSubtitle)
         titleLayout.addStretch()
-        topLayout.addWidget(self.moreBtn)
-        self.viewLayout.addLayout(buttonLayout)
-        buttonLayout.addWidget(self.loadLinkBtn)
-        buttonLayout.addWidget(self.editBtn)
-        buttonLayout.addWidget(self.deleteBtn)
+        self.viewLayout.addLayout(buttonBox)
+        buttonBox.addWidget(self.openLocationBtn)
+        buttonBox.addWidget(self.loadLinkBtn)
+        buttonBox.addWidget(self.editBtn)
+        buttonBox.addWidget(self.deleteBtn)
     
     def openParentDirectory(self, parent):
         """ :MyBrowsersCard: Open the parent directory of the browser """
         path = os.path.normpath(self.path)
-        # print(path)
 
         if os.path.exists(path):
             try:
@@ -1043,3 +1057,5 @@ class SearchResultDialog(MessageBoxBase):
                     "please check your installation...",
                     parent
                 )
+
+# Ajouter un layout en grille pour la SmartList

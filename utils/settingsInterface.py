@@ -11,9 +11,14 @@ class SettingsInterface(QWidget):
         super().__init__(parent)
         self.setObjectName("Settings")
         self.selectorWindow = None
+        self.selectorPreviewStatus = None
+        self.widgetDef = SettingWidgetDefinition()
+        self.mainFromListDlg = None
+        self.mainRemoveDlg = None
 
         mainSetLayout = QVBoxLayout(self)
         mainSetLayout.setContentsMargins(0, 20, 0, 0)
+        mainSetLayout.setSpacing(10)
         mainTitleLine = QHBoxLayout()
         mainTitleLine.setContentsMargins(40, 0, 0, 0)
         mainSetLayout.addLayout(mainTitleLine)
@@ -32,9 +37,6 @@ class SettingsInterface(QWidget):
         mainSetScrollContent.setContentsMargins(40, 0, 40, 0)
         layout = QVBoxLayout(mainSetScrollContent)
         layout.setSpacing(5)
-        self.widgetDef = SettingWidgetDefinition()
-        self.mainFromListDlg = None
-        self.mainRemoveDlg = None
 
         # General
         generalLabel = SubtitleLabel("General")
@@ -70,13 +72,6 @@ class SettingsInterface(QWidget):
         self.optionSoundConfig = SoundFxConfigGroup(self)
         layout.addWidget(self.optionSoundConfig)
 
-        # Markdown Viewer
-        markViewerLabel = SubtitleLabel("Markdown Viewer")
-        markViewerLabel.setContentsMargins(0, 40, 0, 0)
-        markViewerLabel.setAlignment(Qt.AlignmentFlag.AlignTop)
-        layout.addWidget(markViewerLabel)
-        layout.addWidget(BodyLabel("Coming soon..."))
-
         # Smart Selector
         selectorLabel = SubtitleLabel("Smart Selector")
         selectorLabel.setContentsMargins(0, 40, 0, 0)
@@ -102,15 +97,15 @@ class SettingsInterface(QWidget):
         self.advancedRestart = PushSettingCard(
             "Restart",
             segFont.fromName("UpdateRestore"),
-            f"Restart {SmartLinkerName}",
-            "If you need for some reason to restart the software, this is the easiest way to proceed."
+            f"Restart {SmartLinkerName}"
+            # "If you need for some reason to restart the software, this is the easiest way to proceed."
         )
         layout.addWidget(self.advancedRestart)
         self.advancedStop = PushSettingCard(
             "Stop process",
             FICO.POWER_BUTTON,
-            f"Stop {SmartLinkerName}",
-            "If you need for some reason to stop the software process, this is the safest way to proceed."
+            f"Stop {SmartLinkerName}"
+            # "If you need for some reason to stop the software process, this is the safest way to proceed."
         )
         layout.addWidget(self.advancedStop)
 
@@ -174,7 +169,7 @@ class SettingsInterface(QWidget):
             self.widgetDef.optionMainBrowserCard.contentLabel.setText(f"{SmartLinkerName} will redirect your web requests to {cfg.get(cfg.mainBrowser) if not cfg.get(cfg.mainBrowserIsManual) else os.path.basename(cfg.get(cfg.mainBrowserPath))} if no browser is running.")
             self.widgetDef.optionMainBrowserCard.removeMainButton.setEnabled(True)
         else:
-            self.widgetDef.optionMainBrowserCard.iconWidget.setIcon(QIcon(smart.resourcePath(f"resources/icons/ico/icon_outline{"" if theme() == Theme.DARK else "_black"}.ico")))
+            self.widgetDef.optionMainBrowserCard.iconWidget.setIcon(segSVG.SMARTLINKER_OUTLINE)
             self.widgetDef.optionMainBrowserCard.titleLabel.setText("Configure your main browser")
             self.widgetDef.optionMainBrowserCard.contentLabel.setText("You can either set a browser from your storage or SmartList as your main browser if no one is running.")
             self.widgetDef.optionMainBrowserCard.removeMainButton.setEnabled(False)
@@ -252,20 +247,64 @@ class SettingsInterface(QWidget):
     def previewSelector(self, parent):
         """ :SettingsInterface: Open the Smart Selector from the preview option. """
         from utils.smartSelector import SmartSelectorGUI as Selector
+
+        def onDestroyed(window: Selector):
+            if window.isVisible(): window.close()
+            setattr(self, "selectorWindow", None)
+
+            if self.selectorPreviewStatus and isinstance(self.selectorPreviewStatus, StateToolTip):
+                self.selectorPreviewStatus.setTitle("Preview closed!")
+                self.selectorPreviewStatus.setContent("")
+                self.selectorPreviewStatus.setState(True)
+                self.selectorPreviewStatus = None
+
+            self.widgetDef.optionPreviewSelector.iconLabel.setIcon(FICO.VIEW)
+            self.widgetDef.optionPreviewSelector.setTitle("Preview the Smart Selector")
+            self.widgetDef.optionPreviewSelector.setContent(
+                "For preview purposes, you can open the Smart Selector directly through " \
+                "this option (no link is provided)."
+            )
+            self.widgetDef.optionPreviewSelector.button.setText("Preview")
         
         if self.selectorWindow is None or not self.selectorWindow.isVisible():
+            self.widgetDef.optionPreviewSelector.iconLabel.setIcon(segFont.fromName("Blocked"))
+            self.widgetDef.optionPreviewSelector.setTitle("Previewing the Smart Selector...")
+            self.widgetDef.optionPreviewSelector.setContent(
+                'The Smart Selector is currently being previewed. You can end the preview ' \
+                'by closing its window or clicking on the "Stop preview" button.'
+            )
+            self.widgetDef.optionPreviewSelector.button.setText("Stop preview")
+
             self.selectorWindow = Selector(["", "/AsPreview"])
-            self.selectorWindow.destroyed.connect(lambda: setattr(self, "selectorWindow", None))
             self.selectorWindow.show()
+            self.selectorWindow.closeEvent = lambda e, window=self.selectorWindow: onDestroyed(window)
+
+            if self.selectorPreviewStatus:
+                self.selectorPreviewStatus = None
+            self.selectorPreviewStatus = StateToolTip(
+                "Previewing the Smart Selector...",
+                "The Smart Selector is currently being previewed...",
+                parent
+            )
+            self.selectorPreviewStatus.closeButton.setEnabled(False)
+            self.selectorPreviewStatus.closeButton.setVisible(False)
+            self.selectorPreviewStatus.move(
+                (parent.frameGeometry().width() // 2)
+                - (self.selectorPreviewStatus.width() // 2),
+                10
+            )
+            self.selectorPreviewStatus.show()
+
         else:
-            smart.warningNotify(
+            onDestroyed(self.selectorWindow)
+            """ smart.warningNotify(
                 "Warning, be careful!",
                 "The Smart Selector is already being previewed. " \
                 "Please close the Selector first.",
                 parent
             )
             RichCLI.log("[yellow][b u]WARNING!![/b u] The Smart Selector is already being previewed. " \
-                        "Please close the Selector first.[/]")
+                        "Please close the Selector first.[/]") """
 
 class SettingWidgetDefinition():
     """ Declaration class for some of SettingsInterface widgets """
@@ -294,9 +333,9 @@ class SettingWidgetDefinition():
         self.optionMainRefresh = PushSettingCard(
             "Refresh",
             segFont.fromName("Refresh"),
-            "Refresh main browser card",
-            "In case your main browser card above is not synchronized with some changes, " \
-            "you can make it unified again with this option."
+            "Refresh main browser card"
+            # "In case your main browser card above is not synchronized with some changes, " \
+            # "you can make it unified again with this option."
         )
 
         # Personalization
@@ -401,7 +440,7 @@ class ThemeColorSelectGroup(ExpandGroupSettingCard):
         """ :ThemeColorSelect: Change the current accent mode and color according to the selection. """
         if text == "Custom accent color":
             cfg.set(cfg.accentMode, "Custom")
-            setThemeColor(QColor(cfg.get(cfg.accentColor)) if cfg.get(cfg.accentColor) else QColor(cfg.get(cfg.qAccentColor)), save=True)
+            setThemeColor(QColor(cfg.get(cfg.accentColor)) if cfg.get(cfg.accentColor) else getSystemAccentColor(), save=True)
         else:
             cfg.set(cfg.accentMode, "System")
             setThemeColor(getSystemAccentColor(), save=True)
@@ -571,8 +610,8 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
         super().__init__(
             FICO.MIX_VOLUMES,
             "Configure sound effects",
-            "You can customize the available sounds all the way you want, right here.",
-            parent
+            # "You can customize the available sounds all the way you want, right here.",
+            parent=parent
         )
         self.soundSample = None
         self.soundRemoveDlg = None
@@ -792,6 +831,3 @@ class SoundFxConfigGroup(ExpandGroupSettingCard):
             smart.managerLog(f"SUCCESS: The {soundType} sound effect has been successfully removed!")
             smart.successNotify("Removal complete!", f"The {soundType} sound has been successfully removed!", parent)
         else: pass
-
-# Add Markdown Viewer section with settings:
-## CSS & Homepage properties (will use MarkdownConfig)

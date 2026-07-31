@@ -4,7 +4,7 @@ from utils.SmartUtils import *
 
 TITLE = "Smart DownMarker (BETA)"
 
-class CustomTitleBar(StandardTitleBar):
+class CustomTitleBar(FluentWidgetTitleBar):
     """ Custom title bar """
 
     def __init__(self, parent):
@@ -16,69 +16,70 @@ class CustomTitleBar(StandardTitleBar):
                                    QColor("white") if cfg.get(cfg.appTheme) == "Dark" else QColor("black"))
         self.closeBtn.setNormalColor((QColor("white" if smart.isDarkMode() else "black")) if cfg.get(cfg.appTheme) == "Auto" else
                                    QColor("white") if cfg.get(cfg.appTheme) == "Dark" else QColor("black"))
-        self.minBtn.setHoverBackgroundColor(QColor(cfg.get(cfg.accentColor)) if cfg.get(cfg.accentMode) == "Custom" else QColor(cfg.get(cfg.qAccentColor)))
+        self.minBtn.setHoverBackgroundColor(QColor(cfg.get(cfg.accentColor)) if cfg.get(cfg.accentMode) == "Custom" else getSystemAccentColor())
         self.minBtn.setPressedColor(QColor("white"))
-        self.maxBtn.setHoverBackgroundColor(QColor(cfg.get(cfg.accentColor)) if cfg.get(cfg.accentMode) == "Custom" else QColor(cfg.get(cfg.qAccentColor)))
+        self.maxBtn.setHoverBackgroundColor(QColor(cfg.get(cfg.accentColor)) if cfg.get(cfg.accentMode) == "Custom" else getSystemAccentColor())
         self.maxBtn.setPressedColor(QColor("white"))
-        self.closeBtn.setHoverBackgroundColor(QColor(cfg.get(cfg.accentColor)) if cfg.get(cfg.accentMode) == "Custom" else QColor(cfg.get(cfg.qAccentColor)))
+        self.closeBtn.setHoverBackgroundColor(QColor(cfg.get(cfg.accentColor)) if cfg.get(cfg.accentMode) == "Custom" else getSystemAccentColor())
 
-class SmartDownMarkerGUI(FramelessWindow):
-    """ Class for the **Smart DownMarker** (or *Markdown Viewer*) window """
+class SmartDownMarkerGUI(FluentWidget):
+    """ Class for the **Smart DownMarker** (or *Markdown Editor*) window """
 
     def __init__(self, mdFilePath: str, parent = None):
         super().__init__(parent=parent)
+        # smart.clearCLI()
         RichCLI.print(smart.consoleScript())
-        self.mdPath = mdFilePath if mdFilePath else "Untitled"
+        self.mdPath: str = mdFilePath
         self.mdTitleBar = CustomTitleBar(self)
         self.setTitleBar(self.mdTitleBar)
         self.setWindowIcon(smIco.renderIcon(smIco.MARKDOWN))
-        self.setWindowTitle(f"{self.mdPath} - {TITLE} | {SmartLinkerName}")
-        self.resize(1280, 720)
+        self.setWindowTitle(f"{self.mdPath} | {TITLE}")
+        self.resize(1280, 768)
         self.setMinimumSize(1120, 630)
-        self.move(40, 25)
+        smart.centerWindow(self)
         if cfg.get(cfg.appTheme) == "Dark": setTheme(Theme.DARK)
         elif cfg.get(cfg.appTheme) == "Light": setTheme(Theme.LIGHT)
         else: setTheme(Theme.AUTO)
-        self.setStyleSheet((("background: white" if not smart.isDarkMode() else "") if cfg.get(cfg.appTheme) == "Auto" else
-                          "" if cfg.get(cfg.appTheme) == "Dark" else "background: white") if not cfg.get(cfg.micaEffect) else "")
         try:
-            fontDB = QFontDatabase.addApplicationFont(smart.resourcePath("resources\\fonts\\CascadiaCode.ttf"))
+            fontDB = QFontDatabase.addApplicationFont(smart.resourcePath("resources\\fonts\\Code.ttf"))
             fontEditFam = QFontDatabase.applicationFontFamilies(fontDB)[6]
         except Exception as e:
             print(f"{Fore.RED}Something went wrong while attempting to load the editor font: {e}{Style.RESET_ALL}")
             fontEditFam = "Consolas"
-        finally: fontEditor = fontEditFam
+        finally: self.fontEditor = fontEditFam
         try:
-            fontDB = QFontDatabase.addApplicationFont(smart.resourcePath("resources\\fonts\\SegoeFont.ttf"))
-            fontUIFam = QFontDatabase.applicationFontFamilies(fontDB)[12]
+            fontDB = QFontDatabase.addApplicationFont(smart.resourcePath("resources\\fonts\\Interface.ttf"))
+            fontUIFam = QFontDatabase.applicationFontFamilies(fontDB)[24]
         except Exception as e:
             print(f"{Fore.RED}Something went wrong while attempting to load the editor font: {e}{Style.RESET_ALL}")
             fontUIFam = "Segoe UI"
-        finally: fontUI = fontUIFam
-        fontEditor_QSS = f"font-family: {fontEditor}, 'Consolas', 'Courier New', monospace;"
-        fontUI_QSS = f"font-family: {fontUI}, 'Segoe UI', sans-serif;"
+        finally: self.fontUI = fontUIFam
+        self.fontEditor_QSS = f"font-family: '{self.fontEditor}', 'Consolas', 'Courier New', monospace;"
+        self.fontUI_QSS = f"font-family: '{self.fontUI}', 'Segoe UI', sans-serif;"
 
+        self.themeCtrl = ThemeController(self)
+        self.tabWidget = TabWidget(self)
         self.validPath: bool = os.path.exists(self.mdPath)
-        self.markHistory = self.loadHistory()
+        self.markHistory: dict[str, list[dict[str, str]]] = self.loadHistory()
+        self.confirmSaveDlg = None
         self.historyManageDlg = None
+        self.aboutDialog = None
         self.customCSSDlg = None
         self.customHomeDlg = None
         self.renderMD = MarkdownIt().use(tasklists_plugin).enable("table")
-        self.content = ""
+        self.content: str = ""
         self.contentMD = None
-        self.htmlContent = None
-        self.isHome: bool = True
-        self.editMode: bool = markCfg.get(markCfg.startInEditMode)
-        self.symbols = [
-            '<', '>', '[', ']', '{', '}', '(', ')', '/', '\\', '"', "'", '.', ',', ';', ':', '-', '_', '=', '&', '|', '`', '?', '!', '@', '#', '^',
-            '¨', '$', '%', '~', '°', '*', '+', '§', 'µ', '€'
-        ]
+        self.htmlContent: str = ""
+        self.editMode: bool = cfg.get(cfg.mdStartInEditMode)
         self.baseMD: str = self.loadHomepageContent()
         self.styleMD: str = self.loadStylesheet()
-        self.cache: str = self.configCache()
-        self.displayScrollX = 0
-        self.displayScrollY = 0
-        self.pendingDisplayScrollRestore: bool = False
+        self.cache: dict = self.configCache()
+
+        self.tabWidget.setMovable(True)
+        self.tabWidget.setScrollable(False)
+        self.tabWidget.setTabShadowEnabled(True)
+        self.tabWidget.setTabMaximumWidth(200)
+        self.tabWidget.setCloseButtonDisplayMode(TabCloseButtonDisplayMode.ON_HOVER)
 
         mainLayout = QVBoxLayout(self)
         mainLayout.setContentsMargins(0, self.titleBar.height(), 0, 0)
@@ -86,21 +87,12 @@ class SmartDownMarkerGUI(FramelessWindow):
         self.commandBar = CommandBar()
         self.commandBar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         
-        self.mdNew = Action(FICO.DOCUMENT, "New", triggered=self.newMDFile)
+        self.mdNew = Action(FICO.DOCUMENT, "New", triggered=lambda: self.newMDTab(self._currentTabIndex()))
         self.mdOpen = Action(FICO.FOLDER, "Open", triggered=lambda: self.openMDFile(self))
         self.openRecent = TransparentDropDownPushButton(FICO.HISTORY, "Open recent")
         self.openRecent.setFixedHeight(34)
         setFont(self.openRecent, 12)
-        if self.markHistory["MarkdownHistory"]:
-            self.openRecent.setEnabled(True)
-            self.historyList = RoundMenu(parent=self)
-            for path in self.markHistory["MarkdownHistory"]:
-                mdPath = path["path"]
-                self.historyList.addAction(Action(FICO.DOCUMENT, path["path"], triggered=lambda checked, text=mdPath, parent=self: self.loadMDFile(text, parent)))
-            self.historyList.addSeparator()
-            self.historyList.addAction(Action(FICO.SETTING, "Manage history", triggered=lambda checked, parent=self: self.openHistoryManager(parent)))
-            self.openRecent.setMenu(self.historyList)
-        else: self.openRecent.setEnabled(False)
+        self.openRecent.setEnabled(bool(self.markHistory["MarkdownHistory"]))
         self.mdEdit = Action(FICO.EDIT, "Edit", checkable=True, triggered=lambda checked: self.toggleEditMode(checked))
         self.mdEdit.setChecked(self.editMode)
         self.mdSave = TransparentToolButton(FICO.SAVE)
@@ -174,164 +166,64 @@ class SmartDownMarkerGUI(FramelessWindow):
         MDCLayout.setContentsMargins(0, 0, 0, 0)
         MDCLayout.setSpacing(0)
 
-        self.editorBox = QWidget()
-        self.editorBox.setObjectName("EditorBox")
-        self.editorBox.setContentsMargins(0, 0, 0, 0)
-        self.editorBox.setStyleSheet(f"#EditorBox {{ border-top: 1px solid {"#E3E6E9" if not smart.isDarkMode() else "#393939"}; }}")
-        self.editorBox.setFixedWidth(self.width() // 2)
-        self.editorBox.setEnabled(self.mdEdit.isChecked())
-        editorLayout = QVBoxLayout(self.editorBox)
-        editorLayout.setContentsMargins(0, 0, 0, 0)
-        editorLayout.setSpacing(0)
-        editorZone = QHBoxLayout()
-        editorZone.setContentsMargins(0, 0, 0, 0)
-        editorZone.setSpacing(0)
-        
-        # Editor
-        self.mdEditor = MarkEditor(self)
-        self.mdEditor.installEventFilter(self)
-        self.mdEditor.textChanged.connect(self.editorUpdate)
-        self.mdEditor.cursorPositionChanged.connect(self.editorStatusUpdate)
-        self.mdEditor.selectionChanged.connect(self.editorSelectionUpdate)
+        MDCLayout.addWidget(self.tabWidget)
+
+        if os.path.exists(self.mdPath): self.loadMDFileInNewTab(self.mdPath, self)
+        else: self.newMDTab()
+
+        self.currentTabIndex = self.tabWidget.currentIndex()
+        self.currentTab = self.tabWidget.currentWidget()
+        assert isinstance(self.currentTab, TabInterface)
+        self.currentEditor = self.currentTab.mdEditor
+        self.currentDisplayer = self.currentTab.mdDisplayer
+
+        self.tabWidget.currentChanged.connect(self.onCurrentTabChanged)
+        self.tabWidget.tabCloseRequested.connect(self.closeMDTab)
+        self.tabWidget.tabAddRequested.connect(self.newMDTab)
+        self.tabWidget.tabBar.contextMenuEvent = lambda a0: print(self._paths())
+
+        if self.markHistory["MarkdownHistory"]:
+            self.historyList = RoundMenu(parent=self)
+            for path in self.markHistory["MarkdownHistory"]:
+                mdPath = path["path"]
+                self.historyList.addAction(
+                    Action(FICO.DOCUMENT, path["path"], triggered=lambda checked, text=mdPath, parent=self: (
+                        self.loadMDFileInNewTab(text, parent, True) if self.currentTab.path or self.currentEditor.text() # type: ignore
+                        else self.loadMDFileInTab(self.currentTabIndex, text, parent, True)
+                    ))
+                )
+            self.historyList.addSeparator()
+            self.historyList.addAction(
+                Action(FICO.SETTING, "Manage history", triggered=lambda checked, parent=self: self.openHistoryManager(parent))
+            )
+            self.openRecent.setMenu(self.historyList)
 
         self.mdSave.setEnabled(False)
         self.mdSaveAs.setEnabled(self.editMode)
-        self.mdUndo.setEnabled(self.editMode and self.mdEditor.isUndoAvailable())
-        self.mdRedo.setEnabled(self.editMode and self.mdEditor.isRedoAvailable())
+        self.mdUndo.setEnabled(self.editMode and self.currentEditor.isUndoAvailable())
+        self.mdRedo.setEnabled(self.editMode and self.currentEditor.isRedoAvailable())
         self.mdCut.setEnabled(False)
         self.mdCopy.setEnabled(False)
-        self.mdPaste.setEnabled(self.editMode and self.mdEditor.canPaste())
+        self.mdPaste.setEnabled(self.editMode and self.currentEditor.canPaste())
         self.mdFind.setEnabled(self.editMode)
         self.mdShare.setEnabled(self.validPath)
-        self.mdInfo.setEnabled(bool(self.validPath) or bool(self.mdEditor.text()))
-        # self.mdHome.setEnabled(not self.isHome)
+        self.mdInfo.setEnabled(self.validPath)
 
-        self.mdSave.clicked.connect(lambda: self.saveMDFile(self.mdPath, self.mdEditor.text(), False, self))
-        self.mdSaveAs.clicked.connect(lambda: self.saveMDFile(self.mdPath, self.mdEditor.text(), True, self))
-        self.mdUndo.clicked.connect(self.mdEditor.undo if self.mdEditor else None)
-        self.mdRedo.clicked.connect(self.mdEditor.redo if self.mdEditor else None)
-        self.mdCut.clicked.connect(lambda: (
-            self.mdEditor.cut() if self.mdEditor else None,
-            self.mdPaste.setEnabled(self.mdEditor.canPaste())
-        ))
-        self.mdCopy.clicked.connect(lambda: (
-            self.mdEditor.copy() if self.mdEditor else None,
-            self.mdPaste.setEnabled(self.mdEditor.canPaste())
-        ))
-        self.mdPaste.clicked.connect(self.mdEditor.paste if self.mdEditor else None)
-        self.mdHome.clicked.connect(self.backToHome)
+        """ self.mdSave.clicked.connect(lambda: self.saveMDFileAtTab(self.currentTabIndex, self.mdPath, self.currentEditor.text(), False, self))
+        self.mdSaveAs.clicked.connect(lambda: self.saveMDFileAtTab(self.currentTabIndex, self.mdPath, self.currentEditor.text(), True, self))
+        self.mdUndo.clicked.connect(self.currentEditor.undo if self.currentEditor else None)
+        self.mdRedo.clicked.connect(self.currentEditor.redo if self.currentEditor else None)
+        self.mdCut.clicked.connect(self.currentTab.editorCut)
+        self.mdCopy.clicked.connect(self.currentTab.editorCopy)
+        self.mdPaste.clicked.connect(self.currentEditor.paste if self.currentEditor else None)
+        self.mdInfo.clicked.connect(lambda checked: self.openInfoDialog(self.currentTabIndex))
+        self.mdHome.clicked.connect(lambda: self.backToHome(self.currentTabIndex)) """
         self.mdSettings.toggled.connect(lambda checked: self.toggleSettings(checked))
-
-        self.editorSymbols = SingleDirectionScrollArea(self, Qt.Orientation.Horizontal)
-        self.editorSymbols.setContentsMargins(0, 0, 0, 0)
-        self.editorSymbols.setWidgetResizable(True)
-        self.editorSymbols.setMaximumHeight(41)
-        self.editorSymbols.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.editorSymbols.enableTransparentBackground()
-        self.editorSymbols.setStyleSheet(f"""
-            SingleDirectionalScrollArea {{
-                border-radius: 0px;
-                border-top: 1px solid {"#E3E6E9" if not smart.isDarkMode() else "#393939"};
-            }}
-        """)
-        self.editorSymbolsWidget = QWidget()
-        self.editorSymbols.setWidget(self.editorSymbolsWidget)
-        self.editorSymbolsLayout = QHBoxLayout(self.editorSymbolsWidget)
-        self.editorSymbolsLayout.setContentsMargins(10, 10, 10, 10)
-        self.editorSymbolsLayout.setSpacing(20)
-        self.editorSymbolsLayout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.symTab = CaptionLabel("Tab")
-        self.symTab.setStyleSheet(f"{fontEditor_QSS} font-size: 16px;")
-        self.symTab.mousePressEvent = lambda ev: self.mdEditor.insertTab()
-        self.editorSymbolsLayout.addWidget(self.symTab)
-        for sym in self.symbols:
-            symbol = CaptionLabel(sym)
-            symbol.setStyleSheet(f"{fontEditor_QSS} font-size: 16px;")
-            symbol.mousePressEvent = lambda ev, symbol=sym: self.mdEditor.insertAt(symbol, *self.mdEditor.getCursorPosition())
-            self.editorSymbolsLayout.addWidget(symbol)
-        
-        self.editorStatus = QWidget()
-        self.editorStatus.setObjectName("StatusBar")
-        self.editorStatus.setContentsMargins(0, 0, 0, 0)
-        self.editorStatus.setMaximumHeight(40)
-        self.editorStatus.setStyleSheet("QWidget#StatusBar { background: transparent; }")
-        self.editorStatusBox = QHBoxLayout(self.editorStatus)
-        self.editorStatusBox.setContentsMargins(10, 10, 10, 10)
-        self.editorStatusBox.setSpacing(20)
-        self.statusLineCol = CaptionLabel()
-        self.statusLineCol.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
-        self.statusLineCol.setStyleSheet(fontUI_QSS)
-        self.editorStatusBox.addWidget(self.statusLineCol)
-        self.editorStatusBox.addStretch()
-        self.statusEncoding = CaptionLabel()
-        self.statusEncoding.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
-        self.statusEncoding.setStyleSheet(fontUI_QSS)
-        self.editorStatusBox.addWidget(self.statusEncoding)
-        self.editorStatusBox.addStretch()
-        self.statusCapsLock = CaptionLabel("Caps Lock")
-        self.statusCapsLock.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
-        self.statusCapsLock.setStyleSheet(fontUI_QSS)
-        self.statusCapsLock.setVisible(bool(ctypes.windll.user32.GetKeyState(0x14) & 1))
-        self.editorStatusBox.addWidget(self.statusCapsLock)
-        self.statusNumLock = CaptionLabel("Num Lock")
-        self.statusNumLock.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
-        self.statusNumLock.setStyleSheet(fontUI_QSS)
-        self.statusNumLock.setVisible(bool(ctypes.windll.user32.GetKeyState(0x90) & 1))
-        self.editorStatusBox.addWidget(self.statusNumLock)
-        self.editorStatusBox.addStretch()
-        self.statusTotalChars = CaptionLabel()
-        self.statusTotalChars.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
-        self.statusTotalChars.setStyleSheet(fontUI_QSS)
-        self.editorStatusBox.addWidget(self.statusTotalChars)
-        self.statusTotalLines = CaptionLabel()
-        self.statusTotalLines.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
-        self.statusTotalLines.setStyleSheet(f"font-family: {fontUI}, 'Segoe UI', sans-serif;")
-        self.editorStatusBox.addWidget(self.statusTotalLines)
-        self.statusTotalWords = CaptionLabel()
-        self.statusTotalWords.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
-        self.statusTotalWords.setStyleSheet(fontUI_QSS)
-        self.editorStatusBox.addWidget(self.statusTotalWords)
-
-        editorZone.addWidget(self.mdEditor)
-        editorLayout.addLayout(editorZone)
-        editorLayout.addWidget(self.editorSymbols)
-        editorLayout.addWidget(self.editorStatus)
-        MDCLayout.addWidget(self.editorBox)
-
-        # Viewer
-        self.mdContainer = QWidget(self)
-        self.mdContainer.setObjectName("Container")
-        self.mdContainer.setContentsMargins(0, 0, 0, 0)
-        self.mdContainer.setStyleSheet(f"""
-            #Container {{
-                border: 1px solid {"#E3E6E9" if not smart.isDarkMode() else "#393939"};
-                border-bottom: none;
-                background: transparent;
-            }}
-        """)
-        displayLayout = QVBoxLayout(self.mdContainer)
-        displayLayout.setContentsMargins(1, 1, 1, 0)
-        displayLayout.setSpacing(0)
-        self.mdDisplayer = MarkWebView(self)
-        self.mdDisplayer.setAcceptDrops(True)
-        self.mdDisplayer.loadFinished.connect(self._restorePreviewScrollPosition)
-        self.mdDisplayer.setHtml(self.baseMD, QUrl("http://localhost"))
-        displayLayout.addWidget(self.mdDisplayer)
-        self.displayNavBar = DisplayNavigationBar(self)
-        displayLayout.addWidget(self.displayNavBar)
-
-        MDCLayout.addWidget(self.mdContainer)
 
         # Settings
         self.settingsBox = QWidget()
         self.settingsBox.setObjectName("SettingsBox")
         self.settingsBox.setContentsMargins(0, 0, 0, 0)
-        self.settingsBox.setStyleSheet(f"""
-            QWidget#SettingsBox {{
-                background: transparent;
-                border-top: 1px solid {"#E3E6E9" if not smart.isDarkMode() else "#393939"};
-            }}
-        """)
         self.settingsBox.setEnabled(self.mdSettings.isChecked())
         self.settingsBox.setVisible(self.mdSettings.isChecked())
         settingsLayout = QVBoxLayout(self.settingsBox)
@@ -359,14 +251,13 @@ class SmartDownMarkerGUI(FramelessWindow):
         settingsScroll.setStyleSheet("background-color: rgba(0, 0, 0, 0); border: none")
         settingsContent = QVBoxLayout(setScrollContainer)
         settingsContent.setSpacing(5)
-        self.widgetDef = SettingsWidgetDefinition()
+        self.widgetDef = SettingsWidgets.SettingsWidgetDefinition()
         self.saveConfigOnExitDlg = None
 
         # Settings - General
         settingsContent.addWidget(SubtitleLabel("General"))
         self.widgetDef.optionStartInEditMode.checkedChanged.connect(lambda checked: self.configEditListener())
         settingsContent.addWidget(self.widgetDef.optionStartInEditMode)
-        #self.widgetDef.optionFixTheme.setVisible(cfg.get(cfg.appTheme) == "Auto")
         self.widgetDef.optionFixTheme.button.clicked.connect(self.fixTheme)
         settingsContent.addWidget(self.widgetDef.optionFixTheme)
         self.widgetDef.optionManageHistory.button.clicked.connect(lambda: self.openHistoryManager(self))
@@ -376,7 +267,7 @@ class SmartDownMarkerGUI(FramelessWindow):
         editorLabel = SubtitleLabel("Editor")
         editorLabel.setContentsMargins(0, 20, 0, 0)
         settingsContent.addWidget(editorLabel)
-        self.fontConfig = EditorFontConfigGroup(self)
+        self.fontConfig = SettingsWidgets.EditorFontConfigGroup(self)
         self.fontConfig.configChanged.connect(self.configEditListener)
         settingsContent.addWidget(self.fontConfig)
         self.widgetDef.optionShowLineNumbers.checkedChanged.connect(lambda checked: self.configEditListener())
@@ -391,10 +282,10 @@ class SmartDownMarkerGUI(FramelessWindow):
         settingsContent.addWidget(self.widgetDef.optionEnableWordWrap)
         self.widgetDef.optionHighlightCurrentLine.checkedChanged.connect(lambda checked: self.configEditListener())
         settingsContent.addWidget(self.widgetDef.optionHighlightCurrentLine)
-        self.indentConfig = IndentationConfigGroup(self)
+        self.indentConfig = SettingsWidgets.IndentationConfigGroup(self)
         self.indentConfig.configChanged.connect(self.configEditListener)
         settingsContent.addWidget(self.indentConfig)
-        self.selectColorConfig = EditorSelectionConfigGroup(self)
+        self.selectColorConfig = SettingsWidgets.EditorSelectionConfigGroup(self)
         self.selectColorConfig.selectButton.clicked.connect(lambda: self.openColorDialog(self))
         self.selectColorConfig.configChanged.connect(self.configEditListener)
         settingsContent.addWidget(self.selectColorConfig)
@@ -406,16 +297,19 @@ class SmartDownMarkerGUI(FramelessWindow):
         settingsContent.addWidget(viewerLabel)
         self.widgetDef.optionOpenExternalLinks.checkedChanged.connect(lambda checked: self.configEditListener())
         settingsContent.addWidget(self.widgetDef.optionOpenExternalLinks)
-        self.cssPropertiesConfig = CSSPropertiesConfigGroup(self)
+        self.cssPropertiesConfig = SettingsWidgets.CSSPropertiesConfigGroup(self)
         self.cssPropertiesConfig.storageSelectButton.clicked.connect(self.selectLocalCSSSource)
         self.cssPropertiesConfig.customStyleEditButton.clicked.connect(lambda: self.openCustomCSSEditor(self))
         self.cssPropertiesConfig.configChanged.connect(self.configEditListener)
         settingsContent.addWidget(self.cssPropertiesConfig)
-        self.homepageConfig = HomePageConfigGroup(self)
+        self.homepageConfig = SettingsWidgets.HomePageConfigGroup(self)
         self.homepageConfig.storageSelectButton.clicked.connect(self.selectLocalHomepageSource)
         self.homepageConfig.customContentEditButton.clicked.connect(lambda: self.openCustomHomeEditor(self))
         self.homepageConfig.configChanged.connect(self.configEditListener)
         settingsContent.addWidget(self.homepageConfig)
+        self.dragDropConfig = SettingsWidgets.DragAndDropEventsConfigGroup(self)
+        self.dragDropConfig.configChanged.connect(self.configEditListener)
+        settingsContent.addWidget(self.dragDropConfig)
 
         settingsContent.addStretch()
         MDCLayout.addWidget(self.settingsBox)
@@ -423,8 +317,8 @@ class SmartDownMarkerGUI(FramelessWindow):
 
         self.titleBar.raise_()
         self.mdSave.setEnabled(False)
-        self.editorBox.setVisible(self.mdEdit.isChecked())
-        self.loadMDFile(self.mdPath, self)
+        self.applyTheme(cfg.get(cfg.appTheme))
+        self.themeCtrl.themeChanged.connect(lambda text: self.applyTheme(cfg.get(cfg.appTheme)))
 
     def _renderGitMarkdown(self, text: str) -> str:
         return self.renderMD.render(self._convertGithubAlerts(text))
@@ -486,6 +380,1041 @@ class SmartDownMarkerGUI(FramelessWindow):
 
         return "\n".join(output)
 
+    def _paths(self) -> str:
+        return f"self.paths = {self.tabsPaths()}"
+
+    def _currentTabIndex(self) -> int:
+        return self.tabWidget.currentIndex()
+
+    def applyTheme(self, mode: str):
+        setTheme(Theme.DARK)
+        """ if mode == "Auto":
+            setTheme(Theme.DARK if smart.isDarkModeEnabled() else Theme.LIGHT)
+        elif mode == "Dark":
+            setTheme(Theme.DARK)
+        else:
+            setTheme(Theme.LIGHT) """
+        
+        self.setMicaEffectEnabled(cfg.get(cfg.micaEffect))
+
+        for i in range(self.tabWidget.count()):
+            tab = self.tabWidget.widget(i)
+            assert isinstance(tab, TabInterface)
+            tab.editorBox.setStyleSheet(f"#EditorBox {{ border-top: 1px solid {"#E3E6E9" if theme() == Theme.LIGHT else "#393939"}; }}")
+            tab.editorSymbols.setStyleSheet(f"""
+                SingleDirectionalScrollArea {{
+                    border-radius: 0px;
+                    border-top: 1px solid {"#E3E6E9" if theme() == Theme.LIGHT else "#393939"};
+                }}
+            """)
+            tab.mdContainer.setStyleSheet(f"""
+                #Container {{
+                    border: 1px solid {"#E3E6E9" if theme() == Theme.LIGHT else "#393939"};
+                    border-bottom: none;
+                    background: transparent;
+                }}
+            """)
+            tab.displayNavBar.setStyleSheet(f"""
+                QWidget#DisplayNavigation {{
+                    border-top: 1px solid {"#E3E6E9" if theme() == Theme.LIGHT else "#393939"};
+                    background: transparent;
+                }}
+            """)
+
+        self.settingsBox.setStyleSheet(f"""
+            QWidget#SettingsBox {{
+                background: transparent;
+                border-top: 1px solid {"#E3E6E9" if theme() == Theme.LIGHT else "#393939"};
+            }}
+        """)
+
+    def tabsPaths(self) -> list[str]:
+        paths: list[str] = []
+
+        for i in range(self.tabWidget.count()):
+            tab = self.tabWidget.widget(i)
+            assert isinstance(tab, TabInterface)
+
+            paths.append(tab.path)
+
+        return paths
+
+    def onCurrentTabChanged(self, index: int):
+        self.currentTab = self.tabWidget.widget(index)
+        assert isinstance(self.currentTab, TabInterface)
+        self.currentEditor = self.currentTab.mdEditor
+        self.currentDisplayer = self.currentTab.mdDisplayer
+        self.mdPath = self.currentTab.path
+
+        self.setWindowTitle(
+            f"{"• " if self.currentTab.canSave else ""}{self.currentTab.path if self.currentTab.path else "Untitled"} | {TITLE}"
+        )
+
+        self.mdSave.setEnabled(self.editMode and (self.currentTab.canSave or self.currentTab.canSaveContent()))
+        self.mdUndo.setEnabled(self.editMode and (self.currentTab.canUndo or self.currentEditor.isUndoAvailable()))
+        self.mdRedo.setEnabled(self.editMode and (self.currentTab.canRedo or self.currentEditor.isRedoAvailable()))
+        self.mdCut.setEnabled(self.editMode and (self.currentTab.canCut or self.currentEditor.hasSelectedText()))
+        self.mdCopy.setEnabled(self.editMode and (self.currentTab.canCopy or self.currentEditor.hasSelectedText()))
+        self.mdPaste.setEnabled(self.editMode and (self.currentTab.canPaste or self.currentEditor.canPaste()))
+        self.mdShare.setEnabled(self.currentTab.canShare or os.path.exists(self.currentTab.path))
+        self.mdInfo.setEnabled(self.currentTab.canInfo or os.path.exists(self.currentTab.path))
+        self.mdHome.setEnabled(not self.currentTab.isHome)
+
+        if self.markHistory["MarkdownHistory"]:
+            self.historyList = RoundMenu(parent=self)
+            for path in self.markHistory["MarkdownHistory"]:
+                mdPath = path["path"]
+                self.historyList.addAction(
+                    Action(FICO.DOCUMENT, path["path"], triggered=lambda checked, text=mdPath, parent=self: (
+                        self.loadMDFileInNewTab(text, parent, True) if self.currentTab.path or self.currentEditor.text() # type: ignore
+                        else self.loadMDFileInTab(index, text, parent, True)
+                    ))
+                )
+            self.historyList.addSeparator()
+            self.historyList.addAction(
+                Action(FICO.SETTING, "Manage history", triggered=lambda checked, parent=self: self.openHistoryManager(parent))
+            )
+            self.openRecent.setMenu(self.historyList)
+
+        self.mdSave.clicked.connect(lambda: self.saveMDFileAtTab(index, self.mdPath, self.currentEditor.text(), False, self))
+        self.mdSaveAs.clicked.connect(lambda: self.saveMDFileAtTab(index, self.mdPath, self.currentEditor.text(), True, self))
+        self.mdUndo.clicked.connect(self.currentEditor.undo if self.currentEditor else None)
+        self.mdRedo.clicked.connect(self.currentEditor.redo if self.currentEditor else None)
+        self.mdCut.clicked.connect(self.currentTab.editorCut)
+        self.mdCopy.clicked.connect(self.currentTab.editorCopy)
+        self.mdPaste.clicked.connect(self.currentEditor.paste if self.currentEditor else None)
+        self.mdInfo.clicked.connect(lambda checked: self.openInfoDialog(index))
+        self.mdHome.clicked.connect(lambda: self.backToHome(index))
+
+    def newMDTab(self, afterIndex: int | None = None):
+        self.mdPath = ""
+        if afterIndex is not None:
+            newTab = self.tabWidget.insertTab(
+                afterIndex + 1,
+                TabInterface("", "", self.baseMD, self.mdEdit.isChecked(), self),
+                "Untitled",
+                segSVG.MARKDOWN
+            )
+        else:
+            newTab = self.tabWidget.addTab(
+                TabInterface("", "", self.baseMD, self.mdEdit.isChecked(), self),
+                "Untitled",
+                segSVG.MARKDOWN
+            )
+        self.tabWidget.setCurrentIndex(newTab)
+        self.backToHome(newTab)
+    
+    def closeMDTab(self, index: int):
+        selectedTab = self.tabWidget.widget(index)
+        assert isinstance(selectedTab, TabInterface)
+        
+        if selectedTab.canSave:
+            def closeDialog(widget: TabWidget, dialog: MessageBox):
+                widget.removeTab(index)
+                dialog.reject()
+
+            if self.confirmSaveDlg:
+                self.confirmSaveDlg = None
+            self.confirmSaveDlg = MessageBox(
+                "Save changes before closing",
+                "New changes have been made inside this tab. "
+                "If you close it without saving, all those changes "
+                "will be definitely lost.\n\nDo you want to save them "
+                "before closing your tab?",
+                self
+            )
+            self.confirmSaveDlg.yesButton.setText("Save changes and close")
+            noButton = PushButton("Close without saving", self.confirmSaveDlg.buttonGroup)
+            noButton.clicked.connect(lambda checked, dialog=self.confirmSaveDlg: closeDialog(self.tabWidget, dialog))
+            self.confirmSaveDlg.buttonLayout.removeWidget(self.confirmSaveDlg.cancelButton)
+            self.confirmSaveDlg.buttonLayout.addWidget(noButton, 1, Qt.AlignmentFlag.AlignVCenter)
+            self.confirmSaveDlg.buttonLayout.addWidget(self.confirmSaveDlg.cancelButton, 1, Qt.AlignmentFlag.AlignVCenter)
+
+            if self.confirmSaveDlg.exec():
+                try:
+                    self.saveMDFileAtTab(
+                        index,
+                        selectedTab.path,
+                        selectedTab.mdEditor.text(),
+                        self.tabWidget.tabText(index) == "Untitled",
+                        self
+                    )
+                    self.tabWidget.removeTab(index)
+                except Exception as e:
+                    RichCLI.log(f"[red][b u]ERROR[/b u]: Failed to save changes: [i]{e}[/]")
+                    smart.errorNotify(
+                        "Oops! Something went wrong...",
+                       f"An error occured while attempting to save your changes:\n{e}",
+                       self
+                    )
+        
+        else:
+            self.tabWidget.removeTab(index)
+        
+        if self.tabWidget.count() == 0:
+            self.newMDTab()
+    
+    def openMDFile(self, parent):
+        """ Open a Markdown file from storage """
+        path = smart.browseFileDialog(parent, "Open a file in the Markdown Viewer", "", "Markdown files (*.md; *.markdown)")
+        if path:
+            currentIndex = self.tabWidget.currentIndex()
+            
+            if self.tabsPaths()[currentIndex]:
+                self.loadMDFileInNewTab(path, parent)
+            else:
+                self.loadMDFileInTab(currentIndex, path, parent)
+
+    def loadMDFileInTab(self, tabIndex: int, path: str, parent, fromHistory: bool = False):
+        paths = self.tabsPaths()
+        path = os.path.normpath(path)
+        if os.path.exists(path):
+            if smart.isMarkdownExtension(path):
+                if smart.getFileMimeType(path).startswith("text"):
+                    if path not in paths:
+                        self.mdPath = path
+                        with open(path, encoding="utf-8") as mdReader:
+                            self.content = mdReader.read()
+                        self.contentMD = self.renderMD.render(self.content) if cfg.get(cfg.mdCssSource) != "Default" else self._renderGitMarkdown(self.content)
+                        self.htmlContent = f'<html>\n<head>\n<style>\n{self.styleMD}</style>\n</head>\n\n<body class="markdown-body" style="padding: 20px;">\n{self.contentMD}\n</body>\n</html>'
+                        
+                        currentTab = self.tabWidget.widget(tabIndex)
+                        assert isinstance(currentTab, TabInterface)
+                        currentTab.path = path
+                        currentTab.content = self.content
+                        currentTab.viewContent = self.htmlContent
+                        currentTab.mdEditor.setText(self.content)
+                        currentTab.mdDisplayer.setHtml(self.htmlContent, QUrl("http://localhost"))
+                        self.tabWidget.setCurrentWidget(currentTab)
+                        self.markUpdate(tabIndex, False, parent)
+                        with open(ROOT_PATH / "markdownContent.log", "w", encoding="utf-8") as mdWriter:
+                            mdWriter.write(self.content)
+                        with open(ROOT_PATH / "markdownHtml.log", "w", encoding="utf-8") as htmlWriter:
+                            htmlWriter.write(self.htmlContent)
+                    
+                    else:
+                        idx = paths.index(path)
+                        selectedTab = self.tabWidget.widget(idx)
+                        assert isinstance(selectedTab, TabInterface)
+                        if selectedTab.path == paths[idx]:
+                            self.tabWidget.setCurrentWidget(selectedTab)
+                        else:
+                            for i in range(self.tabWidget.count()):
+                                tab = self.tabWidget.widget(i)
+                                assert isinstance(tab, TabInterface)
+                                if tab.path == paths[idx]:
+                                    self.tabWidget.setCurrentWidget(tab)
+                    
+                else:
+                    smart.warningNotify("Warning, be careful!", "The format of the provided file is not supported...", parent)
+                    if fromHistory: self.removeFromHistory(path, parent)
+
+            else:
+                smart.warningNotify("Warning, be careful!", "The provided file is not recognized as a Markdown file...", parent)
+                if fromHistory: self.removeFromHistory(path, parent)
+
+        else:
+            smart.warningNotify("Warning, be careful!", "The file at the provided path does not exist...", parent)
+            if fromHistory: self.removeFromHistory(path, parent)
+
+    def loadMDFileInNewTab(self, path: str, parent, fromHistory: bool = False):
+        paths = self.tabsPaths()
+        path = os.path.normpath(path)
+        if os.path.exists(path):
+            if smart.isMarkdownExtension(path):
+                if smart.getFileMimeType(path).startswith("text"):
+                    if path not in paths:
+                        self.mdPath = path
+                        with open(path, encoding="utf-8") as mdReader:
+                            self.content = mdReader.read()
+                        self.contentMD = self.renderMD.render(self.content) if cfg.get(cfg.mdCssSource) != "Default" else self._renderGitMarkdown(self.content)
+                        self.htmlContent = f'<html>\n<head>\n<style>\n{self.styleMD}</style>\n</head>\n\n<body class="markdown-body" style="padding: 20px;">\n{self.contentMD}\n</body>\n</html>'
+                        newTab = self.tabWidget.addTab(
+                            TabInterface(path, self.content, self.htmlContent, self.mdEdit.isChecked(), self),
+                            os.path.basename(path),
+                            segSVG.MARKDOWN
+                        )
+                        self.tabWidget.setCurrentIndex(newTab)
+                        self.markUpdate(newTab, True, parent)
+                        with open(ROOT_PATH / "markdownContent.log", "w", encoding="utf-8") as mdWriter: mdWriter.write(self.content)
+                        with open(ROOT_PATH / "markdownHtml.log", "w", encoding="utf-8") as htmlWriter: htmlWriter.write(self.htmlContent)
+                    
+                    else:
+                        idx = paths.index(path)
+                        selectedTab = self.tabWidget.widget(idx)
+                        assert isinstance(selectedTab, TabInterface)
+                        if selectedTab.path == paths[idx]:
+                            self.tabWidget.setCurrentWidget(selectedTab)
+                        else:
+                            for i in range(self.tabWidget.count()):
+                                tab = self.tabWidget.widget(i)
+                                assert isinstance(tab, TabInterface)
+                                if tab.path == paths[idx]:
+                                    self.tabWidget.setCurrentWidget(tab)
+                    
+                else:
+                    smart.warningNotify("Warning, be careful!", "The format of the provided file is not supported...", parent)
+                    if fromHistory: self.removeFromHistory(path, parent)
+
+            else:
+                smart.warningNotify("Warning, be careful!", "The provided file is not recognized as a Markdown file...", parent)
+                if fromHistory: self.removeFromHistory(path, parent)
+
+        else:
+            smart.warningNotify("Warning, be careful!", "The file at the provided path does not exist...", parent)
+            if fromHistory: self.removeFromHistory(path, parent)
+
+    def markUpdate(self, tabIndex: int, inNewTab: bool, parent):
+        inHistory: bool = False
+        selectedTab = self.tabWidget.widget(tabIndex)
+        assert isinstance(selectedTab, TabInterface)
+        self.setWindowTitle(f"{selectedTab.path} | {TITLE}")
+        self.tabWidget.setTabIcon(tabIndex, segSVG.MARKDOWN)
+        if not inNewTab:
+            self.tabWidget.setTabText(tabIndex, os.path.basename(selectedTab.path))
+        
+        for histPath in self.markHistory["MarkdownHistory"]:
+            if histPath["path"] == selectedTab.path:
+                inHistory = True
+                break
+        
+        if not inHistory:
+            self.markHistory["MarkdownHistory"].append({"path": selectedTab.path})
+            self.saveHistory(self.markHistory)
+            self.markHistory = self.loadHistory()
+            self.openRecent.setEnabled(True)
+            self.historyList = RoundMenu(parent=self)
+            for hPath in self.markHistory["MarkdownHistory"]:
+                self.historyList.addAction(Action(FICO.DOCUMENT, hPath["path"], triggered=lambda checked, path=hPath["path"], parent=parent: self.loadMDFileInNewTab(path, parent, True)))
+            
+            self.historyList.addSeparator()
+            self.historyList.addAction(Action(FICO.SETTING, "Manage history", triggered=lambda checked, parent=parent: self.openHistoryManager(parent)))
+            self.openRecent.setMenu(self.historyList)
+        
+        selectedTab.canInfo = True
+        self.mdInfo.setEnabled(selectedTab.canInfo)
+
+    def saveMDFileAtTab(self, tabIndex: int, path: str, content: str, saveAs: bool, parent):
+        selectedTab = self.tabWidget.widget(tabIndex)
+        assert isinstance(selectedTab, TabInterface)
+        validPath = os.path.exists(path)
+        if saveAs or not validPath:
+            newPath = os.path.normpath(
+                smart.saveFileDialog(
+                    parent,
+                    f"Save a Markdown file from {TITLE}",
+                    os.path.dirname(path) if validPath else "",
+                    "Markdown files (*.md; *.markdown)"
+                )
+            )
+            if newPath:
+                with open(newPath, "w", encoding="utf-8") as mdWriter:
+                    mdWriter.write(content)
+                self.mdPath = newPath
+                self.setWindowTitle(f"{newPath} | {TITLE}")
+                self.tabWidget.setTabText(tabIndex, os.path.basename(newPath))
+                smart.successNotify("Save complete!", "The file has been saved successfully!", parent)
+            print(newPath)
+        
+        else:
+            with open(path, 'w', encoding="utf-8") as mdWriter:
+                mdWriter.write(content)
+            self.setWindowTitle(f"{self.windowTitle()[2:] if self.windowTitle().startswith('•') else self.windowTitle()}")
+            smart.successNotify("Save complete!", "The file has been saved successfully!", parent)
+            print(path)
+        
+        self.tabWidget.setTabIcon(tabIndex, segSVG.MARKDOWN)
+        selectedTab.canSave = False
+        self.mdSave.setEnabled(selectedTab.canSave)
+
+    def loadStylesheet(self) -> str:
+        if cfg.get(cfg.mdCssSource) == "Local":
+            if os.path.exists(cfg.get(cfg.mdCssSourcePath)):
+                with open(cfg.get(cfg.mdCssSourcePath), encoding="utf-8") as styleReader: return styleReader.read()
+            else:
+                with open(smart.resourcePath("resources/assets/github-markdown.css"), encoding="utf-8") as styleReader: return styleReader.read()
+                smart.warningNotify("Warning, be careful!", "Your local CSS resource cannot be found in your storage. Applying the default style...", self)
+        
+        elif cfg.get(cfg.mdCssSource) == "Custom":
+            if cfg.get(cfg.mdCssProperties): return cfg.get(cfg.mdCssProperties)
+            else:
+                with open(smart.resourcePath("resources/assets/github-markdown.css"), encoding="utf-8") as styleReader: return styleReader.read()
+                smart.warningNotify("Warning, be careful!", "Your custom CSS properties are currently empty. Applying the default style...", self)
+        
+        else:
+            with open(smart.resourcePath("resources/assets/github-markdown.css"), encoding="utf-8") as styleReader: return styleReader.read()
+
+    def loadHomepageContent(self) -> str:
+        if cfg.get(cfg.mdHomepageSource) == "Local":
+            if os.path.exists(cfg.get(cfg.mdHomepageSourcePath)):
+                with open(cfg.get(cfg.mdHomepageSourcePath), encoding="utf-8") as baseReader: return baseReader.read()
+            else:
+                with open(smart.resourcePath("resources/assets/markdown-base-content.html"), encoding="utf-8") as baseReader: return (baseReader.read().replace("Markdown Viewer", TITLE)).replace("Open a Markdown file", "Open")
+                smart.warningNotify("Warning, be careful!", "Your local homepage content cannot be found in your storage. Loading the default homepage...", self)
+        
+        elif cfg.get(cfg.mdCssSource) == "Custom":
+            if cfg.get(cfg.mdCssProperties): return cfg.get(cfg.mdCssProperties)
+            else:
+                with open(smart.resourcePath("resources/assets/markdown-base-content.html"), encoding="utf-8") as baseReader: return (baseReader.read().replace("Markdown Viewer", TITLE)).replace("Open a Markdown file", "Open")
+                smart.warningNotify("Warning, be careful!", "Your custom homepage properties are currently empty. Loading the default homepage...", self)
+        
+        else:
+            with open(smart.resourcePath("resources/assets/markdown-base-content.html"), encoding="utf-8") as baseReader: return (baseReader.read().replace("Markdown Viewer", TITLE)).replace("Open a Markdown file", "Open")
+
+    def openInfoDialog(self, tabIndex: int):
+        selectedTab = self.tabWidget.widget(tabIndex)
+        assert isinstance(selectedTab, TabInterface)
+
+        if selectedTab.canInfo:
+            selectedTab.openInfoDialog()
+
+    def backToHome(self, tabIndex: int):
+        toHome: bool = True
+        selectedTab = self.tabWidget.widget(tabIndex)
+        assert isinstance(selectedTab, TabInterface)
+
+        if selectedTab.canSave:
+            def closeDialog(dialog: MessageBox):
+                dialog.reject()
+
+            if self.confirmSaveDlg:
+                self.confirmSaveDlg = None
+            self.confirmSaveDlg = MessageBox(
+                "Save changes before going back to Home",
+                "New changes have been made inside this tab. "
+                "If you go back to Home it without saving, all those changes "
+                "will be definitely lost.\n\nDo you want to save them "
+                "before going back to Home?",
+                self
+            )
+            self.confirmSaveDlg.yesButton.setText("Save changes and back to Home")
+            noButton = PushButton("Back to Home without saving", self.confirmSaveDlg.buttonGroup)
+            noButton.clicked.connect(lambda checked, dialog=self.confirmSaveDlg: closeDialog(dialog))
+            self.confirmSaveDlg.buttonLayout.removeWidget(self.confirmSaveDlg.cancelButton)
+            self.confirmSaveDlg.buttonLayout.addWidget(noButton, 1, Qt.AlignmentFlag.AlignVCenter)
+            self.confirmSaveDlg.buttonLayout.addWidget(self.confirmSaveDlg.cancelButton, 1, Qt.AlignmentFlag.AlignVCenter)
+
+            if self.confirmSaveDlg.exec():
+                try:
+                    self.saveMDFileAtTab(
+                        tabIndex,
+                        selectedTab.path,
+                        selectedTab.mdEditor.text(),
+                        self.tabWidget.tabText(tabIndex) == "Untitled",
+                        self
+                    )
+                    toHome = True
+                except Exception as e:
+                    RichCLI.log(f"[red][b u]ERROR[/b u]: Failed to save changes: [i]{e}[/]")
+                    smart.errorNotify(
+                        "Oops! Something went wrong...",
+                       f"An error occured while attempting to save your changes:\n{e}",
+                       self
+                    )
+                    toHome = False
+            else:
+                toHome = False
+
+        if toHome:
+            selectedTab.path = ""
+            selectedTab.content = ""
+            selectedTab.viewContent = self.baseMD
+            selectedTab.canSave = False
+            selectedTab.canUndo = False
+            selectedTab.canRedo = False
+            selectedTab.canCut = False
+            selectedTab.canCopy = False
+            selectedTab.canPaste = selectedTab.mdEditor.canPaste()
+            selectedTab.canShare = False
+            selectedTab.canInfo = False
+            selectedTab.isHome = True
+            
+            selectedTab.mdEditor.setText(selectedTab.content)
+            selectedTab.mdDisplayer.setHtml(selectedTab.viewContent, QUrl("http://localhost"))
+            self.tabWidget.setTabIcon(tabIndex, segSVG.MARKDOWN)
+            self.tabWidget.setTabText(tabIndex, "Untitled")
+
+            currentTab = self.tabWidget.currentIndex()
+            if currentTab == tabIndex:
+                self.setWindowTitle(f"Untitled | {TITLE}")
+                self.mdSave.setEnabled(selectedTab.canSave)
+                self.mdUndo.setEnabled(selectedTab.canUndo)
+                self.mdRedo.setEnabled(selectedTab.canRedo)
+                self.mdCut.setEnabled(selectedTab.canCut)
+                self.mdCopy.setEnabled(selectedTab.canCopy)
+                self.mdPaste.setEnabled(selectedTab.canPaste)
+                self.mdShare.setEnabled(selectedTab.canShare)
+                self.mdInfo.setEnabled(selectedTab.canInfo)
+
+    def loadHistory(self):
+        try:
+            with open(Path(ROOT_PATH / "bin" / "markdown_history.dat"), "rb") as histReader: return pickle.load(histReader)
+        except: return {"MarkdownHistory": []}
+    
+    def saveHistory(self, history):
+        try:
+            with open(Path(ROOT_PATH / "bin" / "markdown_history.dat"), "wb") as histWriter: pickle.dump(history, histWriter)
+        except Exception as e:
+            print(f"{Fore.RED}An error occured while attempting to save browser-related changes: {e}{Style.RESET_ALL}")
+            smart.managerLog(f"ERROR: Failed to save browser-related changes: {e}")
+
+    def openHistoryManager(self, parent):
+        history = self.loadHistory()
+        if self.historyManageDlg:
+            self.historyManageDlg = None
+        self.historyManageDlg = ManageHistoryDialog(history, parent)
+        
+        if self.historyManageDlg.exec(): # type: ignore
+            try:
+                self.saveHistory(self.historyManageDlg.tempHistory)
+                self.markHistory = self.loadHistory()
+                self.historyList = RoundMenu(parent=self)
+                for hPath in self.markHistory["MarkdownHistory"]:
+                    self.historyList.addAction(
+                        Action(
+                            FICO.DOCUMENT,
+                            hPath["path"],
+                            triggered=lambda checked, path=hPath["path"], parent=parent: self.loadMDFileInNewTab(path, parent, True)
+                        )
+                    )
+                self.historyList.addSeparator()
+                self.historyList.addAction(Action(FICO.SETTING, "Manage history", triggered=lambda checked, parent=parent: self.openHistoryManager(parent)))
+                self.openRecent.setMenu(self.historyList)
+                self.historyManageDlg = None
+                
+                """ mdHistory = [path["path"] for path in self.markHistory["MarkdownHistory"]]
+                if self.mdPath not in mdHistory:
+                    self.backToHome() """
+                smart.successNotify("Save complete!", "The changes have been saved successfully!", parent)
+                print(f"{Fore.GREEN}The history changes have been saved successfully!{Style.RESET_ALL}")
+            
+            except Exception as e:
+                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to save history changes: {e}", parent)
+                print(f"{Fore.RED}An error occured while attempting to save history changes: {e}{Style.RESET_ALL}")
+
+    def removeFromHistory(self, value: str, parent):
+        self.markHistory = self.loadHistory()
+        try:
+            self.markHistory["MarkdownHistory"].remove({"path": value})
+        except Exception as e:
+            RichCLI.log("[red][b u]ERROR[/b u]: Failed to remove the invalid path " \
+                       f"'[i u]{value}[/i u]' from your Markdown history:\n[i]{e}[/]")
+            smart.errorNotify(
+                "Oops! Something went wrong...",
+                "An error occured while attempting to remove an invalid path " \
+               f"from your Markdown history:\n{e}",
+               self
+            )
+            return
+        
+        if self.markHistory["MarkdownHistory"]:
+            self.historyList = RoundMenu(parent=self)
+            for hPath in self.markHistory["MarkdownHistory"]:
+                self.historyList.addAction(
+                    Action(
+                        FICO.DOCUMENT,
+                        hPath["path"],
+                        triggered=lambda savedPath=hPath["path"], parent=parent: self.loadMDFileInNewTab(savedPath, parent, True)
+                    )
+                )
+            self.historyList.addSeparator()
+            self.historyList.addAction(Action(FICO.SETTING, "Manage history"))
+            self.openRecent.setMenu(self.historyList)
+        else:
+            self.openRecent.setEnabled(False)
+            self.historyList.clear()
+            smart.infoNotify("Empty history", "Your Markdown history is now empty.")
+
+        self.saveHistory(self.markHistory)
+        self.markHistory = self.loadHistory()
+
+    def toggleEditMode(self, check: bool):
+        self.editMode = check
+        for i in range(self.tabWidget.count()):
+            tab = self.tabWidget.widget(i)
+            assert isinstance(tab, TabInterface)
+            tab.editorBox.setEnabled(check)
+            tab.editorBox.setVisible(check)
+            
+            if not check:
+                tab.canSave = False
+                tab.canUndo = False
+                tab.canRedo = False
+                tab.canCut = False
+                tab.canCopy = False
+                tab.canPaste = False
+            else:
+                tab.canSave = tab.canSaveContent()
+                tab.canUndo = tab.mdEditor.isUndoAvailable()
+                tab.canRedo = tab.mdEditor.isRedoAvailable()
+                tab.canCut = tab.mdEditor.hasSelectedText()
+                tab.canCopy = tab.mdEditor.hasSelectedText()
+                tab.canPaste = tab.mdEditor.canPaste()
+        
+        currentTab = self.tabWidget.currentWidget()
+        assert isinstance(currentTab, TabInterface)
+        self.mdSave.setEnabled(currentTab.canSave)
+        self.mdSaveAs.setEnabled(check)
+        self.mdUndo.setEnabled(currentTab.canUndo)
+        self.mdRedo.setEnabled(currentTab.canRedo)
+        self.mdCut.setEnabled(currentTab.canCut)
+        self.mdCopy.setEnabled(currentTab.canCopy)
+        self.mdPaste.setEnabled(currentTab.canPaste)
+        self.mdFind.setEnabled(check)
+        currentTab.editorUpdate()
+
+    def toggleSettings(self, check: bool):
+        def leave(tab: TabInterface):
+            self.tabWidget.setEnabled(True)
+            self.tabWidget.setVisible(True)
+            self.settingsBox.setEnabled(False)
+            self.settingsBox.setVisible(False)
+            self.mdNew.setEnabled(True)
+            self.mdOpen.setEnabled(True)
+            self.openRecent.setEnabled(
+                bool(self.markHistory["MarkdownHistory"])
+                or bool(self.historyList.actions())
+            )
+            self.mdEdit.setEnabled(True)
+            self.mdSave.setEnabled(self.editMode and tab.canSave)
+            self.mdSaveAs.setEnabled(self.editMode)
+            self.mdUndo.setEnabled(self.editMode and tab.canUndo)
+            self.mdRedo.setEnabled(self.editMode and tab.canRedo)
+            self.mdCut.setEnabled(self.editMode and tab.canCut)
+            self.mdCopy.setEnabled(self.editMode and tab.canCopy)
+            self.mdPaste.setEnabled(self.editMode and tab.canPaste)
+            self.mdFind.setEnabled(self.editMode)
+            self.mdShare.setEnabled(bool(tab.mdEditor.text()))
+            self.mdInfo.setEnabled(os.path.exists(tab.path))
+            self.mdHome.setEnabled(not tab.isHome)
+
+        currentTab = self.tabWidget.currentWidget()
+        assert isinstance(currentTab, TabInterface)
+        self.pendingChanges = self.cache != self.configCache()
+        
+        if check:
+            self.tabWidget.setEnabled(not check)
+            self.tabWidget.setVisible(not check)
+            self.settingsBox.setEnabled(check)
+            self.settingsBox.setVisible(check)
+            self.mdNew.setEnabled(not check)
+            self.mdOpen.setEnabled(not check)
+            self.openRecent.setEnabled(not check)
+            self.mdEdit.setEnabled(not check)
+            self.mdSave.setEnabled(not check)
+            self.mdSaveAs.setEnabled(not check)
+            self.mdUndo.setEnabled(not check)
+            self.mdRedo.setEnabled(not check)
+            self.mdCut.setEnabled(not check)
+            self.mdCopy.setEnabled(not check)
+            self.mdPaste.setEnabled(not check)
+            self.mdFind.setEnabled(not check)
+            self.mdShare.setEnabled(not check)
+            self.mdInfo.setEnabled(not check)
+            self.mdHome.setEnabled(not check)
+        else:
+            self.saveConfigOnExitDlg = None
+            if self.pendingChanges:
+                self.saveConfigOnExitDlg = MessageBox(
+                    "WARNING: Unsaved settings changes",
+                    "Some settings have been changed but not saved yet. If you close the settings, "
+                    "all your changes will be discarded.\n\nDo you want to save and apply them now?",
+                    self
+                )
+                self.saveConfigOnExitDlg.yesButton.setText("Save and apply changes")
+                self.saveConfigOnExitDlg.cancelButton.setText("Discard changes")
+                if self.saveConfigOnExitDlg.exec():
+                    self.configSave()
+                    leave(currentTab)
+                else:
+                    leave(currentTab) # Discard and leave
+            else: leave(currentTab)
+
+    def openColorDialog(self, parent):
+        """ Open a dialog to change the editor's selection custom color. """
+        if not self.selectCustomColorDlg:
+            self.selectCustomColorDlg = ColorDialog(
+                themeColor(),
+                "Choose your preferred color",
+                parent,
+                enableAlpha=True
+            )
+            self.selectCustomColorDlg.editLabel.setText("Edit HEX color")
+        if self.selectCustomColorDlg.exec():
+            cfg.set(cfg.mdSelectionCustomColor, self.selectCustomColorDlg.color.name(QColor.NameFormat.HexArgb))
+            self.configEditListener()
+
+    def fixTheme(self):
+        self.cache["Personalization"]["EnableMicaEffect"] = cfg.get(cfg.micaEffect)
+        self.applyTheme(cfg.get(cfg.appTheme))
+        """ if cfg.get(cfg.appTheme) == "Auto":
+            setTheme(Theme.DARK if smart.isDarkMode() else Theme.LIGHT)
+            self.setStyleSheet("background: white" if not smart.isDarkMode() else "")
+            self.mdTitleBar.titleLabel.setStyleSheet(f"color: {"white" if smart.isDarkMode() else "black"}")
+        else:
+            smart.warningNotify("Warning, be careful!", "Your theme configuration does not follow your system...", self) """
+
+    def selectLocalCSSSource(self):
+        try:
+            cssPath = smart.browseFileDialog(
+                self,
+                "Select a CSS file as your new viewer styling resource",
+                "",
+                "Cascade Style Sheets (*.css)"
+            )
+            if os.path.exists(cssPath):
+                cfg.set(cfg.mdCssSourcePath, cssPath)
+                self.cssPropertiesConfig.storagePathSublabel.setText(f"Current source path: {cfg.get(cfg.mdCssSourcePath).replace('/', '\\')}")
+                self.cssPropertiesConfig.storagePathSublabel.setVisible(True)
+                self.configEditListener()
+        except Exception as e: smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to select your CSS file: {e}", self)
+
+    def selectLocalHomepageSource(self):
+        try:
+            homePath = smart.browseFileDialog(
+                self,
+                "Select an HTML file as your new landing page",
+                "",
+                "HTML files (*.html; *.htm; *.xhtml; *.xht)"
+            )
+            if os.path.exists(homePath):
+                cfg.set(cfg.mdHomepageSourcePath, homePath)
+                self.homepageConfig.storagePathSublabel.setText(f"Current source path: {cfg.get(cfg.mdHomepageSourcePath).replace('/', '\\')}")
+                self.homepageConfig.storagePathSublabel.setVisible(True)
+                self.configEditListener()
+        except Exception as e: smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to select your HTML file: {e}", self)
+
+    def openCustomCSSEditor(self, parent):
+        if self.customCSSDlg is None:
+            self.customCSSDlg = SettingsWidgets.CSSCustomPropertiesDialog(
+                str(cfg.get(cfg.mdCssProperties)),
+                parent
+            )
+        else:
+            self.customCSSDlg = None
+            self.customCSSDlg = SettingsWidgets.CSSCustomPropertiesDialog(
+                str(cfg.get(cfg.mdCssProperties)),
+                parent
+            )
+        
+        if self.customCSSDlg.exec():
+            cfg.set(cfg.mdCssProperties, self.customCSSDlg.cssEdit.toPlainText())
+            self.configEditListener()
+
+    def openCustomHomeEditor(self, parent):
+        if self.customHomeDlg is None:
+            self.customHomeDlg = SettingsWidgets.HomepageCustomPropertiesDialog(
+                str(cfg.get(cfg.mdHomepageProperties)),
+                parent
+            )
+        else:
+            self.customHomeDlg = None
+            self.customHomeDlg = SettingsWidgets.HomepageCustomPropertiesDialog(
+                str(cfg.get(cfg.mdHomepageProperties)),
+                parent
+            )
+        
+        if self.customHomeDlg.exec():
+            cfg.set(cfg.mdHomepageProperties, self.customHomeDlg.homeEdit.toPlainText())
+            self.configEditListener()
+
+    def configCache(self) -> dict:
+        if Path.exists(ROOT_PATH / "bin" / "config.json"):
+            with open(ROOT_PATH / "bin" / "config.json") as configCacher:
+                return json.load(configCacher)
+        return {}
+
+    def configEditListener(self):
+        if Path.exists(ROOT_PATH / "bin" / "config.json"):
+            with open(ROOT_PATH / "bin" / "config.json") as cfgReader:
+                self.dragDropConfig.dragEnterEdit.setEnabled(cfg.get(cfg.mdHomepageSource) != "Default")
+                self.dragDropConfig.dragLeaveEdit.setEnabled(cfg.get(cfg.mdHomepageSource) != "Default")
+                self.dragDropConfig.dropEdit.setEnabled(cfg.get(cfg.mdHomepageSource) != "Default")
+                self.dragDropConfig.dragEnterValidate.setEnabled(
+                    cfg.get(cfg.mdHomepageSource) != "Default" and self.dragDropConfig.dragEnterEdit.text() != cfg.get(cfg.mdDragEnterJSFunction)
+                )
+                self.dragDropConfig.dragLeaveValidate.setEnabled(
+                    cfg.get(cfg.mdHomepageSource) != "Default" and self.dragDropConfig.dragLeaveEdit.text() != cfg.get(cfg.mdDragLeaveJSFunction)
+                )
+                self.dragDropConfig.dropValidate.setEnabled(
+                    cfg.get(cfg.mdHomepageSource) != "Default" and self.dragDropConfig.dropEdit.text() != cfg.get(cfg.mdDropJSFunction)
+                )
+                self.settingsApplyEdits.setEnabled(self.cache != json.load(cfgReader))
+        else:
+            smart.warningNotify("Warning, be careful!", "The Markdown configuration file cannot be found...", self)
+
+    def configSave(self):
+        print(f"Saving new configuration and applying changes to {TITLE}...")
+        self.editorFont = QFont(
+            cfg.get(cfg.mdFontFamily),
+            cfg.get(cfg.mdFontSize),
+            cfg.get(cfg.mdFontWeight)
+        )
+        
+        for i in range(self.tabWidget.count()):
+            tab = self.tabWidget.widget(i)
+            assert isinstance(tab, TabInterface)
+
+            # Editor
+            tab.mdEditor.setFont(self.editorFont)
+            tab.mdEditor.setMarginLineNumbers(0, cfg.get(cfg.mdDisplayLineNumbers))
+            tab.mdEditor.setMarginWidth(0, "0000" if cfg.get(cfg.mdDisplayLineNumbers) else 0)
+            tab.mdEditor.setMarginsFont(self.editorFont)
+            tab.mdEditor.setMarginsBackgroundColor(QColor("#282C34") if theme() == Theme.DARK else QColor("#E6E9EF"))
+            tab.mdEditor.setMarginsForegroundColor(QColor("#4B5263") if theme() == Theme.DARK else QColor("#ACB0BE"))
+            tab.editorSymbols.setEnabled(cfg.get(cfg.mdDisplaySymbolsBar))
+            tab.editorSymbols.setVisible(cfg.get(cfg.mdDisplaySymbolsBar))
+            tab.editorStatus.setVisible(cfg.get(cfg.mdDisplayStatusBar))
+            tab.mdEditor.setLexer(tab.mdEditor.editorLexer if cfg.get(cfg.mdEnableSyntaxHighlighting) else None)
+            tab.mdEditor.setWrapMode(QsciScintilla.WrapMode.WrapWord if cfg.get(cfg.mdEnableWordWrap) else QsciScintilla.WrapMode.WrapNone)
+            tab.mdEditor.setCaretLineVisible(cfg.get(cfg.mdHighlightCurrentLine))
+            tab.mdEditor.setIndentationWidth(cfg.get(cfg.mdIndentWidth))
+            tab.mdEditor.setIndentationGuides(cfg.get(cfg.mdDisplayIndentGuides))
+            tab.mdEditor.setAutoIndent(cfg.get(cfg.mdEnableAutoIndent))
+            tab.mdEditor.setSelectionBackgroundColor(
+                cfg.get(cfg.accentColor) if cfg.get(cfg.mdSelectionColorMode) == "Accent"
+                else cfg.get(cfg.mdSelectionCustomColor)
+            )
+
+            # Viewer
+                # Homepage
+            if cfg.get(cfg.mdHomepageSource) == "Local":
+                if os.path.exists(cfg.get(cfg.mdHomepageSourcePath)):
+                    with open(cfg.get(cfg.mdHomepageSourcePath), encoding="utf-8") as baseReader:
+                        self.baseMD = baseReader.read()
+                else:
+                    with open(smart.resourcePath("resources/assets/markdown-base-content.html"), encoding="utf-8") as baseReader:
+                        self.baseMD = (baseReader.read().replace("Markdown Viewer", TITLE)).replace("Open a Markdown file", "Open")
+                    smart.warningNotify("Warning, be careful!", "Your local homepage content cannot be found in your storage, the default homepage will be used...", self)
+                    self.homepageConfig.sourceTypeCombo.setCurrentIndex(0)
+                    cfg.set(cfg.mdHomepageSource, "Default")
+            
+            elif cfg.get(cfg.mdCssSource) == "Custom":
+                if cfg.get(cfg.mdCssProperties):
+                    self.baseMD = cfg.get(cfg.mdCssProperties)
+                else:
+                    with open(smart.resourcePath("resources/assets/markdown-base-content.html"), encoding="utf-8") as baseReader:
+                        self.baseMD = (baseReader.read().replace("Markdown Viewer", TITLE)).replace("Open a Markdown file", "Open")
+                    smart.warningNotify("Warning, be careful!", "Your custom homepage properties are currently empty, the default homepage will be used...", self)
+                    self.homepageConfig.sourceTypeCombo.setCurrentIndex(0)
+                    cfg.set(cfg.mdHomepageSource, "Default")
+            
+            else:
+                with open(smart.resourcePath("resources/assets/markdown-base-content.html"), encoding="utf-8") as baseReader:
+                    self.baseMD = (baseReader.read().replace("Markdown Viewer", TITLE)).replace("Open a Markdown file", "Open")
+            
+            if tab.isHome:
+                tab.mdDisplayer.setHtml(self.baseMD, QUrl("http://localhost"))
+
+                # CSS
+            if cfg.get(cfg.mdCssSource) == "Local":
+                if os.path.exists(cfg.get(cfg.mdCssSourcePath)):
+                    with open(cfg.get(cfg.mdCssSourcePath), encoding="utf-8") as styleReader: self.styleMD = styleReader.read()
+                    if cfg.get(cfg.mdCssSource) != self.cache["Markdown-Viewer"]["CSSSource"] or \
+                    (cfg.get(cfg.mdCssSource) == self.cache["Markdown-Viewer"]["CSSSource"] and cfg.get(cfg.mdCssSourcePath) != self.cache["Markdown-Viewer"]["CSSSourcePath"]):
+                        smart.infoNotify("Information", "The new style will be applied to the next Markdown files to be loaded.", self)
+                else:
+                    with open(smart.resourcePath("resources/assets/github-markdown.css"), encoding="utf-8") as styleReader: self.styleMD = styleReader.read()
+                    smart.warningNotify("Warning, be careful!", "Your local CSS resource cannot be found in your storage, the default style will be applied...", self)
+                    self.cssPropertiesConfig.sourceTypeCombo.setCurrentIndex(0)
+                    cfg.set(cfg.mdCssSource, "Default")
+            
+            elif cfg.get(cfg.mdCssSource) == "Custom":
+                if cfg.get(cfg.mdCssProperties):
+                    self.styleMD = cfg.get(cfg.mdCssProperties)
+                    if cfg.get(cfg.mdCssSource) != self.cache["Markdown-Viewer"]["CSSSource"] or \
+                    (cfg.get(cfg.mdCssSource) == self.cache["Markdown-Viewer"]["CSSSource"] and cfg.get(cfg.mdCssProperties) != self.cache["Markdown-Viewer"]["CSSProperties"]):
+                        smart.infoNotify("Information", "The new style will be applied to the next Markdown files to be loaded.", self)
+                else:
+                    with open(smart.resourcePath("resources/assets/github-markdown.css"), encoding="utf-8") as styleReader:
+                        self.styleMD = styleReader.read()
+                    smart.warningNotify("Warning, be careful!", "Your custom CSS properties are currently empty, the default style will be applied...", self)
+                    self.cssPropertiesConfig.sourceTypeCombo.setCurrentIndex(0)
+                    cfg.set(cfg.mdCssSource, "Default")
+            else:
+                with open(smart.resourcePath("resources/assets/github-markdown.css"), encoding="utf-8") as styleReader:
+                    self.styleMD = styleReader.read()
+                if cfg.get(cfg.mdCssSource) != self.cache["Markdown-Viewer"]["CSSSource"]:
+                    smart.infoNotify("Information", "The new style will be applied to the next Markdown files to be loaded.", self)
+
+        self.cache = self.configCache()
+        self.settingsApplyEdits.setEnabled(False)
+        print(f"{Fore.GREEN}New configuration saved and changes applied to {TITLE}!{Style.RESET_ALL}")
+        smart.successNotify("Configuration complete", "The changes have been saved and applied successfully!", self)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+
+        if not getattr(self, "tabWidget", None):
+            return
+
+        for i in range(self.tabWidget.count()):
+            tab = self.tabWidget.widget(i)
+            assert isinstance(tab, TabInterface)
+            
+            if tab.editorBox:
+                tab.editorBox.setFixedWidth(self.width() // 2)
+
+    def eventFilter(self, obj, event):
+        if hasattr(self, "tabWidget"):
+            if obj == self and event.type() in [QEvent.Type.KeyPress, QEvent.Type.KeyRelease]:
+                for i in range(self.tabWidget.count()):
+                    tab = self.tabWidget.widget(i)
+                    assert isinstance(tab, TabInterface)
+                    tab.editorStatusUpdate()
+
+        return super().eventFilter(obj, event)
+
+    # Paramètres :
+    ## Editeur :
+    #### Couleur de syntaxe
+
+class TabInterface(QWidget):
+    """ Class for tab layout and content """
+
+    def __init__(self, path: str, content: str, viewContent: str,
+                 editMode: bool, owner: SmartDownMarkerGUI, parent = None):
+        super().__init__(parent)
+        self.tabParent = owner
+        self.path = path
+        self.content: str = content
+        self.viewContent: str = viewContent
+        self.canSave: bool = False
+        self.canUndo: bool = False
+        self.canRedo: bool = False
+        self.canCut: bool = False
+        self.canCopy: bool = False
+        self.canPaste: bool = True
+        self.canShare: bool = bool(self.content)
+        self.canInfo: bool = os.path.exists(path)
+        self.isHome: bool = not self.content
+        self.symbols: list[str] = [
+            '<', '>', '[', ']', '{', '}', '(', ')', '/', '\\', '"', "'", '.', ',', ';', ':', '-', '_', '=', '&', '|', '`', '?', '!', '@', '#', '^',
+            '¨', '$', '%', '~', '°', '*', '+', '§', 'µ', '€'
+        ]
+        self.displayScrollX = 0
+        self.displayScrollY = 0
+        self.pendingDisplayScrollRestore: bool = False
+        self.aboutDialog = None
+
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+
+        self.hBoxLayout = QHBoxLayout(self)
+        self.hBoxLayout.setContentsMargins(0, 0, 0, 0)
+        self.hBoxLayout.setSpacing(0)
+        # self.hBoxLayout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.editorBox = QWidget()
+        self.editorBox.setObjectName("EditorBox")
+        self.editorBox.setContentsMargins(0, 0, 0, 0)
+        self.editorBox.setFixedWidth(self.tabParent.width() // 2)
+        self.editorBox.setEnabled(editMode)
+        self.editorBox.setVisible(editMode)
+        editorLayout = QVBoxLayout(self.editorBox)
+        editorLayout.setContentsMargins(0, 0, 0, 0)
+        editorLayout.setSpacing(0)
+        editorZone = QHBoxLayout()
+        editorZone.setContentsMargins(0, 0, 0, 0)
+        editorZone.setSpacing(0)
+        
+        # Editor
+        self.mdEditor = MarkEditor(self)
+        self.mdEditor.setText(self.content)
+        self.mdEditor.installEventFilter(self)
+        self.mdEditor.textChanged.connect(self.editorUpdate)
+        self.mdEditor.cursorPositionChanged.connect(self.editorStatusUpdate)
+        self.mdEditor.selectionChanged.connect(self.editorSelectionUpdate)
+
+        self.editorSymbols = SingleDirectionScrollArea(self, Qt.Orientation.Horizontal)
+        self.editorSymbols.setContentsMargins(0, 0, 0, 0)
+        self.editorSymbols.setWidgetResizable(True)
+        self.editorSymbols.setMaximumHeight(41)
+        self.editorSymbols.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.editorSymbols.enableTransparentBackground()
+        self.editorSymbolsWidget = QWidget()
+        self.editorSymbols.setWidget(self.editorSymbolsWidget)
+        self.editorSymbolsLayout = QHBoxLayout(self.editorSymbolsWidget)
+        self.editorSymbolsLayout.setContentsMargins(10, 10, 10, 10)
+        self.editorSymbolsLayout.setSpacing(20)
+        self.editorSymbolsLayout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.symTab = CaptionLabel("Tab")
+        self.symTab.setStyleSheet(f"{self.tabParent.fontEditor_QSS} font-size: 16px;")
+        self.symTab.mousePressEvent = lambda ev: self.mdEditor.insertTab()
+        self.editorSymbolsLayout.addWidget(self.symTab)
+        for sym in self.symbols:
+            symbol = CaptionLabel(sym)
+            symbol.setStyleSheet(f"{self.tabParent.fontEditor_QSS} font-size: 16px;")
+            symbol.mousePressEvent = lambda ev, symbol=sym: self.mdEditor.insertAt(symbol, *self.mdEditor.getCursorPosition())
+            self.editorSymbolsLayout.addWidget(symbol)
+        
+        self.editorStatus = QWidget()
+        self.editorStatus.setObjectName("StatusBar")
+        self.editorStatus.setContentsMargins(0, 0, 0, 0)
+        self.editorStatus.setMaximumHeight(40)
+        self.editorStatus.setStyleSheet("QWidget#StatusBar { background: transparent; }")
+        self.editorStatusBox = QHBoxLayout(self.editorStatus)
+        self.editorStatusBox.setContentsMargins(10, 10, 10, 10)
+        self.editorStatusBox.setSpacing(20)
+        self.statusLineCol = CaptionLabel()
+        self.statusLineCol.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+        self.statusLineCol.setStyleSheet(self.tabParent.fontUI_QSS)
+        self.editorStatusBox.addWidget(self.statusLineCol)
+        self.editorStatusBox.addStretch()
+        self.statusEncoding = CaptionLabel()
+        self.statusEncoding.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+        self.statusEncoding.setStyleSheet(self.tabParent.fontUI_QSS)
+        self.editorStatusBox.addWidget(self.statusEncoding)
+        self.editorStatusBox.addStretch()
+        self.statusCapsLock = CaptionLabel("Caps Lock")
+        self.statusCapsLock.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+        self.statusCapsLock.setStyleSheet(self.tabParent.fontUI_QSS)
+        self.statusCapsLock.setVisible(bool(ctypes.windll.user32.GetKeyState(0x14) & 1))
+        self.editorStatusBox.addWidget(self.statusCapsLock)
+        self.statusNumLock = CaptionLabel("Num Lock")
+        self.statusNumLock.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+        self.statusNumLock.setStyleSheet(self.tabParent.fontUI_QSS)
+        self.statusNumLock.setVisible(bool(ctypes.windll.user32.GetKeyState(0x90) & 1))
+        self.editorStatusBox.addWidget(self.statusNumLock)
+        self.editorStatusBox.addStretch()
+        self.statusTotalChars = CaptionLabel()
+        self.statusTotalChars.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+        self.statusTotalChars.setStyleSheet(self.tabParent.fontUI_QSS)
+        self.editorStatusBox.addWidget(self.statusTotalChars)
+        self.statusTotalLines = CaptionLabel()
+        self.statusTotalLines.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+        self.statusTotalLines.setStyleSheet(f"font-family: {self.tabParent.fontUI}, 'Segoe UI', sans-serif;")
+        self.editorStatusBox.addWidget(self.statusTotalLines)
+        self.statusTotalWords = CaptionLabel()
+        self.statusTotalWords.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+        self.statusTotalWords.setStyleSheet(self.tabParent.fontUI_QSS)
+        self.editorStatusBox.addWidget(self.statusTotalWords)
+
+        editorZone.addWidget(self.mdEditor)
+        editorLayout.addLayout(editorZone)
+        editorLayout.addWidget(self.editorSymbols)
+        editorLayout.addWidget(self.editorStatus)
+        self.hBoxLayout.addWidget(self.editorBox, 1)
+
+        # Viewer
+        self.mdContainer = QWidget(self)
+        self.mdContainer.setObjectName("Container")
+        self.mdContainer.setContentsMargins(0, 0, 0, 0)
+        self.mdContainer.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding
+        )
+        displayLayout = QVBoxLayout(self.mdContainer)
+        displayLayout.setContentsMargins(1, 1, 1, 0)
+        displayLayout.setSpacing(0)
+        self.mdDisplayer = MarkWebView(self)
+        self.mdDisplayer.setAcceptDrops(True)
+        self.mdDisplayer.loadFinished.connect(self._restorePreviewScrollPosition)
+        self.mdDisplayer.setHtml(self.viewContent, QUrl("http://localhost"))
+        displayLayout.addWidget(self.mdDisplayer)
+        self.displayNavBar = DisplayNavigationBar(self)
+        displayLayout.addWidget(self.displayNavBar)
+        self.hBoxLayout.addWidget(self.mdContainer, 1)
+
     def _savePreviewScrollPosition(self):
         page = self.mdDisplayer.page()
         if page is None:
@@ -509,301 +1438,70 @@ class SmartDownMarkerGUI(FramelessWindow):
         except Exception:
             pass
 
-    def newMDFile(self):
-        if self.canSave() or self.windowTitle().startswith("*"):
-            print("Unsaved!")
-            self.backToHome()
-        else: self.backToHome()
-    
-    def openMDFile(self, parent):
-        """ Open a Markdown file from storage """
-        title = self.mdPath
-        path = smart.browseFileDialog(parent, "Open a file in the Markdown Viewer", "", "Markdown files (*.md; *.markdown)")
-        if not path: self.setWindowTitle(f"{title} - {TITLE} | {SmartLinkerName}")
-        else: self.loadMDFile(path, parent)
+    def canSaveContent(self) -> bool:
+        text = self.mdEditor.text()
+        validPath = os.path.exists(self.path)
+        if text:
+            if validPath:
+                with open(self.path, 'r', encoding="utf-8") as origReader: origText = origReader.read()
+                return not origText == text
+        return False
 
-    def loadMDFile(self, path: str, parent, history: bool = False):
-        path = os.path.normpath(path)
-        if os.path.exists(path):
-            if smart.isMarkdownExtension(path):
-                if smart.getFileMimeType(path).startswith("text"):
-                    self.mdPath = path
-                    print(self.mdPath)
-                    with open(path, encoding="utf-8") as mdReader: self.content = mdReader.read()
-                    self.contentMD = self.renderMD.render(self.content) if markCfg.get(markCfg.cssSource) != "Default" else self._renderGitMarkdown(self.content)
-                    self.htmlContent = f'<html>\n<head>\n<style>\n{self.styleMD}</style>\n</head>\n\n<body class="markdown-body" style="padding: 20px;">\n{self.contentMD}\n</body>\n</html>'
-                    self.mdEditor.setText(self.content)
-                    self.mdDisplayer.setHtml(self.htmlContent, QUrl("http://localhost"))
-                    self.isHome = False
-                    self.markUpdate(True, self.mdPath, parent)
-                    with open("markdownContent.log", "w", encoding="utf-8") as mdWriter: mdWriter.write(self.content)
-                    with open("markdownHtml.log", "w", encoding="utf-8") as htmlWriter: htmlWriter.write(self.htmlContent)
-                else:
-                    smart.warningNotify("Warning, be careful!", "The format of the provided file is not supported...", parent)
-                    if history: self.removeFromHistory(path, parent)
-            else:
-                smart.warningNotify("Warning, be careful!", "The provided file is not recognized as a Markdown file...", parent)
-                if history: self.removeFromHistory(path, parent)
+    def editorCut(self):
+        if self.mdEditor:
+            self.mdEditor.cut()
+            self.canPaste = self.mdEditor.canPaste()
+            self.tabParent.mdPaste.setEnabled(self.canPaste)
 
-    def markUpdate(self, exists: bool, path: str, parent):
-        pathExists: bool = False
-        if exists:
-            self.setWindowTitle(f"{path} - {TITLE} | {SmartLinkerName}")
-            for mdPath in self.markHistory["MarkdownHistory"]:
-                if mdPath["path"] == path:
-                    pathExists = True
-                    break
-            if not pathExists:
-                self.markHistory["MarkdownHistory"].append({"path": path})
-                self.saveHistory(self.markHistory)
-                self.markHistory = self.loadHistory()
-                self.openRecent.setEnabled(True)
-                self.historyList = RoundMenu(parent=self)
-                for hPath in self.markHistory["MarkdownHistory"]: self.historyList.addAction(Action(FICO.DOCUMENT, hPath["path"], triggered=lambda checked, path=hPath["path"], parent=parent: self.loadMDFile(path, parent)))
-                self.historyList.addSeparator()
-                self.historyList.addAction(Action(FICO.SETTING, "Manage history", triggered=lambda checked, parent=parent: self.openHistoryManager(parent)))
-                self.openRecent.setMenu(self.historyList)
-            # self.mdHome.setEnabled(True)
-            self.mdInfo.setEnabled(True)
-        else:
-            # self.mdHome.setEnabled(False)
-            self.mdInfo.setEnabled(False)
-
-    def saveMDFile(self, path: str, content: str, saveAs: bool, parent):
-        self.validPath = os.path.exists(self.mdPath)
-        if saveAs or not self.validPath:
-            newPath = os.path.normpath(smart.saveFileDialog(parent, f"Save a Markdown file from {SmartLinkerName}", os.path.dirname(self.mdPath) if self.validPath else "", "Markdown files (*.md; *.markdown)"))
-            if newPath:
-                with open(newPath, "w", encoding="utf-8") as mdWriter: mdWriter.write(content)
-                self.mdPath = newPath
-                self.setWindowTitle(f"{self.mdPath} - {TITLE} | {SmartLinkerName}")
-                smart.successNotify("Save complete!", "The file has been saved successfully!", parent)
-            print(newPath)
-        else:
-            with open(self.mdPath, 'w', encoding="utf-8") as mdWriter: mdWriter.write(content)
-            self.setWindowTitle(f"{self.windowTitle()[1:] if self.windowTitle().startswith('*') else self.windowTitle()}")
-            print(path)
-            smart.successNotify("Save complete!", "The file has been saved successfully!", parent)
-        self.mdSave.setEnabled(False)
-
-    def loadStylesheet(self) -> str:
-        if markCfg.get(markCfg.cssSource) == "Local":
-            if os.path.exists(markCfg.get(markCfg.cssSourcePath)):
-                with open(markCfg.get(markCfg.cssSourcePath), encoding="utf-8") as styleReader: return styleReader.read()
-            else:
-                with open(smart.resourcePath("resources/assets/github-markdown.css"), encoding="utf-8") as styleReader: return styleReader.read()
-                smart.warningNotify("Warning, be careful!", "Your local CSS resource cannot be found in your storage. Applying the default style...", self)
-        elif markCfg.get(markCfg.cssSource) == "Custom":
-            if markCfg.get(markCfg.cssProperties): return markCfg.get(markCfg.cssProperties)
-            else:
-                with open(smart.resourcePath("resources/assets/github-markdown.css"), encoding="utf-8") as styleReader: return styleReader.read()
-                smart.warningNotify("Warning, be careful!", "Your custom CSS properties are currently empty. Applying the default style...", self)
-        else:
-            with open(smart.resourcePath("resources/assets/github-markdown.css"), encoding="utf-8") as styleReader: return styleReader.read()
-
-    def loadHomepageContent(self) -> str:
-        if markCfg.get(markCfg.homepageSource) == "Local":
-            if os.path.exists(markCfg.get(markCfg.homepageSourcePath)):
-                with open(markCfg.get(markCfg.homepageSourcePath), encoding="utf-8") as baseReader: return baseReader.read()
-            else:
-                with open(smart.resourcePath("resources/assets/markdown-base-content.html"), encoding="utf-8") as baseReader: return (baseReader.read().replace("Markdown Viewer", TITLE)).replace("Open a Markdown file", "Open")
-                smart.warningNotify("Warning, be careful!", "Your local homepage content cannot be found in your storage. Loading the default homepage...", self)
-        elif markCfg.get(markCfg.cssSource) == "Custom":
-            if markCfg.get(markCfg.cssProperties): return markCfg.get(markCfg.cssProperties)
-            else:
-                with open(smart.resourcePath("resources/assets/markdown-base-content.html"), encoding="utf-8") as baseReader: return (baseReader.read().replace("Markdown Viewer", TITLE)).replace("Open a Markdown file", "Open")
-                smart.warningNotify("Warning, be careful!", "Your custom homepage properties are currently empty. Loading the default homepage...", self)
-        else:
-            with open(smart.resourcePath("resources/assets/markdown-base-content.html"), encoding="utf-8") as baseReader: return (baseReader.read().replace("Markdown Viewer", TITLE)).replace("Open a Markdown file", "Open")
-
-    def backToHome(self):
-        self.mdPath = "Untitled"
-        self.validPath = False
-        self.isHome = True
-        # self.mdHome.setEnabled(False)
-        self.mdUndo.setEnabled(False)
-        self.mdRedo.setEnabled(False)
-        self.mdInfo.setEnabled(False)
-        self.mdEditor.setText("")
-        self.mdDisplayer.setHtml(self.baseMD, QUrl("http://localhost"))
-        self.setWindowTitle(f"Untitled - {TITLE} | {SmartLinkerName}")
-
-    def loadHistory(self):
-        try:
-            with open(smart.resourcePath("bin/markdown_history.dat"), "rb") as histReader: return pickle.load(histReader)
-        except: return {"MarkdownHistory": []}
-    
-    def saveHistory(self, history):
-        try:
-            with open(smart.resourcePath("bin/markdown_history.dat"), "wb") as histWriter: pickle.dump(history, histWriter)
-        except Exception as e:
-            print(f"{Fore.RED}An error occured while attempting to save browser-related changes: {e}{Style.RESET_ALL}")
-            smart.managerLog(f"ERROR: Failed to save browser-related changes: {e}")
-
-    def openHistoryManager(self, parent):
-        history = self.loadHistory()
-        if self.historyManageDlg is None: self.historyManageDlg = ManageHistoryDialog(history, parent)
-        else:
-            self.historyManageDlg = None
-            self.historyManageDlg = ManageHistoryDialog(history, parent)
-        if self.historyManageDlg.exec(): # type: ignore
-            try:
-                self.saveHistory(self.historyManageDlg.tempHistory)
-                self.markHistory = self.loadHistory()
-                self.historyList = RoundMenu(parent=self)
-                for hPath in self.markHistory["MarkdownHistory"]: self.historyList.addAction(Action(FICO.DOCUMENT, hPath["path"], triggered=lambda checked, path=hPath["path"], parent=parent: self.loadMDFile(path, parent)))
-                self.historyList.addSeparator()
-                self.historyList.addAction(Action(FICO.SETTING, "Manage history", triggered=lambda checked, parent=parent: self.openHistoryManager(parent)))
-                self.openRecent.setMenu(self.historyList)
-                self.historyManageDlg = None
-                mdHistory = [path["path"] for path in self.markHistory["MarkdownHistory"]]
-                if self.mdPath not in mdHistory: self.backToHome()
-                smart.successNotify("Save complete!", "The changes have been saved successfully!", parent)
-                print(f"{Fore.GREEN}The history changes have been saved successfully!{Style.RESET_ALL}")
-            except Exception as e:
-                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to save history changes: {e}", parent)
-                print(f"{Fore.RED}An error occured while attempting to save history changes: {e}{Style.RESET_ALL}")
-
-    def removeFromHistory(self, value: str, parent):
-        self.markHistory = self.loadHistory()
-        self.newHistory = {"MarkdownHistory":[]}
-        for path in self.markHistory["MarkdownHistory"]:
-            if path["path"] != value:
-                self.newHistory["MarkdownHistory"].append({"path": os.path.normpath(path["path"])})
-        if self.newHistory["MarkdownHistory"]:
-            self.historyList = RoundMenu(parent=self)
-            for hPath in self.newHistory["MarkdownHistory"]: self.historyList.addAction(Action(FICO.DOCUMENT, hPath["path"], triggered=lambda savedPath=hPath["path"], parent=parent: self.loadMDFile(savedPath, parent, True)))
-            self.historyList.addSeparator()
-            self.historyList.addAction(Action(FICO.SETTING, "Manage history"))
-            self.openRecent.setMenu(self.historyList)
-        else:
-            self.openRecent.setEnabled(False)
-            self.historyList.clear()
-            smart.infoNotify("Empty history", "Your Markdown history is now empty.")
-            self.backToHome()
-        self.saveHistory(self.newHistory)
-        self.markHistory = self.loadHistory()
-
-    def toggleEditMode(self, check: bool):
-        self.editMode = check
-        self.editorBox.setEnabled(check)
-        self.editorBox.setVisible(check)
-        if not check:
-            self.mdSave.setEnabled(False)
-            self.mdSaveAs.setEnabled(False)
-            self.mdUndo.setEnabled(False)
-            self.mdRedo.setEnabled(False)
-            self.mdCut.setEnabled(False)
-            self.mdCopy.setEnabled(False)
-            self.mdPaste.setEnabled(False)
-            self.mdFind.setEnabled(False)
-        else:
-            self.mdSave.setEnabled(self.canSave())
-            self.mdSaveAs.setEnabled(True)
-            self.mdUndo.setEnabled(self.mdEditor.isUndoAvailable())
-            self.mdRedo.setEnabled(self.mdEditor.isRedoAvailable())
-            self.mdCut.setEnabled(self.mdEditor.hasSelectedText())
-            self.mdCopy.setEnabled(self.mdEditor.hasSelectedText())
-            self.mdPaste.setEnabled(self.mdEditor.canPaste())
-            self.mdFind.setEnabled(True)
-        self.editorUpdate()
-
-    def toggleSettings(self, check: bool):
-        def leave():
-            self.mdContainer.setEnabled(True)
-            self.mdContainer.setVisible(True)
-            self.settingsBox.setEnabled(False)
-            self.settingsBox.setVisible(False)
-            self.mdNew.setEnabled(True)
-            self.mdOpen.setEnabled(True)
-            self.openRecent.setEnabled(True)
-            self.mdEdit.setEnabled(True)
-            self.mdSave.setEnabled(self.editMode and self.canSave())
-            self.mdSaveAs.setEnabled(self.editMode)
-            self.mdUndo.setEnabled(self.editMode and self.mdEditor.isUndoAvailable())
-            self.mdRedo.setEnabled(self.editMode and self.mdEditor.isRedoAvailable())
-            self.mdCut.setEnabled(self.editMode and self.mdEditor.hasSelectedText())
-            self.mdCopy.setEnabled(self.editMode and self.mdEditor.hasSelectedText())
-            self.mdPaste.setEnabled(self.editMode and self.mdEditor.canPaste())
-            self.mdFind.setEnabled(self.editMode)
-            self.mdShare.setEnabled(self.validPath)
-            self.mdInfo.setEnabled(self.validPath)
-            self.mdHome.setEnabled(not self.isHome)
-            self.editorBox.setEnabled(self.editMode)
-            self.editorBox.setVisible(self.editMode)
-
-        self.pendingChanges = self.cache != self.configCache()
-        if check:
-            self.mdContainer.setEnabled(not check)
-            self.mdContainer.setVisible(not check)
-            self.settingsBox.setEnabled(check)
-            self.settingsBox.setVisible(check)
-            self.mdNew.setEnabled(not check)
-            self.mdOpen.setEnabled(not check)
-            self.openRecent.setEnabled(not check)
-            self.mdEdit.setEnabled(not check)
-            self.mdSave.setEnabled(not check)
-            self.mdSaveAs.setEnabled(not check)
-            self.mdUndo.setEnabled(not check)
-            self.mdRedo.setEnabled(not check)
-            self.mdCut.setEnabled(not check)
-            self.mdCopy.setEnabled(not check)
-            self.mdPaste.setEnabled(not check)
-            self.mdFind.setEnabled(not check)
-            self.mdShare.setEnabled(not check)
-            self.mdInfo.setEnabled(not check)
-            self.mdHome.setEnabled(not check)
-            self.editorBox.setEnabled(not check)
-            self.editorBox.setVisible(not check)
-        else:
-            self.saveConfigOnExitDlg = None
-            if self.pendingChanges:
-                self.saveConfigOnExitDlg = MessageBox(
-                    "WARNING: Unsaved settings changes",
-                    "Some settings have been changed but not saved yet. If you close the settings, "
-                    "all your changes will be discarded.\n\nDo you want to save and apply them now?",
-                    self
-                )
-                self.saveConfigOnExitDlg.yesButton.setText("Save and apply changes")
-                self.saveConfigOnExitDlg.cancelButton.setText("Discard changes")
-                if self.saveConfigOnExitDlg.exec():
-                    self.configSave()
-                    leave()
-                else:
-                    leave() # Discard and leave
-            else: leave()
+    def editorCopy(self):
+        if self.mdEditor:
+            self.mdEditor.copy()
+            self.canPaste = self.mdEditor.canPaste()
+            self.tabParent.mdPaste.setEnabled(self.canPaste)
 
     def editorUpdate(self):
-        text =  self.mdEditor.text()
-        self.validPath = os.path.exists(self.mdPath)
-        if text:
-            if self.validPath:
-                self.mdSave.setEnabled(self.canSave())
-                self.setWindowTitle(f"{"*" if self.canSave() else ""}{self.mdPath} - {TITLE} | {SmartLinkerName}")
+        currentTab = self.tabParent.tabWidget.currentIndex()
+        self.content =  self.mdEditor.text()
+        validPath = os.path.exists(self.path)
+        if self.content:
+            if validPath:
+                self.canSave = self.canSaveContent()
             else:
-                self.mdSave.setEnabled(bool(text))
-                self.setWindowTitle(f"*Untitled - {TITLE} | {SmartLinkerName}")
+                self.canSave = bool(self.content)
             self.isHome = False
-            markText = self.renderMD.render(text) if markCfg.get(markCfg.cssSource) != "Default" else self._renderGitMarkdown(text)
+            self.tabParent.mdSave.setEnabled(self.canSave)
+            self.tabParent.setWindowTitle(
+                f"{"• " if self.canSave else ""}{self.path if validPath else "Untitled"} | {TITLE}"
+            )
+            self.tabParent.tabWidget.setTabIcon(currentTab, FICO.SAVE if self.canSave else segSVG.MARKDOWN)
+            markText = self.tabParent.renderMD.render(self.content) if cfg.get(cfg.mdCssSource) != "Default" else self.tabParent._renderGitMarkdown(self.content)
             self._savePreviewScrollPosition()
             self.pendingDisplayScrollRestore = True
-            self.htmlContent = f'<html>\n<head>\n<style>\n{self.styleMD}</style>\n</head>\n\n<body class="markdown-body" style="padding: 20px;">\n{markText}\n</body>\n</html>'
-            self.mdDisplayer.setHtml(self.htmlContent, QUrl("http://localhost"))
-            self.mdUndo.setEnabled(self.mdEditor.isUndoAvailable() if self.mdEdit.isChecked() else False)
-            self.mdRedo.setEnabled(self.mdEditor.isRedoAvailable() if self.mdEdit.isChecked() else False)
+            self.viewContent = f'<html>\n<head>\n<style>\n{self.tabParent.styleMD}</style>\n</head>\n\n<body class="markdown-body" style="padding: 20px;">\n{markText}\n</body>\n</html>'
+            self.mdDisplayer.setHtml(self.viewContent, QUrl("http://localhost"))
+            self.canUndo = self.mdEditor.isUndoAvailable() if self.tabParent.mdEdit.isChecked() else False
+            self.canRedo = self.mdEditor.isRedoAvailable() if self.tabParent.mdEdit.isChecked() else False
+            self.tabParent.mdUndo.setEnabled(self.canUndo)
+            self.tabParent.mdRedo.setEnabled(self.canRedo)
+        
         else:
+            self.canSave = False if not validPath else self.canSaveContent()
             self.isHome = True
-            self.mdDisplayer.setHtml(self.baseMD, QUrl("http://localhost"))
-            self.mdSave.setEnabled(False if not self.validPath else self.canSave())
-            self.setWindowTitle(f"{'*' if self.canSave() else ''}{"Untitled" if not self.validPath else self.mdPath} - {TITLE} | {SmartLinkerName}")
-        # self.mdHome.setEnabled(not self.isHome)
+            self.mdDisplayer.setHtml(self.tabParent.baseMD, QUrl("http://localhost"))
+            self.tabParent.mdSave.setEnabled(self.canSave)
+            self.tabParent.setWindowTitle(f"{"• " if self.canSave else ""}{"Untitled" if not validPath else self.path} | {TITLE}")
+            self.tabParent.tabWidget.setTabIcon(currentTab, FICO.SAVE if self.canSave else segSVG.MARKDOWN)
+        
+        self.tabParent.tabWidget.setTabIcon(currentTab, FICO.SAVE if self.canSave else segSVG.MARKDOWN)
         self.editorStatusUpdate()
     
     def editorSelectionUpdate(self):
         self.editorStatusUpdate()
         selectedChars = self.mdEditor.selectedText()
-        self.mdCut.setEnabled(bool(selectedChars))
-        self.mdCopy.setEnabled(bool(selectedChars))
+        self.canCut = bool(selectedChars)
+        self.canCopy = bool(selectedChars)
+        self.tabParent.mdCut.setEnabled(self.canCut)
+        self.tabParent.mdCopy.setEnabled(self.canCopy)
 
     def editorStatusUpdate(self):
         self.statusCapsLock.setVisible(bool(ctypes.windll.user32.GetKeyState(0x14) & 1))
@@ -826,217 +1524,31 @@ class SmartDownMarkerGUI(FramelessWindow):
         self.statusTotalLines.setText(f'{totalLines} line{"s" if totalLines > 1 else ""}')
         self.statusTotalWords.setText(f'{totalWords} word{"s" if totalWords > 1 else ""}')
 
-    def canSave(self) -> bool:
-        text = self.mdEditor.text()
-        self.validPath = os.path.exists(self.mdPath)
-        if text:
-            if self.validPath:
-                with open(self.mdPath, 'r', encoding="utf-8") as origReader: origText = origReader.read()
-                return not origText == text
-        return False
-
-    def openColorDialog(self, parent):
-        """ Open a dialog to change the editor's selection custom color. """
-        if not self.selectCustomColorDlg:
-            self.selectCustomColorDlg = ColorDialog(
-                themeColor(),
-                "Choose your preferred color",
-                parent,
-                enableAlpha=True
-            )
-            self.selectCustomColorDlg.editLabel.setText("Edit HEX color")
-        if self.selectCustomColorDlg.exec():
-            markCfg.set(markCfg.selectionCustomColor, self.selectCustomColorDlg.color.name(QColor.NameFormat.HexArgb))
-            self.configEditListener()
-
-    def fixTheme(self):
-        if cfg.get(cfg.appTheme) == "Auto":
-            setTheme(Theme.DARK if smart.isDarkMode() else Theme.LIGHT)
-            self.setStyleSheet("background: white" if not smart.isDarkMode() else "")
-            self.mdTitleBar.titleLabel.setStyleSheet(f"color: {"white" if smart.isDarkMode() else "black"}")
-        else:
-            smart.warningNotify("Warning, be careful!", "Your theme configuration does not follow your system...", self)
-
-    def selectLocalCSSSource(self):
-        try:
-            cssPath = smart.browseFileDialog(
-                self,
-                "Select a CSS file as your new viewer styling resource",
-                "",
-                "Cascade Style Sheets (*.css)"
-            )
-            if os.path.exists(cssPath):
-                markCfg.set(markCfg.cssSourcePath, cssPath)
-                self.cssPropertiesConfig.storagePathSublabel.setText(f"Current source path: {markCfg.get(markCfg.cssSourcePath).replace('/', '\\')}")
-                self.cssPropertiesConfig.storagePathSublabel.setVisible(True)
-                self.configEditListener()
-        except Exception as e: smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to select your CSS file: {e}", self)
-
-    def selectLocalHomepageSource(self):
-        try:
-            homePath = smart.browseFileDialog(
-                self,
-                "Select an HTML file as your new landing page",
-                "",
-                "HTML files (*.html; *.htm; *.xhtml; *.xht)"
-            )
-            if os.path.exists(homePath):
-                markCfg.set(markCfg.homepageSourcePath, homePath)
-                self.homepageConfig.storagePathSublabel.setText(f"Current source path: {markCfg.get(markCfg.homepageSourcePath).replace('/', '\\')}")
-                self.homepageConfig.storagePathSublabel.setVisible(True)
-                self.configEditListener()
-        except Exception as e: smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to select your HTML file: {e}", self)
-
-    def openCustomCSSEditor(self, parent):
-        if self.customCSSDlg is None:
-            self.customCSSDlg = CSSCustomPropertiesDialog(
-                str(markCfg.get(markCfg.cssProperties)),
-                parent
-            )
-        else:
-            self.customCSSDlg = None
-            self.customCSSDlg = CSSCustomPropertiesDialog(
-                str(markCfg.get(markCfg.cssProperties)),
-                parent
-            )
-        
-        if self.customCSSDlg.exec():
-            markCfg.set(markCfg.cssProperties, self.customCSSDlg.cssEdit.toPlainText())
-            self.configEditListener()
-
-    def openCustomHomeEditor(self, parent):
-        if self.customHomeDlg is None:
-            self.customHomeDlg = HomepageCustomPropertiesDialog(
-                str(markCfg.get(markCfg.homepageProperties)),
-                parent
-            )
-        else:
-            self.customHomeDlg = None
-            self.customHomeDlg = HomepageCustomPropertiesDialog(
-                str(markCfg.get(markCfg.homepageProperties)),
-                parent
-            )
-        
-        if self.customHomeDlg.exec():
-            markCfg.set(markCfg.homepageProperties, self.customHomeDlg.homeEdit.toPlainText())
-            self.configEditListener()
-
-    def configCache(self) -> str:
-        if os.path.exists(smart.resourcePath("bin/markdown_config.json")):
-            with open(smart.resourcePath("bin/markdown_config.json")) as configCacher: return configCacher.read()
-        return ""
-
-    def configEditListener(self):
-        if os.path.exists(smart.resourcePath("bin/markdown_config.json")):
-            with open(smart.resourcePath("bin/markdown_config.json")) as cfgReader: self.settingsApplyEdits.setEnabled(self.cache != cfgReader.read())
-        else: smart.warningNotify("Warning, be careful!", "The Markdown configuration file cannot be found...", self)
-
-    def configSave(self):
-        print(f"Saving new configuration and applying changes to {TITLE}...")
-        cacheDict = json.loads(self.cache)
-
-        # Editor
-        self.editorFont = QFont(
-            markCfg.get(markCfg.fontFamily),
-            markCfg.get(markCfg.fontSize),
-            markCfg.get(markCfg.fontWeight)
-        )
-        self.mdEditor.setFont(self.editorFont)
-        self.mdEditor.setMarginLineNumbers(0, markCfg.get(markCfg.displayLineNumbers))
-        self.mdEditor.setMarginWidth(0, "0000" if markCfg.get(markCfg.displayLineNumbers) else 0)
-        self.mdEditor.setMarginsFont(self.editorFont)
-        self.editorSymbols.setEnabled(markCfg.get(markCfg.displaySymbolsBar))
-        self.editorSymbols.setVisible(markCfg.get(markCfg.displaySymbolsBar))
-        self.editorStatus.setVisible(markCfg.get(markCfg.displayStatusBar))
-        self.mdEditor.setLexer(self.mdEditor.editorLexer if markCfg.get(markCfg.enableSyntaxHighlighting) else None)
-        self.mdEditor.setWrapMode(QsciScintilla.WrapMode.WrapWord if markCfg.get(markCfg.enableWordWrap) else QsciScintilla.WrapMode.WrapNone)
-        self.mdEditor.setCaretLineVisible(markCfg.get(markCfg.highlightCurrentLine))
-        self.mdEditor.setIndentationWidth(markCfg.get(markCfg.indentWidth))
-        self.mdEditor.setIndentationGuides(markCfg.get(markCfg.displayIndentGuides))
-        self.mdEditor.setAutoIndent(markCfg.get(markCfg.enableAutoIndent))
-        self.mdEditor.setSelectionBackgroundColor(
-            cfg.get(cfg.accentColor) if markCfg.get(markCfg.selectionColorMode) == "Accent"
-            else markCfg.get(markCfg.selectionCustomColor)
-        )
-
-        # Viewer
-        if markCfg.get(markCfg.homepageSource) == "Local":
-            if os.path.exists(markCfg.get(markCfg.homepageSourcePath)):
-                with open(markCfg.get(markCfg.homepageSourcePath), encoding="utf-8") as baseReader: self.baseMD = baseReader.read()
-            else:
-                with open(smart.resourcePath("resources/assets/markdown-base-content.html"), encoding="utf-8") as baseReader: self.baseMD = (baseReader.read().replace("Markdown Viewer", TITLE)).replace("Open a Markdown file", "Open")
-                smart.warningNotify("Warning, be careful!", "Your local homepage content cannot be found in your storage, the default homepage will be used...", self)
-                self.homepageConfig.sourceTypeCombo.setCurrentIndex(0)
-                markCfg.set(markCfg.homepageSource, "Default")
-        elif markCfg.get(markCfg.cssSource) == "Custom":
-            if markCfg.get(markCfg.cssProperties): self.baseMD = markCfg.get(markCfg.cssProperties)
-            else:
-                with open(smart.resourcePath("resources/assets/markdown-base-content.html"), encoding="utf-8") as baseReader: self.baseMD = (baseReader.read().replace("Markdown Viewer", TITLE)).replace("Open a Markdown file", "Open")
-                smart.warningNotify("Warning, be careful!", "Your custom homepage properties are currently empty, the default homepage will be used...", self)
-                self.homepageConfig.sourceTypeCombo.setCurrentIndex(0)
-                markCfg.set(markCfg.homepageSource, "Default")
-        else:
-            with open(smart.resourcePath("resources/assets/markdown-base-content.html"), encoding="utf-8") as baseReader: self.baseMD = (baseReader.read().replace("Markdown Viewer", TITLE)).replace("Open a Markdown file", "Open")
-        if self.isHome: self.mdDisplayer.setHtml(self.baseMD, QUrl("http://localhost"))
-            # ------
-        if markCfg.get(markCfg.cssSource) == "Local":
-            if os.path.exists(markCfg.get(markCfg.cssSourcePath)):
-                with open(markCfg.get(markCfg.cssSourcePath), encoding="utf-8") as styleReader: self.styleMD = styleReader.read()
-                if markCfg.get(markCfg.cssSource) != cacheDict["Viewer"]["CSSSource"] or \
-                (markCfg.get(markCfg.cssSource) == cacheDict["Viewer"]["CSSSource"] and markCfg.get(markCfg.cssSourcePath) != cacheDict["Viewer"]["CSSSourcePath"]):
-                    smart.infoNotify("Information", "The new style will be applied to the next Markdown files to be loaded.", self)
-            else:
-                with open(smart.resourcePath("resources/assets/github-markdown.css"), encoding="utf-8") as styleReader: self.styleMD = styleReader.read()
-                smart.warningNotify("Warning, be careful!", "Your local CSS resource cannot be found in your storage, the default style will be applied...", self)
-                self.cssPropertiesConfig.sourceTypeCombo.setCurrentIndex(0)
-                markCfg.set(markCfg.cssSource, "Default")
-        elif markCfg.get(markCfg.cssSource) == "Custom":
-            if markCfg.get(markCfg.cssProperties):
-                self.styleMD = markCfg.get(markCfg.cssProperties)
-                if markCfg.get(markCfg.cssSource) != cacheDict["Viewer"]["CSSSource"] or \
-                (markCfg.get(markCfg.cssSource) == cacheDict["Viewer"]["CSSSource"] and markCfg.get(markCfg.cssProperties) != cacheDict["Viewer"]["CSSProperties"]):
-                    smart.infoNotify("Information", "The new style will be applied to the next Markdown files to be loaded.", self)
-            else:
-                with open(smart.resourcePath("resources/assets/github-markdown.css"), encoding="utf-8") as styleReader: self.styleMD = styleReader.read()
-                smart.warningNotify("Warning, be careful!", "Your custom CSS properties are currently empty, the default style will be applied...", self)
-                self.cssPropertiesConfig.sourceTypeCombo.setCurrentIndex(0)
-                markCfg.set(markCfg.cssSource, "Default")
-        else:
-            with open(smart.resourcePath("resources/assets/github-markdown.css"), encoding="utf-8") as styleReader: self.styleMD = styleReader.read()
-            if markCfg.get(markCfg.cssSource) != cacheDict["Viewer"]["CSSSource"]: smart.infoNotify("Information", "The new style will be applied to the next Markdown files to be loaded.", self)
-
-
-        self.cache = self.configCache()
-        self.settingsApplyEdits.setEnabled(False)
-        print(f"{Fore.GREEN}New configuration saved and changes applied to {TITLE}!{Style.RESET_ALL}")
-        smart.successNotify("Configuration complete", "The changes have been saved and applied successfully!", self)
-
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        self.editorBox.setFixedWidth(self.width() // 2)
-
-    def eventFilter(self, obj, event):
-        if obj == self.mdEditor and event.type() in [QEvent.Type.KeyPress, QEvent.Type.KeyRelease]: self.editorStatusUpdate()
-        return super().eventFilter(obj, event)
-
-    # Paramètres :
-    ## Editeur :
-    #### Couleur de syntaxe
+    def openInfoDialog(self):
+        if self.canInfo:
+            if self.aboutDialog:
+                self.aboutDialog = None
+            self.aboutDialog = AboutDocumentDialog(self.path, self.tabParent)
+            if self.aboutDialog.exec():
+                self.aboutDialog = None
 
 class MarkWebView(FramelessWebEngineView):
     """ Class for the Markdown viewer webview """
     
-    def __init__(self, parent: SmartDownMarkerGUI):
+    def __init__(self, parent: TabInterface):
         super().__init__(parent)
         self.setAcceptDrops(True)
         self.dropParent = parent
+        self.currentTabID: int
         self.reqUrl: str
         self.isHome: bool = True
         self.isCurrentContent: bool = False
         self.isLoading: bool = False
 
+        self.setLocale(smLocale)
         self.settings().setAttribute(QWebEngineSettings.WebAttribute.FullScreenSupportEnabled, True) # type: ignore
 
+        self.page().linkHovered.connect(lambda link: RichCLI.log(f"Hovered link: {link}") if link else None) # type: ignore
         self.page().navigationRequested.connect(self.onNavigationRequested) # type: ignore
         self.loadStarted.connect(self.onLoadStarted)
         self.loadProgress.connect(self.onLoadProgress)
@@ -1046,12 +1558,12 @@ class MarkWebView(FramelessWebEngineView):
     def onNavigationRequested(self, request: QWebEngineNavigationRequest):
         """ :MarkWebView: Intercept and handle navigation requests based on `openExternalLinks` setting """
         self.reqUrl = request.url().toString()
-        self.isHome = unquote(self.reqUrl).replace("data:text/html;charset=UTF-8,", "") == self.dropParent.baseMD
-        self.isCurrentContent = unquote(self.reqUrl).replace("data:text/html;charset=UTF-8,", "") == self.dropParent.htmlContent
+        self.isHome = unquote(self.reqUrl).replace("data:text/html;charset=UTF-8,", "") == self.dropParent.tabParent.baseMD
+        self.isCurrentContent = unquote(self.reqUrl).replace("data:text/html;charset=UTF-8,", "") == self.dropParent.viewContent
         
-        self.dropParent.mdHome.setEnabled(not self.isHome)
+        self.dropParent.tabParent.mdHome.setEnabled(not self.isHome)
         
-        if markCfg.get(markCfg.openExternalLinks):
+        if cfg.get(cfg.mdOpenExternalLinks):
             request.accept()
             self.dropParent.displayNavBar.navSearch.setText(self.reqUrl)
             self.dropParent.displayNavBar.setEnabled(not self.isHome and not self.isCurrentContent)
@@ -1059,9 +1571,11 @@ class MarkWebView(FramelessWebEngineView):
             self.dropParent.displayNavBar.navBack.setEnabled(self.history().canGoBack()) # type: ignore
             self.dropParent.displayNavBar.navForward.setEnabled(self.history().canGoForward()) # type: ignore
             self.dropParent.displayNavBar.navIcon.setVisible(not self.isHome and not self.isCurrentContent)
+        
         elif self.reqUrl.startswith("file://") and smart.getFileMimeType(self.reqUrl).startswith("text") and (smart.isMarkdownExtension(self.reqUrl)):
             request.accept()
             self.dropParent.displayNavBar.navSearch.setText(self.reqUrl)
+        
         else:
             if self.isHome:
                 request.accept()
@@ -1075,7 +1589,7 @@ class MarkWebView(FramelessWebEngineView):
 
     def onLoadStarted(self):
         """ :MarkWebView: Handle load started event """
-        if markCfg.get(markCfg.openExternalLinks):
+        if cfg.get(cfg.mdOpenExternalLinks):
             self.dropParent.displayNavBar.navProgress.setVisible(True)
             self.dropParent.displayNavBar.navProgress.setValue(0)
             self.dropParent.displayNavBar.navRefresh.setIcon(FICO.CLOSE)
@@ -1083,12 +1597,12 @@ class MarkWebView(FramelessWebEngineView):
     
     def onLoadProgress(self, progress: int):
         """ :MarkWebView: Handle load progress event """
-        if markCfg.get(markCfg.openExternalLinks):
+        if cfg.get(cfg.mdOpenExternalLinks):
             self.dropParent.displayNavBar.navProgress.setValue(progress)
     
     def onLoadFinished(self):
         """ :MarkWebView: Handle load finished event """
-        if markCfg.get(markCfg.openExternalLinks):
+        if cfg.get(cfg.mdOpenExternalLinks):
             self.dropParent.displayNavBar.navProgress.setVisible(False)
             self.dropParent.displayNavBar.navProgress.setValue(0)
             self.dropParent.displayNavBar.navRefresh.setIcon(segFont.fromName("Refresh"))
@@ -1096,7 +1610,7 @@ class MarkWebView(FramelessWebEngineView):
 
     def onIconLoaded(self, icon: QIcon):
         """ :MarkWebView: Handle icon loaded event """
-        if markCfg.get(markCfg.openExternalLinks):
+        if cfg.get(cfg.mdOpenExternalLinks):
             self.dropParent.displayNavBar.navIcon.setIcon(icon)
             # self.dropParent.displayNavBar.navIcon.setVisible(not self.isHome and not self.isCurrentContent)
 
@@ -1104,20 +1618,22 @@ class MarkWebView(FramelessWebEngineView):
         """ :MarkWebView: Handle drag enter event """
         if event.mimeData().hasUrls(): # type: ignore
             event.acceptProposedAction() # type: ignore
-            if self.dropParent.isHome: self.page().runJavaScript("onDragEnter()") # type: ignore
+            if self.dropParent.isHome: self.page().runJavaScript(cfg.get(cfg.mdDragEnterJSFunction) or "onDragEnter()") # type: ignore
     
     def dragLeaveEvent(self, event: QDragLeaveEvent | None):
         """ :MarkWebView: Handle drag leave event """
-        event.accept()                                                                  # type: ignore
-        if self.dropParent.isHome: self.page().runJavaScript("onDragLeave()")           # type: ignore
+        event.accept() # type: ignore
+        if self.dropParent.isHome: self.page().runJavaScript(cfg.get(cfg.mdDragLeaveJSFunction) or "onDragLeave()") # type: ignore
     
     def dropEvent(self, event: QDropEvent | None):
         """ :MarkWebView: Handle drop event """
-        if event.mimeData().hasUrls():                                                  # type: ignore
-            for url in event.mimeData().urls():                                         # type: ignore
+        self.currentTabID = self.dropParent.tabParent.tabWidget.currentIndex()
+        if event.mimeData().hasUrls(): # type: ignore
+            for url in event.mimeData().urls(): # type: ignore
                 localPath = url.toLocalFile()
-                if self.dropParent.isHome: self.page().runJavaScript("onDrop()")        # type: ignore
-                self.dropParent.loadMDFile(localPath, self.dropParent)
+                if self.dropParent.isHome:
+                    self.page().runJavaScript(cfg.get(cfg.mdDropJSFunction) or "onDrop()") # type: ignore
+                self.dropParent.tabParent.loadMDFileInTab(self.currentTabID, localPath, self.dropParent)
 
     """ def contextMenuEvent(self, event: QContextMenuEvent | None):
         smart.infoNotify("Did you know?", "The viewer's context menu has been blocked.", self.dropParent) """
@@ -1125,7 +1641,7 @@ class MarkWebView(FramelessWebEngineView):
 class DisplayNavigationBar(QWidget):
     """ Class for the navigation bar displayed under `MarkWebView` """
 
-    def __init__(self, parent: SmartDownMarkerGUI):
+    def __init__(self, parent: TabInterface):
         super().__init__(parent)
         self.navParent = parent
 
@@ -1134,11 +1650,11 @@ class DisplayNavigationBar(QWidget):
         self.setMaximumHeight(45)
         self.setStyleSheet(f"""
             QWidget#DisplayNavigation {{
-                border-top: 1px solid {"#E3E6E9" if not smart.isDarkMode() else "#393939"};
+                border-top: 1px solid {"#E3E6E9" if theme() == Theme.LIGHT else "#393939"};
                 background: transparent;
             }}
         """)
-        self.setVisible(markCfg.get(markCfg.openExternalLinks))
+        self.setVisible(cfg.get(cfg.mdOpenExternalLinks))
         self.navBox = QVBoxLayout(self)
         self.navBox.setContentsMargins(0, 0, 0, 0)
         self.navBox.setSpacing(0)
@@ -1242,93 +1758,93 @@ class DisplayNavigationBar(QWidget):
             "If you go back to rendering your current Markdown content, your browsing history " \
             "will be discarded and you will not be able to return to the previous page.\n\n" \
             "Do you really want to continue?",
-            self.navParent
+            self.navParent.tabParent
         )
         returnToMarkdownDlg.yesButton.setText("Return to Markdown content")
         returnToMarkdownDlg.cancelButton.setText("Continue browsing")
         if returnToMarkdownDlg.exec():
-            displayHistory = self.navParent.mdDisplayer.page().history() # type: ignore
-            displayHistory.clear() # type: ignore
-            self.navParent.mdDisplayer.setHtml(self.navParent.baseMD, QUrl("http://localhost"))
-            if self.navParent.htmlContent: self.navParent.mdDisplayer.setHtml(self.navParent.htmlContent, QUrl("http://localhost"))
+            self.navParent.mdDisplayer.setHtml(self.navParent.tabParent.baseMD, QUrl("http://localhost"))
+            if self.navParent.viewContent:
+                self.navParent.mdDisplayer.setHtml(self.navParent.viewContent, QUrl("http://localhost"))
             displayHistory = self.navParent.mdDisplayer.page().history() # type: ignore
             displayHistory.clear() # type: ignore
             history = [displayHistory.itemAt(i) for i in range(displayHistory.count())] # type: ignore
-            for item in history: print(item.url().toString())
+            for item in history:
+                print(item.url().toString())
 
 class MarkEditor(QsciScintilla):
     """ Class for the SmartLinker-adapted Markdown editor """
 
-    def __init__(self, parent = None):
+    def __init__(self, parent: TabInterface):
         super().__init__(parent)
         self.editParent = parent
-        self.setStyleSheet(f"background: {"#282C34" if smart.isDarkMode() else "#EFF1F5"};")
+        self.setStyleSheet(f"background: {"#282C34" if theme() == Theme.DARK else "#EFF1F5"};")
         self.setSelectionBackgroundColor(
-            cfg.get(cfg.accentColor) if markCfg.get(markCfg.selectionColorMode) == "Accent"
-            else markCfg.get(markCfg.selectionCustomColor)
+            cfg.get(cfg.accentColor) if cfg.get(cfg.mdSelectionColorMode) == "Accent"
+            else cfg.get(cfg.mdSelectionCustomColor)
         )
         
         # Font config
         self.editorFont = QFont(
-            markCfg.get(markCfg.fontFamily),
-            markCfg.get(markCfg.fontSize),
-            markCfg.get(markCfg.fontWeight)
+            cfg.get(cfg.mdFontFamily),
+            cfg.get(cfg.mdFontSize),
+            cfg.get(cfg.mdFontWeight)
         )
         self.setFont(self.editorFont)
 
         # Syntax highlighting (lexer)
         self.editorLexer = QsciLexerMarkdown(self)
         self.editorLexer.setFont(self.editorFont)
-        self.editorLexer.setColor(QColor("#ABB2BF") if smart.isDarkMode() else QColor("#4C4F69"), 0)
-        self.editorLexer.setColor(QColor("#E06C75") if smart.isDarkMode() else QColor("#D20F39"), QsciLexerMarkdown.Header1)
-        self.editorLexer.setColor(QColor("#E06C75") if smart.isDarkMode() else QColor("#D20F39"), QsciLexerMarkdown.Header2)
-        self.editorLexer.setColor(QColor("#E06C75") if smart.isDarkMode() else QColor("#D20F39"), QsciLexerMarkdown.Header3)
-        self.editorLexer.setColor(QColor("#E06C75") if smart.isDarkMode() else QColor("#D20F39"), QsciLexerMarkdown.Header4)
-        self.editorLexer.setColor(QColor("#E06C75") if smart.isDarkMode() else QColor("#D20F39"), QsciLexerMarkdown.Header5)
-        self.editorLexer.setColor(QColor("#E06C75") if smart.isDarkMode() else QColor("#D20F39"), QsciLexerMarkdown.Header6)
-        self.editorLexer.setColor(QColor("#D19A66") if smart.isDarkMode() else QColor("#FE640B"), QsciLexerMarkdown.EmphasisUnderscores)
-        self.editorLexer.setColor(QColor("#D19A66") if smart.isDarkMode() else QColor("#FE640B"), QsciLexerMarkdown.StrongEmphasisUnderscores)
-        self.editorLexer.setColor(QColor("#98C379") if smart.isDarkMode() else QColor("#40A02B"), QsciLexerMarkdown.EmphasisAsterisks)
-        self.editorLexer.setColor(QColor("#98C379") if smart.isDarkMode() else QColor("#40A02B"), QsciLexerMarkdown.StrongEmphasisAsterisks)
-        self.editorLexer.setColor(QColor("#5C6370") if smart.isDarkMode() else QColor("#8C8FA1"), QsciLexerMarkdown.StrikeOut)
-        self.editorLexer.setColor(QColor("#C678DD") if smart.isDarkMode() else QColor("#8839EF"), QsciLexerMarkdown.Link)
-        self.editorLexer.setColor(QColor("#61AFEF") if smart.isDarkMode() else QColor("#1E66F5"), QsciLexerMarkdown.CodeBackticks)
-        self.editorLexer.setColor(QColor("#E5C07B") if smart.isDarkMode() else QColor("#DF8E1D"), QsciLexerMarkdown.CodeDoubleBackticks)
-        self.editorLexer.setColor(QColor("#4082E4") if smart.isDarkMode() else QColor("#2196F3"), QsciLexerMarkdown.CodeBlock)
-        if markCfg.get(markCfg.enableSyntaxHighlighting): self.setLexer(self.editorLexer)
+        self.editorLexer.setColor(QColor("#ABB2BF") if theme() == Theme.DARK else QColor("#4C4F69"), 0)
+        self.editorLexer.setColor(QColor("#E06C75") if theme() == Theme.DARK else QColor("#D20F39"), QsciLexerMarkdown.Header1)
+        self.editorLexer.setColor(QColor("#E06C75") if theme() == Theme.DARK else QColor("#D20F39"), QsciLexerMarkdown.Header2)
+        self.editorLexer.setColor(QColor("#E06C75") if theme() == Theme.DARK else QColor("#D20F39"), QsciLexerMarkdown.Header3)
+        self.editorLexer.setColor(QColor("#E06C75") if theme() == Theme.DARK else QColor("#D20F39"), QsciLexerMarkdown.Header4)
+        self.editorLexer.setColor(QColor("#E06C75") if theme() == Theme.DARK else QColor("#D20F39"), QsciLexerMarkdown.Header5)
+        self.editorLexer.setColor(QColor("#E06C75") if theme() == Theme.DARK else QColor("#D20F39"), QsciLexerMarkdown.Header6)
+        self.editorLexer.setColor(QColor("#D19A66") if theme() == Theme.DARK else QColor("#FE640B"), QsciLexerMarkdown.EmphasisUnderscores)
+        self.editorLexer.setColor(QColor("#D19A66") if theme() == Theme.DARK else QColor("#FE640B"), QsciLexerMarkdown.StrongEmphasisUnderscores)
+        self.editorLexer.setColor(QColor("#98C379") if theme() == Theme.DARK else QColor("#40A02B"), QsciLexerMarkdown.EmphasisAsterisks)
+        self.editorLexer.setColor(QColor("#98C379") if theme() == Theme.DARK else QColor("#40A02B"), QsciLexerMarkdown.StrongEmphasisAsterisks)
+        self.editorLexer.setColor(QColor("#5C6370") if theme() == Theme.DARK else QColor("#8C8FA1"), QsciLexerMarkdown.StrikeOut)
+        self.editorLexer.setColor(QColor("#C678DD") if theme() == Theme.DARK else QColor("#8839EF"), QsciLexerMarkdown.Link)
+        self.editorLexer.setColor(QColor("#61AFEF") if theme() == Theme.DARK else QColor("#1E66F5"), QsciLexerMarkdown.CodeBackticks)
+        self.editorLexer.setColor(QColor("#E5C07B") if theme() == Theme.DARK else QColor("#DF8E1D"), QsciLexerMarkdown.CodeDoubleBackticks)
+        self.editorLexer.setColor(QColor("#4082E4") if theme() == Theme.DARK else QColor("#2196F3"), QsciLexerMarkdown.CodeBlock)
+        if cfg.get(cfg.mdEnableSyntaxHighlighting): self.setLexer(self.editorLexer)
 
         # Indentation
         self.setIndentationsUseTabs(False)
         self.setTabIndents(True)
         self.setBackspaceUnindents(True)
-        self.setIndentationWidth(markCfg.get(markCfg.indentWidth))
-        self.setIndentationGuides(markCfg.get(markCfg.displayIndentGuides))
-        self.setAutoIndent(markCfg.get(markCfg.enableAutoIndent))
+        self.setIndentationWidth(cfg.get(cfg.mdIndentWidth))
+        self.setIndentationGuides(cfg.get(cfg.mdDisplayIndentGuides))
+        self.setAutoIndent(cfg.get(cfg.mdEnableAutoIndent))
 
         # Margin #0: number column
-        self.setMarginWidth(0, "0000" if markCfg.get(markCfg.displayLineNumbers) else 0)
-        self.setMarginLineNumbers(0, markCfg.get(markCfg.displayLineNumbers))
+        self.setMarginWidth(0, "0000" if cfg.get(cfg.mdDisplayLineNumbers) else 0)
+        self.setMarginLineNumbers(0, cfg.get(cfg.mdDisplayLineNumbers))
         self.setMarginsFont(self.editorFont)
-        self.setMarginsBackgroundColor(QColor("#282C34") if smart.isDarkMode() else QColor("#E6E9EF"))
-        self.setMarginsForegroundColor(QColor("#4B5263") if smart.isDarkMode() else QColor("#ACB0BE"))
+        self.setMarginsBackgroundColor(QColor("#282C34") if theme() == Theme.DARK else QColor("#E6E9EF"))
+        self.setMarginsForegroundColor(QColor("#4B5263") if theme() == Theme.DARK else QColor("#ACB0BE"))
 
         # Word wrap
-        self.setWrapMode(self.WrapMode.WrapWord if markCfg.get(markCfg.enableWordWrap) else self.WrapMode.WrapNone)
+        self.setWrapMode(self.WrapMode.WrapWord if cfg.get(cfg.mdEnableWordWrap) else self.WrapMode.WrapNone)
         
         # Current line highlighting (caret)
-        self.setCaretLineVisible(markCfg.get(markCfg.highlightCurrentLine))
-        self.setCaretLineBackgroundColor(QColor("#4B5263") if smart.isDarkMode() else QColor("#CFCFCF"))
+        self.setCaretLineVisible(cfg.get(cfg.mdHighlightCurrentLine))
+        self.setCaretLineBackgroundColor(QColor("#4B5263") if theme() == Theme.DARK else QColor("#CFCFCF"))
 
         # Brace/Pair matching
         self.setBraceMatching(self.BraceMatch.StrictBraceMatch)
 
-    def undo(self) -> None:
+    def undo(self):
         super().undo()
-        self.editParent.mdUndo.setEnabled(self.editParent.editMode and self.isUndoAvailable()) # type: ignore
+        self.editParent.tabParent.mdUndo.setEnabled(self.editParent.tabParent.editMode and self.isUndoAvailable()) # type: ignore
 
-    def redo(self) -> None:
+    def redo(self):
         super().redo()
-        self.editParent.mdRedo.setEnabled(self.editParent.editMode and self.isRedoAvailable()) # type: ignore
+        self.editParent.tabParent.mdRedo.setEnabled(self.editParent.tabParent.editMode and self.isRedoAvailable()) # type: ignore
 
     def canPaste(self):
         return QApplication.clipboard().mimeData().hasText()    # type: ignore
@@ -1344,7 +1860,7 @@ class ManageHistoryDialog(MessageBoxBase):
     def __init__(self, history: dict[str, list[dict[str, str]]], parent):
         super().__init__(parent)
         self.dialogParent = parent
-        self.markdownHistory,  = history
+        self.markdownHistory = history
         self.tempHistory = history.copy()
         self.removeMsg: str = ""
         self.changes: bool = self.tempHistory != self.markdownHistory
@@ -1442,686 +1958,970 @@ class ManageHistoryDialog(MessageBoxBase):
     def validate(self) -> bool:
         return self.changes
 
-class SettingsWidgetDefinition():
-    """ Declaration class for the Settings screen widgets """
+class AboutDocumentDialog(MessageBoxBase):
+    """ Class for the `About the document` dialog box """
 
-    def __init__(self):
-        super().__init__()
+    class OverviewCard(SimpleCardWidget):
 
-        # General
-        self.optionStartInEditMode = SwitchSettingCard(
-            FICO.EDIT,
-            "Start in Edit mode",
-            f"You can choose whether {TITLE} should start directly in Edit mode.",
-            markCfg.startInEditMode
-        )
+        def __init__(self, path: str, parent):
+            super().__init__(parent)
+            self.iconWidget = IconWidget(segSVG.MARKDOWN, self)
+            self.titleLabel = SubtitleLabel(os.path.basename(path), self)
+            self.pathLabel = CaptionLabel(path, self)
 
-        self.optionFixTheme = PushSettingCard(
-            "Fix theme",
-            segFont.fromName("Repair"),
-            "Fix currrent theme",
-            f"If {SmartLinkerName} theme configuration follows your system, "
-            "this option helps you reapply the theme according to the one applied system-wide."
-        )
+            self.hBoxLayout = QHBoxLayout(self)
+            self.labelBox = QVBoxLayout()
 
-        self.optionManageHistory = PushSettingCard(
-            "Manage history",
-            FICO.HISTORY,
-            "Manage your Markdown history",
-            f"You can load or remove any Markdown file already opened in {SmartLinkerName} or {TITLE}."
-        )
+            self.setFixedHeight(80)
+            self.iconWidget.setFixedSize(40, 40)
+            self.pathLabel.setTextColor(QColor("#606060"), QColor("#d2d2d2"))
 
-        # Editor
-        self.optionShowLineNumbers = SwitchSettingCard(
-            segSVG.NUMBER_SYMBOL,
-            "Display the line numbers",
-            "You can choose whether the line numbers can be displayed in the editor pane.",
-            markCfg.displayLineNumbers
-        )
+            self.hBoxLayout.setContentsMargins(20, 11, 20, 11)
+            self.hBoxLayout.setSpacing(15)
+            self.hBoxLayout.addWidget(self.iconWidget)
+            self.labelBox.setContentsMargins(0, 0, 0, 0)
+            self.labelBox.setSpacing(0)
+            self.labelBox.addWidget(self.titleLabel, 0, Qt.AlignmentFlag.AlignVCenter)
+            self.labelBox.addWidget(self.pathLabel, 0, Qt.AlignmentFlag.AlignVCenter)
+            self.labelBox.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+            self.hBoxLayout.addLayout(self.labelBox)
 
-        self.optionShowSymbolsBar = SwitchSettingCard(
-            segFont.fromName("EmojiTabMoreSymbols"),
-            "Display the symbols bar",
-            "You can choose whether the symbols bar can be displayed in the editor pane.",
-            markCfg.displaySymbolsBar
-        )
+    def __init__(self, path: str, parent: SmartDownMarkerGUI):
+        super().__init__(parent)
+        self.dialogParent = parent
+        self.topLine = QHBoxLayout()
+        self.icon = IconWidget(FICO.INFO, self)
+        self.titleLabel = SubtitleLabel("About this document", self)
+        self.topCard = self.OverviewCard(path, self)
+        self.metadata = self.getMetadataFromPath(path)
 
-        self.optionShowStatusBar = SwitchSettingCard(
-            segFont.fromName("SIPRedock"),
-            "Display the status bar",
-            "You can choose whether the status bar can be displayed at the bottom of the editor pane.",
-            markCfg.displayStatusBar
-        )
-
-        self.optionEnableSyntaxHighlighting = SwitchSettingCard(
-            segFont.fromName("Highlight"),
-            "Enable syntax highlighting",
-            "You can choose whether the editor can be syntax-highlighted based on Markdown syntax.",
-            markCfg.enableSyntaxHighlighting
-        )
-
-        self.optionEnableWordWrap = SwitchSettingCard(
-            segSVG.TEXT_WRAP,
-            "Enable text wrapping",
-            "You can choose whether the editor content can be wrapped to the next line.",
-            markCfg.enableWordWrap
-        )
-
-        self.optionHighlightCurrentLine = SwitchSettingCard(
-            segSVG.COLOR_LINE,
-            "Highlight the current line",
-            "You can choose whether the focused line in the editor can be highlighted.",
-            markCfg.highlightCurrentLine
-        )
-
-        # Viewer
-        self.optionOpenExternalLinks = SwitchSettingCard(
-            segFont.fromName("Link"),
-            "Access external links",
-            f"Allow {TITLE} to access external links such as webpages, non-Markdown content"
-            " and more via the viewer pane.",
-            markCfg.openExternalLinks
-        )
-
-class EditorFontConfigGroup(ExpandGroupSettingCard):
-    """ Class for Smart DownMarker font settings in the Editor section """
-    configChanged = pyqtSignal()
-
-    def __init__(self, parent = None):
-        super().__init__(
-            segFont.fromName("Font"), # type: ignore
-            "Customize font settings",
-            "Modify the editor's font family, size and weight properties"
-        )
-        self.familyList: list[str] = [
-            "Ace Sans",
-            "Agency FB",
-            "Algerian",
-            "Alte DIN 1451 Mittelschrift",
-            "Arial",
-            "Bahnschrift",
-            "BankGothic",
-            "Bauhaus 93",
-            "Berlin Sans FB",
-            "Calibri",
-            "Capriola",
-            "Cascadia Code",
-            "Cascadia Mono",
-            "Chalet",
-            "Clock BoldSerif",
-            "Clock RetroStripe",
-            "Clock Stamp",
-            "Clock2021",
-            "Consolas",
-            "Copperplate Gothic",
-            "Dune Rise",
-            "Figtree",
-            "Forte",
-            "Franklin Gothic",
-            "Franklin Gothic Book",
-            "Gill Sans MT",
-            "Google Sans",
-            "Harlow Solid",
-            "Harrington",
-            "JetBrains Mono",
-            "JK Abode",
-            "Masterpiece",
-            "Mochiy Pop One",
-            "Montserrat",
-            "Montserrat Alternates",
-            "NEON LED Light",
-            "Nexa",
-            "NFS font",
-            "Nikkyou Sans",
-            "Old English Text MT",
-            "Pricedown",
-            "Roboto",
-            "Rockwell",
-            "Samsung Sharp Sans",
-            "Segoe UI",
-            "Segoe UI Variable Display",
-            "SignPainter-HouseScript",
-            "SpecialAlphabets P04",
-            "Stone",
-            "Times New Roman",
-            "Tourner",
-            "Trebuchet MS",
-            "Tw Cen MT",
-            "Varino",
-            "Velocity",
-            "Verdana"
-        ]
-        self.isFamConfigInList: bool = markCfg.get(markCfg.fontFamily) in self.familyList
-        if self.isFamConfigInList:
-            for font in self.familyList:
-                if font == markCfg.get(markCfg.fontFamily):
-                    self.currentFont = font
-                    break
-        else: self.currentFont = self.familyList[0]
-        self.fontProp = f"""
-            font-family: "{self.currentFont}";
-            font-size: {markCfg.get(markCfg.fontSize)};
-            font-weight: {markCfg.get(markCfg.fontWeight)};
-        """
-
-        # Font family
-        self.familyCombo = ComboBox()
-        for font in self.getSystemFonts(): self.familyCombo.addItem(font, segFont.fromName("Font"))
-        self.familyCombo.setCurrentText(self.currentFont)
-        self.familyCombo.currentTextChanged.connect(self.updatePreview)
-
-        # Font size
-        self.sizeSpin = SpinBox()
-        self.sizeSpin.setValue(markCfg.get(markCfg.fontSize))
-        self.sizeSpin.setMinimum(4)
-        self.sizeSpin.valueChanged.connect(self.updatePreview)
-
-        # Font weight
-        self.weightSpin = SpinBox()
-        self.weightSpin.setRange(100, 800)
-        self.weightSpin.setValue(markCfg.get(markCfg.fontWeight))
-        self.weightSpin.setSingleStep(100)
-        self.weightSpin.valueChanged.connect(self.updatePreview)
-
-        # Preview text
-        self.fontPreview = BodyLabel("The quick brown fox jumps over the lazy dog.")
-        self.fontPreview.setStyleSheet(self.fontProp)
-
-        # Adjust the internal layout
-        self.viewLayout.setContentsMargins(0, 0, 0, 0)
-        self.viewLayout.setSpacing(0)
-
-        self.add(BodyLabel("Choose a font"), self.familyCombo)
-        self.add(BodyLabel("Set font size"), self.sizeSpin)
-        self.add(BodyLabel("Set font weight"), self.weightSpin)
-        self.add(BodyLabel("Font preview"), self.fontPreview)
-    
-    def add(self, label, widget = None):
-        """ :EditorFontConfig: Add labels and config widgets to the group. """
-        wid = QWidget()
-        wid.setFixedHeight(60)
-        widLayout = QHBoxLayout(wid)
-        widLayout.setContentsMargins(48, 12, 48, 12)
-
-        widLayout.addWidget(label)
-        if widget:
-            widLayout.addStretch()
-            widLayout.addWidget(widget)
+        self.widget.setMinimumWidth(400)
+        self.topLine.setContentsMargins(0, 0, 0, 0)
+        self.topLine.setSpacing(15)
+        self.topLine.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        self.icon.setFixedSize(24, 24)
         
-        self.addGroupWidget(wid)
-    
-    def updatePreview(self):
-        self.fontFamily = self.familyCombo.currentText()
-        self.fontSize = self.sizeSpin.value()
-        self.fontWeight = self.weightSpin.value()
-        self.fontProp = f"""
-            font-family: "{self.fontFamily}";
-            font-size: {self.fontSize}px;
-            font-weight: {self.fontWeight}
-        """
+        self.yesButton.clicked.connect(lambda: self.reject())
+        self.cancelButton.setParent(None)
+        self.buttonLayout.removeWidget(self.cancelButton)
+        self.buttonLayout.removeWidget(self.yesButton)
+        self.buttonLayout.addStretch(1)
+        self.buttonLayout.addWidget(self.yesButton, 1)
 
-        self.fontPreview.setStyleSheet(self.fontProp)
-        markCfg.set(markCfg.fontFamily, self.fontFamily)
-        markCfg.set(markCfg.fontSize, self.fontSize)
-        markCfg.set(markCfg.fontWeight, self.fontWeight)
-        self.configChanged.emit()
-    
-    def getSystemFonts(self, asList: bool = True) -> list[str] | dict[str, str]:
-        """ :EditorFontConfig: Get the system fonts as a list or dictionary
+        self.topLine.addWidget(self.icon)
+        self.topLine.addWidget(self.titleLabel)
 
-        Parameters
-        ----------
-        asList : bool, optional
-            Whether to return the list of fonts as a list (*if `True`*) or a dictionary (*if `False`*), by default True
+        self.viewLayout.addLayout(self.topLine)
+        self.viewLayout.addWidget(self.topCard)
 
-        Returns
-        -------
-        `list[str]` | `dict[str, str]`: The list of fonts or a dictionary of font families and their names
-        """
-        fonts = {}
-        paths = [
-            (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts"),
-            (winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts")
-        ]
+        self.addInfo(
+            segFont.fromName("HardDrive"), "Size",
+            f"{self.metadata["sizeHumanReadable"]} ({self.metadata["sizeBytes"]} B)"
+        )
+        self.addInfo(FICO.CALENDAR, "Last modified at", self.metadata["lastModifiedAt"])
+        self.addInfo(FICO.VIEW, "Read-only", self.metadata["isReadOnly"])
+        self.addInfo(FICO.MORE, "MIME type", self.metadata["mimeType"])
 
-        for hive, subkey in paths:
+    def addInfo(self, icon: QIcon | str | FluentIconBase, name: str, value: str):
+        """ :AboutDocumentDialog: Add a metadata of the file to the list """
+
+        l = QHBoxLayout()
+        l.setContentsMargins(0, 0, 0, 0)
+        l.setSpacing(10)
+        l.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+
+        i = IconWidget(icon or FICO.INFO)
+        i.setFixedSize(16, 16)
+
+        v = BodyLabel(str(value))
+        v.setWordWrap(True)
+
+        l.addWidget(i)
+        l.addWidget(BodyLabel(name), 1)
+        l.addWidget(v, 1)
+
+        self.viewLayout.addLayout(l)
+
+    def getMetadataFromPath(self, filePath: str) -> dict:
+        """ :AboutDocumentDialog: Collect all metadata from the specified path's file into a `dict` """
+        path = Path(filePath)
+        meta = {}
+        dateTime = datetime.datetime
+
+        # -------------------
+        # Filesystem metadata
+        # -------------------
+        statInfo = path.stat()
+
+        meta["name"] = path.name
+        meta["extension"] = path.suffix
+        meta["absolutePath"] = str(path.resolve())
+        meta["parentDir"] = str(path.parent.resolve())
+
+        meta["sizeBytes"] = statInfo.st_size
+        meta["sizeHumanReadable"] = f"{statInfo.st_size / 1024:.2f} KB"
+
+        meta["createdAt"] = dateTime.fromtimestamp(statInfo.st_ctime).isoformat()
+        meta["lastModifiedAt"] = dateTime.fromtimestamp(statInfo.st_mtime).isoformat()
+        meta["lastAccessedAt"] = dateTime.fromtimestamp(statInfo.st_atime).isoformat()
+
+        meta["isReadOnly"] = not os.access(filePath, os.W_OK)
+        meta["permissions"] = stat.filemode(statInfo.st_mode)
+        meta["isFile"] = path.is_file()
+        meta["isSymlink"] = path.is_symlink()
+        meta["mimeType"] = smart.getFileMimeType(filePath)
+
+        # ----------------
+        # Content metadata
+        # ----------------
+        with open(filePath, "rb") as binaRead:
+            rawBytes = binaRead.read()
+
+        # Detect line endings
+        if b'\r\n' in rawBytes:
+            meta["lineEnding"] = "CRLF (Windows)"
+        elif b'\n' in rawBytes:
+            meta["lineEnding"] = "LF (Unix)"
+        elif b'\r' in rawBytes:
+            meta["lineEnding"] = "CR (Old Mac)"
+        else:
+            meta["lineEnding"] = "None (Single line or empty)"
+
+        # Detect encoding
+        if rawBytes.startswith(b'\xef\xbb\xbf'):
+            meta["detectedEncoding"] = "UTF-8-SIG (BOM)"
+            encodingToUse = "utf-8-sig"
+        else:
             try:
-                with winreg.OpenKey(hive, subkey) as key:
-                    for i in range(winreg.QueryInfoKey(key)[1]):
-                        name, value, _ = winreg.EnumValue(key, i)
-                        if name and value:
-                            cleanName = name.split("(")[0].strip()
-                            if cleanName: fonts[cleanName] = value
-            except FileNotFoundError: continue
+                rawBytes.decode("utf-8")
+                meta["detectedEncoding"] = "UTF-8"
+                encodingToUse = "utf-8"
+            except UnicodeDecodeError:
+                meta["detectedEncoding"] = "Likely Windows-1252 / Latin-1"
+                encodingToUse = "cp1252"
+
+        with open(filePath, encoding=encodingToUse) as f:
+            content = f.read()
+            lines = content.splitlines()
+
+        meta["totalChars"] = len(content)
+        meta["totalCharsNoSpaces"] = len(content.replace(" ", "").replace("\n", "").replace("\t", ""))
+        meta["totalLines"] = len(lines)
+        meta["totalWords"] = len(content.split())
+        meta["emptyLines"] = sum(1 for line in lines if not line.strip())
+        meta["longestLineLength"] = max((len(line) for line in lines), default=0)
+
+        # Language/Content hints (top 5 most common words)
+        wordsCleaned = [word.strip('.,!?()[]{}":;').lower() for word in content.split()]
+        wordsCleaned = [w for w in wordsCleaned if w] # making sure to remove empty strings
+        meta["top5Words"] = Counter(wordsCleaned).most_common(5)
+
+        # -----------------
+        # Identity metadata
+        # -----------------
+        meta["hashMD5"] = hashlib.md5(rawBytes).hexdigest()
+        meta["hashSHA256"] = hashlib.sha256(rawBytes).hexdigest()
+
+        return meta
+
+class SettingsWidgets:
+
+    class SettingsWidgetDefinition():
+        """ Declaration class for the Settings screen widgets """
+
+        def __init__(self):
+            super().__init__()
+
+            # General
+            self.optionStartInEditMode = SwitchSettingCard(
+                FICO.EDIT,
+                "Start in Edit mode",
+                f"You can choose whether {TITLE} should start directly in Edit mode.",
+                cfg.mdStartInEditMode
+            )
+
+            self.optionFixTheme = PushSettingCard(
+                "Fix theme",
+                segFont.fromName("Repair"),
+                "Fix currrent theme",
+                f"If {SmartLinkerName} theme configuration follows your system, "
+                "this option helps you reapply the theme according to the one applied system-wide."
+            )
+
+            self.optionManageHistory = PushSettingCard(
+                "Manage history",
+                FICO.HISTORY,
+                "Manage your Markdown history",
+                f"You can load or remove any Markdown file already opened in {SmartLinkerName} or {TITLE}."
+            )
+
+            # Editor
+            self.optionShowLineNumbers = SwitchSettingCard(
+                segSVG.NUMBER_SYMBOL,
+                "Display the line numbers",
+                "You can choose whether the line numbers can be displayed in the editor pane.",
+                cfg.mdDisplayLineNumbers
+            )
+
+            self.optionShowSymbolsBar = SwitchSettingCard(
+                segFont.fromName("EmojiTabMoreSymbols"),
+                "Display the symbols bar",
+                "You can choose whether the symbols bar can be displayed in the editor pane.",
+                cfg.mdDisplaySymbolsBar
+            )
+
+            self.optionShowStatusBar = SwitchSettingCard(
+                segFont.fromName("SIPRedock"),
+                "Display the status bar",
+                "You can choose whether the status bar can be displayed at the bottom of the editor pane.",
+                cfg.mdDisplayStatusBar
+            )
+
+            self.optionEnableSyntaxHighlighting = SwitchSettingCard(
+                segFont.fromName("Highlight"),
+                "Enable syntax highlighting",
+                "You can choose whether the editor can be syntax-highlighted based on Markdown syntax.",
+                cfg.mdEnableSyntaxHighlighting
+            )
+
+            self.optionEnableWordWrap = SwitchSettingCard(
+                segSVG.TEXT_WRAP,
+                "Enable text wrapping",
+                "You can choose whether the editor content can be wrapped to the next line.",
+                cfg.mdEnableWordWrap
+            )
+
+            self.optionHighlightCurrentLine = SwitchSettingCard(
+                segSVG.COLOR_LINE,
+                "Highlight the current line",
+                "You can choose whether the focused line in the editor can be highlighted.",
+                cfg.mdHighlightCurrentLine
+            )
+
+            # Viewer
+            self.optionOpenExternalLinks = SwitchSettingCard(
+                segFont.fromName("Link"),
+                "Access external links",
+                f"Allow {TITLE} to access external links such as webpages, non-Markdown content"
+                " and more via the viewer pane.",
+                cfg.mdOpenExternalLinks
+            )
+
+    class EditorFontConfigGroup(ExpandGroupSettingCard):
+        """ Class for Smart DownMarker font settings in the Editor section """
+        configChanged = pyqtSignal()
+
+        def __init__(self, parent = None):
+            super().__init__(
+                segFont.fromName("Font"), # type: ignore
+                "Customize font settings",
+                "Modify the editor's font family, size and weight properties",
+                parent
+            )
+            self.familyList: list[str] = [
+                "Ace Sans",
+                "Agency FB",
+                "Algerian",
+                "Alte DIN 1451 Mittelschrift",
+                "Arial",
+                "Bahnschrift",
+                "BankGothic",
+                "Bauhaus 93",
+                "Berlin Sans FB",
+                "Calibri",
+                "Capriola",
+                "Cascadia Code",
+                "Cascadia Mono",
+                "Chalet",
+                "Clock BoldSerif",
+                "Clock RetroStripe",
+                "Clock Stamp",
+                "Clock2021",
+                "Consolas",
+                "Copperplate Gothic",
+                "Dune Rise",
+                "Figtree",
+                "Forte",
+                "Franklin Gothic",
+                "Franklin Gothic Book",
+                "Gill Sans MT",
+                "Google Sans",
+                "Harlow Solid",
+                "Harrington",
+                "JetBrains Mono",
+                "JK Abode",
+                "Masterpiece",
+                "Mochiy Pop One",
+                "Montserrat",
+                "Montserrat Alternates",
+                "NEON LED Light",
+                "Nexa",
+                "NFS font",
+                "Nikkyou Sans",
+                "Old English Text MT",
+                "Pricedown",
+                "Roboto",
+                "Rockwell",
+                "Samsung Sharp Sans",
+                "Segoe UI",
+                "Segoe UI Variable Display",
+                "SignPainter-HouseScript",
+                "SpecialAlphabets P04",
+                "Stone",
+                "Times New Roman",
+                "Tourner",
+                "Trebuchet MS",
+                "Tw Cen MT",
+                "Varino",
+                "Velocity",
+                "Verdana"
+            ]
+            self.isFamConfigInList: bool = cfg.get(cfg.mdFontFamily) in self.familyList
+            if self.isFamConfigInList:
+                for font in self.familyList:
+                    if font == cfg.get(cfg.mdFontFamily):
+                        self.currentFont = font
+                        break
+            else: self.currentFont = self.familyList[0]
+            self.fontProp = f"""
+                font-family: "{self.currentFont}";
+                font-size: {cfg.get(cfg.mdFontSize)};
+                font-weight: {cfg.get(cfg.mdFontWeight)};
+            """
+
+            # Font family
+            self.familyCombo = ComboBox()
+            for font in self.getSystemFonts(): self.familyCombo.addItem(font, segFont.fromName("Font"))
+            self.familyCombo.setCurrentText(self.currentFont)
+            self.familyCombo.currentTextChanged.connect(self.updatePreview)
+
+            # Font size
+            self.sizeSpin = SpinBox()
+            self.sizeSpin.setValue(cfg.get(cfg.mdFontSize))
+            self.sizeSpin.setMinimum(4)
+            self.sizeSpin.valueChanged.connect(self.updatePreview)
+
+            # Font weight
+            self.weightSpin = SpinBox()
+            self.weightSpin.setRange(100, 800)
+            self.weightSpin.setValue(cfg.get(cfg.mdFontWeight))
+            self.weightSpin.setSingleStep(100)
+            self.weightSpin.valueChanged.connect(self.updatePreview)
+
+            # Preview text
+            self.fontPreview = BodyLabel("The quick brown fox jumps over the lazy dog.")
+            self.fontPreview.setStyleSheet(self.fontProp)
+
+            # Adjust the internal layout
+            self.viewLayout.setContentsMargins(0, 0, 0, 0)
+            self.viewLayout.setSpacing(0)
+
+            self.add(BodyLabel("Choose a font"), self.familyCombo)
+            self.add(BodyLabel("Set font size"), self.sizeSpin)
+            self.add(BodyLabel("Set font weight"), self.weightSpin)
+            self.add(BodyLabel("Font preview"), self.fontPreview)
         
-        if asList: return sorted(list(set(fonts.keys())))
+        def add(self, label, widget = None):
+            """ :EditorFontConfig: Add labels and config widgets to the group. """
+            wid = QWidget()
+            wid.setFixedHeight(60)
+            widLayout = QHBoxLayout(wid)
+            widLayout.setContentsMargins(48, 12, 48, 12)
 
-        return dict(sorted(fonts.items()))
-
-class IndentationConfigGroup(ExpandGroupSettingCard):
-    """ Class for Smart DownMarker indentation settings in the Editor section """
-    configChanged = pyqtSignal()
-
-    def __init__(self, parent = None):
-        super().__init__(
-            segFont.fromName("HorizontalTabKey"), # type: ignore
-            "Customize indentation settings",
-            "Modify the editor's indentation properties such as tab width and indentation guides visibility."
-        )
-
-        # Tab width
-        self.tabWidthSpin = SpinBox()
-        self.tabWidthSpin.setValue(markCfg.get(markCfg.indentWidth))
-        self.tabWidthSpin.setRange(2, 8)
-        self.tabWidthSpin.valueChanged.connect(self.updateConfig)
-
-        # Indentation guides
-        self.indentGuidesCheck = SwitchButton()
-        self.indentGuidesCheck.setChecked(markCfg.get(markCfg.displayIndentGuides))
-        self.indentGuidesCheck.checkedChanged.connect(self.updateConfig)
-
-        # Auto-indent
-        self.autoIndentCheck = SwitchButton()
-        self.autoIndentCheck.setChecked(markCfg.get(markCfg.enableAutoIndent))
-        self.autoIndentCheck.checkedChanged.connect(self.updateConfig)
-
-        # Adjust the internal layout
-        self.viewLayout.setContentsMargins(0, 0, 0, 0)
-        self.viewLayout.setSpacing(0)
-
-        self.add(BodyLabel("Set tab width (from 2 to 8)"), self.tabWidthSpin)
-        self.add(BodyLabel("Display indentation guides"), self.indentGuidesCheck)
-        self.add(BodyLabel("Enable auto-indentation"), self.autoIndentCheck)
-
-    def add(self, label, widget = None):
-        """ :IndentationConfigGroup: Add labels and config widgets to the group. """
-        wid = QWidget()
-        wid.setFixedHeight(60)
-        widLayout = QHBoxLayout(wid)
-        widLayout.setContentsMargins(48, 12, 48, 12)
-
-        widLayout.addWidget(label)
-        if widget:
-            widLayout.addStretch()
-            widLayout.addWidget(widget)
+            widLayout.addWidget(label)
+            if widget:
+                widLayout.addStretch()
+                widLayout.addWidget(widget)
+            
+            self.addGroupWidget(wid)
         
-        self.addGroupWidget(wid)
-    
-    def updateConfig(self):
-        markCfg.set(markCfg.indentWidth, self.tabWidthSpin.value())
-        markCfg.set(markCfg.displayIndentGuides, self.indentGuidesCheck.isChecked())
-        markCfg.set(markCfg.enableAutoIndent, self.autoIndentCheck.isChecked())
-        self.configChanged.emit()
+        def updatePreview(self):
+            self.fontFamily = self.familyCombo.currentText()
+            self.fontSize = self.sizeSpin.value()
+            self.fontWeight = self.weightSpin.value()
+            self.fontProp = f"""
+                font-family: "{self.fontFamily}";
+                font-size: {self.fontSize}px;
+                font-weight: {self.fontWeight}
+            """
 
-class EditorSelectionConfigGroup(ExpandGroupSettingCard):
-    """ Class for Smart DownMarker selection settings in the Editor section """
-    configChanged = pyqtSignal()
-
-    def __init__(self, parent = None):
-        super().__init__(
-            FICO.PALETTE, # type: ignore
-            "Customize selection settings",
-            "Modify the editor's selection properties such as selection mode and custom color."
-        )
-
-        colorModes = {
-            "System accent color": segFont.fromName("System"),
-            "Custom accent color": segFont.fromName("Edit")
-        }
-
-        # Selection color mode
-        self.selectionColorModeCombo = ComboBox()
-        # self.selectionColorModeCombo.addItems(["System accent color", "Custom accent color"])
-        for k, v in colorModes.items(): self.selectionColorModeCombo.addItem(k, v)
-        self.selectionColorModeCombo.setFixedWidth(180)
-        self.selectionColorModeCombo.setCurrentIndex(1 if markCfg.get(markCfg.selectionColorMode) == "Custom" else 0)
-        self.selectionColorModeCombo.currentTextChanged.connect(self.updateConfig)
-
-        # Selection custom color
-        self.selectButton = PushButton(FICO.PALETTE, "Pick my color")
-        self.selectButton.setEnabled(bool(self.selectionColorModeCombo.currentText() == "Custom accent color"))
-        self.selectButton.setFixedWidth(150)
-
-        # Adjust the internal layout
-        self.viewLayout.setContentsMargins(0, 0, 0, 0)
-        self.viewLayout.setSpacing(0)
-
-        self.add(BodyLabel("Set selection color mode"), self.selectionColorModeCombo)
-        self.add(BodyLabel("Select selection custom color"), self.selectButton)
-    
-    def add(self, label, widget = None):
-        """ :EditorSelectionConfigGroup: Add labels and config widgets to the group. """
-        wid = QWidget()
-        wid.setFixedHeight(60)
-        widLayout = QHBoxLayout(wid)
-        widLayout.setContentsMargins(48, 12, 48, 12)
-
-        widLayout.addWidget(label)
-        if widget:
-            widLayout.addStretch()
-            widLayout.addWidget(widget)
+            self.fontPreview.setStyleSheet(self.fontProp)
+            cfg.set(cfg.mdFontFamily, self.fontFamily)
+            cfg.set(cfg.mdFontSize, self.fontSize)
+            cfg.set(cfg.mdFontWeight, self.fontWeight)
+            self.configChanged.emit()
         
-        self.addGroupWidget(wid)
-    
-    def updateConfig(self):
-        self.selectButton.setEnabled(self.selectionColorModeCombo.currentIndex() == 1)
-        markCfg.set(markCfg.selectionColorMode, "Custom" if self.selectionColorModeCombo.currentIndex() == 1 else "Accent")
-        self.configChanged.emit()
+        def getSystemFonts(self, asList: bool = True) -> list[str] | dict[str, str]:
+            """ :EditorFontConfig: Get the system fonts as a list or dictionary
 
-class CSSPropertiesConfigGroup(ExpandGroupSettingCard):
-    """ Class for Smart DownMarker CSS properties in the Viewer section """
-    configChanged = pyqtSignal()
+            Parameters
+            ----------
+            asList : bool, optional
+                Whether to return the list of fonts as a list (*if `True`*) or a dictionary (*if `False`*), by default True
 
-    def __init__(self, parent):
-        super().__init__(
-            segSVG.STYLE_GUIDE, # type: ignore
-            "Customize CSS properties",
-            "Modify the viewer's rendering style properties "
-            "(doesn't apply to webpages, stylized HTML documents or any CSS-incompatible non-static content)"
-        )
+            Returns
+            -------
+            `list[str]` | `dict[str, str]`: The list of fonts or a dictionary of font families and their names
+            """
+            fonts = {}
+            paths = [
+                (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts"),
+                (winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts")
+            ]
 
-        self.sourceTypes = {
-            "Embedded default": segFont.fromName("AppIconDefault"),
-            "From local storage": segFont.fromName("HardDrive"),
-            "Custom": segFont.fromName("TextEdit")
-        }
-        self.sourceIndexes = {"Default": 0, "Local": 1, "Custom": 2}
+            for hive, subkey in paths:
+                try:
+                    with winreg.OpenKey(hive, subkey) as key:
+                        for i in range(winreg.QueryInfoKey(key)[1]):
+                            name, value, _ = winreg.EnumValue(key, i)
+                            if name and value:
+                                cleanName = name.split("(")[0].strip()
+                                if cleanName: fonts[cleanName] = value
+                except FileNotFoundError: continue
+            
+            if asList: return sorted(list(set(fonts.keys())))
 
-        # Stylesheet source type
-        self.sourceTypeCombo = ComboBox()
-        for k, v in self.sourceTypes.items(): self.sourceTypeCombo.addItem(k, v)
-        self.sourceTypeCombo.setFixedWidth(180)
-        self.sourceTypeCombo.setCurrentIndex(next(v for k, v in self.sourceIndexes.items() if markCfg.get(markCfg.cssSource) == k))
-        self.sourceTypeCombo.currentIndexChanged.connect(self.updateConfig)
+            return dict(sorted(fonts.items()))
 
-        # Storage source
-        self.storagePath = QWidget()
-        self.storagePath.setContentsMargins(0, 0, 0, 0)
-        storagePathBox = QVBoxLayout(self.storagePath)
-        storagePathBox.setContentsMargins(0, 0, 0, 0)
-        storagePathBox.setSpacing(5)
-        storagePathBox.addWidget(BodyLabel("Choose a file from your storage"))
-        self.storagePathSublabel = CaptionLabel(
-            f"Current source path: {markCfg.get(markCfg.cssSourcePath).replace('/', '\\')}{" (Inaccessible)" if not os.path.exists(markCfg.get(markCfg.cssSourcePath)) else ""}"
-            if markCfg.get(markCfg.cssSourcePath) else "No path has been defined yet"
-        )
-        self.storagePathSublabel.setTextColor(QColor("gray"), QColor("gray"))
-        self.storagePathSublabel.setVisible(bool(markCfg.get(markCfg.cssSourcePath)) and markCfg.get(markCfg.cssSourcePath) != "Default")
-        storagePathBox.addWidget(self.storagePathSublabel)
-        self.storageSelectButton = PushButton(FICO.FOLDER, "Browse")
-        self.storageSelectButton.setFixedWidth(150)
-        self.storageSelectButton.setEnabled(self.sourceTypeCombo.currentIndex() == 1)
+    class IndentationConfigGroup(ExpandGroupSettingCard):
+        """ Class for Smart DownMarker indentation settings in the Editor section """
+        configChanged = pyqtSignal()
 
-        # Custom source
-        self.customStyleEditButton = PushButton(FICO.EDIT, "Edit style")
-        self.customStyleEditButton.setFixedWidth(150)
-        self.customStyleEditButton.setEnabled(self.sourceTypeCombo.currentIndex() == 2)
+        def __init__(self, parent = None):
+            super().__init__(
+                segFont.fromName("HorizontalTabKey"), # type: ignore
+                "Customize indentation settings",
+                "Modify the editor's indentation properties such as tab width and indentation guides visibility.",
+                parent
+            )
 
-        self.add(BodyLabel("Select a source type"), self.sourceTypeCombo)
-        self.add(self.storagePath, self.storageSelectButton)
-        self.add(BodyLabel("Customize the viewer style manually"), self.customStyleEditButton)
-    
-    def add(self, label, widget = None):
-        """ :CSSPropertiesConfigGroup: Add labels and config widgets to the group. """
-        wid = QWidget()
-        wid.setFixedHeight(60)
-        widLayout = QHBoxLayout(wid)
-        widLayout.setContentsMargins(48, 12, 48, 12)
+            # Tab width
+            self.tabWidthSpin = SpinBox()
+            self.tabWidthSpin.setValue(cfg.get(cfg.mdIndentWidth))
+            self.tabWidthSpin.setRange(2, 8)
+            self.tabWidthSpin.valueChanged.connect(self.updateConfig)
 
-        widLayout.addWidget(label)
-        if widget:
-            widLayout.addStretch()
-            widLayout.addWidget(widget)
+            # Indentation guides
+            self.indentGuidesCheck = SwitchButton()
+            self.indentGuidesCheck.setChecked(cfg.get(cfg.mdDisplayIndentGuides))
+            self.indentGuidesCheck.checkedChanged.connect(self.updateConfig)
+
+            # Auto-indent
+            self.autoIndentCheck = SwitchButton()
+            self.autoIndentCheck.setChecked(cfg.get(cfg.mdEnableAutoIndent))
+            self.autoIndentCheck.checkedChanged.connect(self.updateConfig)
+
+            # Adjust the internal layout
+            self.viewLayout.setContentsMargins(0, 0, 0, 0)
+            self.viewLayout.setSpacing(0)
+
+            self.add(BodyLabel("Set tab width (from 2 to 8)"), self.tabWidthSpin)
+            self.add(BodyLabel("Display indentation guides"), self.indentGuidesCheck)
+            self.add(BodyLabel("Enable auto-indentation"), self.autoIndentCheck)
+
+        def add(self, label, widget = None):
+            """ :IndentationConfigGroup: Add labels and config widgets to the group. """
+            wid = QWidget()
+            wid.setFixedHeight(60)
+            widLayout = QHBoxLayout(wid)
+            widLayout.setContentsMargins(48, 12, 48, 12)
+
+            widLayout.addWidget(label)
+            if widget:
+                widLayout.addStretch()
+                widLayout.addWidget(widget)
+            
+            self.addGroupWidget(wid)
         
-        self.addGroupWidget(wid)
-    
-    def updateConfig(self):
-        markCfg.set(markCfg.cssSource, next(k for k, v in self.sourceIndexes.items() if v == self.sourceTypeCombo.currentIndex()))
-        self.storageSelectButton.setEnabled(self.sourceTypeCombo.currentIndex() == 1)
-        self.customStyleEditButton.setEnabled(self.sourceTypeCombo.currentIndex() == 2)
-        self.configChanged.emit()
+        def updateConfig(self):
+            cfg.set(cfg.mdIndentWidth, self.tabWidthSpin.value())
+            cfg.set(cfg.mdDisplayIndentGuides, self.indentGuidesCheck.isChecked())
+            cfg.set(cfg.mdEnableAutoIndent, self.autoIndentCheck.isChecked())
+            self.configChanged.emit()
 
-class HomePageConfigGroup(ExpandGroupSettingCard):
-    """ Class for Smart DownMarker homepage settings in the Viewer section """
-    configChanged = pyqtSignal()
+    class EditorSelectionConfigGroup(ExpandGroupSettingCard):
+        """ Class for Smart DownMarker selection settings in the Editor section """
+        configChanged = pyqtSignal()
 
-    def __init__(self, parent):
-        super().__init__(
-            FICO.HOME, # type: ignore
-            "Customize homepage settings",
-            "Modify the viewer's homepage properties such as source type and custom content."
-        )
+        def __init__(self, parent = None):
+            super().__init__(
+                FICO.PALETTE, # type: ignore
+                "Customize selection settings",
+                "Modify the editor's selection properties such as selection mode and custom color.",
+                parent
+            )
 
-        self.sourceTypes = {
-            "Embedded default": segFont.fromName("AppIconDefault"),
-            "From local storage": segFont.fromName("HardDrive"),
-            "Custom": segFont.fromName("TextEdit")
-        }
-        self.sourceIndexes = {"Default": 0, "Local": 1, "Custom": 2}
+            colorModes = {
+                "System accent color": segFont.fromName("System"),
+                "Custom accent color": segFont.fromName("Edit")
+            }
 
-        # Homepage source type
-        self.sourceTypeCombo = ComboBox()
-        for k, v in self.sourceTypes.items(): self.sourceTypeCombo.addItem(k, v)
-        self.sourceTypeCombo.setFixedWidth(180)
-        self.sourceTypeCombo.setCurrentIndex(next(v for k, v in self.sourceIndexes.items() if markCfg.get(markCfg.homepageSource) == k))
-        self.sourceTypeCombo.currentIndexChanged.connect(self.updateConfig)
+            # Selection color mode
+            self.selectionColorModeCombo = ComboBox()
+            # self.selectionColorModeCombo.addItems(["System accent color", "Custom accent color"])
+            for k, v in colorModes.items(): self.selectionColorModeCombo.addItem(k, v)
+            self.selectionColorModeCombo.setFixedWidth(180)
+            self.selectionColorModeCombo.setCurrentIndex(1 if cfg.get(cfg.mdSelectionColorMode) == "Custom" else 0)
+            self.selectionColorModeCombo.currentTextChanged.connect(self.updateConfig)
 
-        # Storage source
-        self.storagePath = QWidget()
-        self.storagePath.setContentsMargins(0, 0, 0, 0)
-        storagePathBox = QVBoxLayout(self.storagePath)
-        storagePathBox.setContentsMargins(0, 0, 0, 0)
-        storagePathBox.setSpacing(5)
-        storagePathBox.addWidget(BodyLabel("Choose a file from your storage"))
-        self.storagePathSublabel = CaptionLabel(
-            f"Current source path: {markCfg.get(markCfg.homepageSourcePath).replace('/', '\\')}{" (Inaccessible)" if not os.path.exists(markCfg.get(markCfg.homepageSourcePath)) else ""}"
-            if markCfg.get(markCfg.homepageSourcePath) else "No path has been defined yet"
-        )
-        self.storagePathSublabel.setTextColor(QColor("gray"), QColor("gray"))
-        self.storagePathSublabel.setVisible(bool(markCfg.get(markCfg.homepageSourcePath)) and markCfg.get(markCfg.homepageSourcePath) != "Default")
-        storagePathBox.addWidget(self.storagePathSublabel)
-        self.storageSelectButton = PushButton(FICO.FOLDER, "Browse")
-        self.storageSelectButton.setFixedWidth(150)
-        self.storageSelectButton.setEnabled(self.sourceTypeCombo.currentIndex() == 1)
+            # Selection custom color
+            self.selectButton = PushButton(FICO.PALETTE, "Pick my color")
+            self.selectButton.setEnabled(bool(self.selectionColorModeCombo.currentText() == "Custom accent color"))
+            self.selectButton.setFixedWidth(150)
 
-        # Custom source
-        self.customContentEditButton = PushButton(FICO.EDIT, "Edit content")
-        self.customContentEditButton.setFixedWidth(150)
-        self.customContentEditButton.setEnabled(self.sourceTypeCombo.currentIndex() == 2)
+            # Adjust the internal layout
+            self.viewLayout.setContentsMargins(0, 0, 0, 0)
+            self.viewLayout.setSpacing(0)
 
-        self.add(BodyLabel("Select a source type"), self.sourceTypeCombo)
-        self.add(self.storagePath, self.storageSelectButton)
-        self.add(BodyLabel("Customize the homepage content manually"), self.customContentEditButton)
-    
-    def add(self, label, widget = None):
-        """ :HomePageConfigGroup: Add labels and config widgets to the group. """
-        wid = QWidget()
-        wid.setFixedHeight(60)
-        widLayout = QHBoxLayout(wid)
-        widLayout.setContentsMargins(48, 12, 48, 12)
-
-        widLayout.addWidget(label)
-        if widget:
-            widLayout.addStretch()
-            widLayout.addWidget(widget)
+            self.add(BodyLabel("Set selection color mode"), self.selectionColorModeCombo)
+            self.add(BodyLabel("Select selection custom color"), self.selectButton)
         
-        self.addGroupWidget(wid)
-    
-    def updateConfig(self):
-        markCfg.set(markCfg.homepageSource, next(k for k, v in self.sourceIndexes.items() if v == self.sourceTypeCombo.currentIndex()))
-        self.storageSelectButton.setEnabled(self.sourceTypeCombo.currentIndex() == 1)
-        self.customContentEditButton.setEnabled(self.sourceTypeCombo.currentIndex() == 2)
-        self.configChanged.emit()
+        def add(self, label, widget = None):
+            """ :EditorSelectionConfigGroup: Add labels and config widgets to the group. """
+            wid = QWidget()
+            wid.setFixedHeight(60)
+            widLayout = QHBoxLayout(wid)
+            widLayout.setContentsMargins(48, 12, 48, 12)
 
-class CSSCustomPropertiesDialog(MessageBoxBase):
-    """ Class for the `Customize the viewer style` dialog box """
+            widLayout.addWidget(label)
+            if widget:
+                widLayout.addStretch()
+                widLayout.addWidget(widget)
+            
+            self.addGroupWidget(wid)
+        
+        def updateConfig(self):
+            self.selectButton.setEnabled(self.selectionColorModeCombo.currentIndex() == 1)
+            cfg.set(cfg.mdSelectionColorMode, "Custom" if self.selectionColorModeCombo.currentIndex() == 1 else "Accent")
+            self.configChanged.emit()
 
-    def __init__(self, stylesheet: str, parent):
-        super().__init__(parent)
-        self.dialogParent = parent
-        self.customCSS = stylesheet if stylesheet else self.dialogParent.styleMD
-        self.tempCSS = self.customCSS
-        self.changes: bool = self.customCSS != self.tempCSS
+    class CSSPropertiesConfigGroup(ExpandGroupSettingCard):
+        """ Class for Smart DownMarker CSS properties in the Viewer section """
+        configChanged = pyqtSignal()
 
-        self.topLine = QHBoxLayout()
-        self.topLine.setContentsMargins(0, 0, 0, 0)
-        self.topLine.setSpacing(15)
-        self.icon = IconWidget(smIco.renderIcon(smIco.CSS))
-        self.icon.setFixedSize(32, 32)
-        self.description = BodyLabel(
-            "You can edit manually the CSS properties that will be applied to "
-            f"the Markdown content rendered by the {TITLE} viewer.",
-            self
-        )
-        self.description.setWordWrap(True)
+        def __init__(self, parent):
+            super().__init__(
+                segSVG.STYLE_GUIDE, # type: ignore
+                "Customize CSS properties",
+                "Modify the viewer's rendering style properties "
+                "(doesn't apply to webpages, stylized HTML documents or any CSS-incompatible non-static content)",
+                parent
+            )
 
-        self.cssEdit = TextEdit(self)
-        self.cssEdit.setMinimumHeight(300)
-        self.cssEdit.setAcceptRichText(False)
-        self.cssEdit.setFontFamily(markCfg.get(markCfg.fontFamily))
-        self.cssEdit.setPlaceholderText("Your custom style sheet properties will appear here...")
-        self.cssEdit.setPlainText(self.tempCSS)
-        self.cssEdit.setLineWrapMode(TextEdit.LineWrapMode.NoWrap)
-        self.cssEdit.textChanged.connect(self.editListener)
-        self.cssEdit.selectionChanged.connect(self.editListener)
+            self.sourceTypes = {
+                "Embedded default": segFont.fromName("AppIconDefault"),
+                "From local storage": segFont.fromName("HardDrive"),
+                "Custom": segFont.fromName("TextEdit")
+            }
+            self.sourceIndexes = {"Default": 0, "Local": 1, "Custom": 2}
 
-        self.commandBar = CommandBar()
-        self.commandBar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+            # Stylesheet source type
+            self.sourceTypeCombo = ComboBox()
+            for k, v in self.sourceTypes.items(): self.sourceTypeCombo.addItem(k, v)
+            self.sourceTypeCombo.setFixedWidth(180)
+            self.sourceTypeCombo.setCurrentIndex(next(v for k, v in self.sourceIndexes.items() if cfg.get(cfg.mdCssSource) == k))
+            self.sourceTypeCombo.currentIndexChanged.connect(self.updateConfig)
 
-        self.cssUndo = Action(segFont.fromName("Undo"), "Undo", triggered=lambda: self.cssEdit.undo())
-        self.cssRedo = Action(segFont.fromName("Redo"), "Redo", triggered=lambda: self.cssEdit.redo())
-        self.cssCut = Action(FICO.CUT, "Cut", triggered=lambda: self.cssEdit.cut())
-        self.cssCopy = Action(FICO.COPY, "Copy", triggered=lambda: self.cssEdit.copy())
-        self.cssPaste = Action(FICO.PASTE, "Paste", triggered=lambda: self.cssEdit.paste())
-        self.toggleWrap = Action(segSVG.TEXT_WRAP, "Word wrap", triggered=self.toggleWordWrap)
+            # Storage source
+            self.storagePath = QWidget()
+            self.storagePath.setContentsMargins(0, 0, 0, 0)
+            storagePathBox = QVBoxLayout(self.storagePath)
+            storagePathBox.setContentsMargins(0, 0, 0, 0)
+            storagePathBox.setSpacing(5)
+            storagePathBox.addWidget(BodyLabel("Choose a file from your storage"))
+            self.storagePathSublabel = CaptionLabel(
+                f"Current source path: {cfg.get(cfg.mdCssSourcePath).replace('/', '\\')}{" (Inaccessible)" if not os.path.exists(cfg.get(cfg.mdCssSourcePath)) else ""}"
+                if cfg.get(cfg.mdCssSourcePath) else "No path has been defined yet"
+            )
+            self.storagePathSublabel.setTextColor(QColor("gray"), QColor("gray"))
+            self.storagePathSublabel.setVisible(bool(cfg.get(cfg.mdCssSourcePath)) and cfg.get(cfg.mdCssSourcePath) != "Default")
+            storagePathBox.addWidget(self.storagePathSublabel)
+            self.storageSelectButton = PushButton(FICO.FOLDER, "Browse")
+            self.storageSelectButton.setFixedWidth(150)
+            self.storageSelectButton.setEnabled(self.sourceTypeCombo.currentIndex() == 1)
 
-        self.cssUndo.setEnabled(self.cssEdit.document().isUndoAvailable()) # type: ignore
-        self.cssRedo.setEnabled(self.cssEdit.document().isRedoAvailable()) # type: ignore
-        self.cssCut.setEnabled(self.cssEdit.textCursor().hasSelection())
-        self.cssCopy.setEnabled(self.cssEdit.textCursor().hasSelection())
-        self.cssPaste.setEnabled(self.cssEdit.canPaste())
+            # Custom source
+            self.customStyleEditButton = PushButton(FICO.EDIT, "Edit style")
+            self.customStyleEditButton.setFixedWidth(150)
+            self.customStyleEditButton.setEnabled(self.sourceTypeCombo.currentIndex() == 2)
 
-        self.commandBar.addActions([
-            self.cssUndo, self.cssRedo, self.cssCut,
-            self.cssCopy, self.cssPaste
-        ])
-        self.commandBar.addSeparator()
-        self.commandBar.addAction(self.toggleWrap)
+            self.add(BodyLabel("Select a source type"), self.sourceTypeCombo)
+            self.add(self.storagePath, self.storageSelectButton)
+            self.add(BodyLabel("Customize the viewer style manually"), self.customStyleEditButton)
+        
+        def add(self, label, widget = None):
+            """ :CSSPropertiesConfigGroup: Add labels and config widgets to the group. """
+            wid = QWidget()
+            wid.setFixedHeight(60)
+            widLayout = QHBoxLayout(wid)
+            widLayout.setContentsMargins(48, 12, 48, 12)
 
-        self.viewLayout.setSpacing(20)
+            widLayout.addWidget(label)
+            if widget:
+                widLayout.addStretch()
+                widLayout.addWidget(widget)
+            
+            self.addGroupWidget(wid)
+        
+        def updateConfig(self):
+            cfg.set(cfg.mdCssSource, next(k for k, v in self.sourceIndexes.items() if v == self.sourceTypeCombo.currentIndex()))
+            self.storageSelectButton.setEnabled(self.sourceTypeCombo.currentIndex() == 1)
+            self.customStyleEditButton.setEnabled(self.sourceTypeCombo.currentIndex() == 2)
+            self.configChanged.emit()
 
-        self.viewLayout.addLayout(self.topLine)
-        self.topLine.addWidget(self.icon)
-        self.topLine.addWidget(TitleLabel("Customize the viewer style"))
-        self.viewLayout.addWidget(self.description)
-        self.viewLayout.addWidget(self.commandBar)
-        self.viewLayout.addWidget(self.cssEdit)
+    class HomePageConfigGroup(ExpandGroupSettingCard):
+        """ Class for Smart DownMarker homepage settings in the Viewer section """
+        configChanged = pyqtSignal()
 
-        self.yesButton.setText("Save and apply changes")
-        self.yesButton.setEnabled(self.changes)
-        self.widget.setMinimumWidth(700)
-    
-    def editListener(self):
-        self.tempCSS = self.cssEdit.toPlainText()
-        self.changes = self.tempCSS != self.customCSS
-        self.cssUndo.setEnabled(self.cssEdit.document().isUndoAvailable()) # type: ignore
-        self.cssRedo.setEnabled(self.cssEdit.document().isRedoAvailable()) # type: ignore
-        self.cssCut.setEnabled(self.cssEdit.textCursor().hasSelection())
-        self.cssCopy.setEnabled(self.cssEdit.textCursor().hasSelection())
-        self.cssPaste.setEnabled(self.cssEdit.canPaste())
-        self.yesButton.setEnabled(self.changes)
-    
-    def toggleWordWrap(self):
-        accentColor = QColor(cfg.get(cfg.accentColor))
-        if self.cssEdit.lineWrapMode() != TextEdit.LineWrapMode.NoWrap:
+        def __init__(self, parent):
+            super().__init__(
+                FICO.HOME, # type: ignore
+                "Customize homepage settings",
+                "Modify the viewer's homepage properties such as source type and custom content."
+            )
+
+            self.sourceTypes = {
+                "Embedded default": segFont.fromName("AppIconDefault"),
+                "From local storage": segFont.fromName("HardDrive"),
+                "Custom": segFont.fromName("TextEdit")
+            }
+            self.sourceIndexes = {"Default": 0, "Local": 1, "Custom": 2}
+
+            # Homepage source type
+            self.sourceTypeCombo = ComboBox()
+            for k, v in self.sourceTypes.items(): self.sourceTypeCombo.addItem(k, v)
+            self.sourceTypeCombo.setFixedWidth(180)
+            self.sourceTypeCombo.setCurrentIndex(next(v for k, v in self.sourceIndexes.items() if cfg.get(cfg.mdHomepageSource) == k))
+            self.sourceTypeCombo.currentIndexChanged.connect(self.updateConfig)
+
+            # Storage source
+            self.storagePath = QWidget()
+            self.storagePath.setContentsMargins(0, 0, 0, 0)
+            storagePathBox = QVBoxLayout(self.storagePath)
+            storagePathBox.setContentsMargins(0, 0, 0, 0)
+            storagePathBox.setSpacing(5)
+            storagePathBox.addWidget(BodyLabel("Choose a file from your storage"))
+            self.storagePathSublabel = CaptionLabel(
+                f"Current source path: {cfg.get(cfg.mdHomepageSourcePath).replace('/', '\\')}{" (Inaccessible)" if not os.path.exists(cfg.get(cfg.mdHomepageSourcePath)) else ""}"
+                if cfg.get(cfg.mdHomepageSourcePath) else "No path has been defined yet"
+            )
+            self.storagePathSublabel.setTextColor(QColor("gray"), QColor("gray"))
+            self.storagePathSublabel.setVisible(bool(cfg.get(cfg.mdHomepageSourcePath)) and cfg.get(cfg.mdHomepageSourcePath) != "Default")
+            storagePathBox.addWidget(self.storagePathSublabel)
+            self.storageSelectButton = PushButton(FICO.FOLDER, "Browse")
+            self.storageSelectButton.setFixedWidth(150)
+            self.storageSelectButton.setEnabled(self.sourceTypeCombo.currentIndex() == 1)
+
+            # Custom source
+            self.customContentEditButton = PushButton(FICO.EDIT, "Edit content")
+            self.customContentEditButton.setFixedWidth(150)
+            self.customContentEditButton.setEnabled(self.sourceTypeCombo.currentIndex() == 2)
+
+            self.add(BodyLabel("Select a source type"), self.sourceTypeCombo)
+            self.add(self.storagePath, self.storageSelectButton)
+            self.add(BodyLabel("Customize the homepage content manually"), self.customContentEditButton)
+        
+        def add(self, label, widget = None):
+            """ :HomePageConfigGroup: Add labels and config widgets to the group. """
+            wid = QWidget()
+            wid.setFixedHeight(60)
+            widLayout = QHBoxLayout(wid)
+            widLayout.setContentsMargins(48, 12, 48, 12)
+
+            widLayout.addWidget(label)
+            if widget:
+                widLayout.addStretch()
+                widLayout.addWidget(widget)
+            
+            self.addGroupWidget(wid)
+        
+        def updateConfig(self):
+            cfg.set(cfg.mdHomepageSource, next(k for k, v in self.sourceIndexes.items() if v == self.sourceTypeCombo.currentIndex()))
+            self.storageSelectButton.setEnabled(self.sourceTypeCombo.currentIndex() == 1)
+            self.customContentEditButton.setEnabled(self.sourceTypeCombo.currentIndex() == 2)
+            self.configChanged.emit()
+
+    class CSSCustomPropertiesDialog(MessageBoxBase):
+        """ Class for the `Customize the viewer style` dialog box """
+
+        def __init__(self, stylesheet: str, parent):
+            super().__init__(parent)
+            self.dialogParent = parent
+            self.customCSS = stylesheet if stylesheet else self.dialogParent.styleMD
+            self.tempCSS = self.customCSS
+            self.changes: bool = self.customCSS != self.tempCSS
+
+            self.topLine = QHBoxLayout()
+            self.topLine.setContentsMargins(0, 0, 0, 0)
+            self.topLine.setSpacing(15)
+            self.icon = IconWidget(smIco.renderIcon(smIco.CSS))
+            self.icon.setFixedSize(32, 32)
+            self.description = BodyLabel(
+                "You can edit manually the CSS properties that will be applied to "
+                f"the Markdown content rendered by the {TITLE} viewer.",
+                self
+            )
+            self.description.setWordWrap(True)
+
+            self.cssEdit = TextEdit(self)
+            self.cssEdit.setMinimumHeight(300)
+            self.cssEdit.setAcceptRichText(False)
+            self.cssEdit.setFontFamily(cfg.get(cfg.mdFontFamily))
+            self.cssEdit.setPlaceholderText("Your custom style sheet properties will appear here...")
+            self.cssEdit.setPlainText(self.tempCSS)
             self.cssEdit.setLineWrapMode(TextEdit.LineWrapMode.NoWrap)
-            self.toggleWrap.setIcon(segSVG.TEXT_WRAP)
-        else:
-            self.cssEdit.setLineWrapMode(TextEdit.LineWrapMode.WidgetWidth)
-            self.toggleWrap.setIcon(segSVG.TEXT_WRAP.colored(accentColor, accentColor))
+            self.cssEdit.textChanged.connect(self.editListener)
+            self.cssEdit.selectionChanged.connect(self.editListener)
 
-class HomepageCustomPropertiesDialog(MessageBoxBase):
-    """ Class for the `Customize the viewer homepage` dialog box """
+            self.commandBar = CommandBar()
+            self.commandBar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
 
-    def __init__(self, content: str, parent):
-        super().__init__(parent)
-        self.dialogParent = parent
-        self.customHome = content if content else self.dialogParent.baseMD
-        self.tempHome = self.customHome
-        self.changes: bool = self.customHome != self.tempHome
+            self.cssUndo = Action(segFont.fromName("Undo"), "Undo", triggered=lambda: self.cssEdit.undo())
+            self.cssRedo = Action(segFont.fromName("Redo"), "Redo", triggered=lambda: self.cssEdit.redo())
+            self.cssCut = Action(FICO.CUT, "Cut", triggered=lambda: self.cssEdit.cut())
+            self.cssCopy = Action(FICO.COPY, "Copy", triggered=lambda: self.cssEdit.copy())
+            self.cssPaste = Action(FICO.PASTE, "Paste", triggered=lambda: self.cssEdit.paste())
+            self.toggleWrap = Action(segSVG.TEXT_WRAP, "Word wrap", triggered=self.toggleWordWrap)
 
-        self.topLine = QHBoxLayout()
-        self.topLine.setContentsMargins(0, 0, 0, 0)
-        self.topLine.setSpacing(15)
-        self.icon = IconWidget(smIco.renderIcon(smIco.HTML))
-        self.icon.setFixedSize(32, 32)
-        self.description = BodyLabel(
-            "You can edit manually the HTML content that will be displayed as "
-            f"the {TITLE} viewer's homepage."
-        )
-        self.description.setWordWrap(True)
+            self.cssUndo.setEnabled(self.cssEdit.document().isUndoAvailable()) # type: ignore
+            self.cssRedo.setEnabled(self.cssEdit.document().isRedoAvailable()) # type: ignore
+            self.cssCut.setEnabled(self.cssEdit.textCursor().hasSelection())
+            self.cssCopy.setEnabled(self.cssEdit.textCursor().hasSelection())
+            self.cssPaste.setEnabled(self.cssEdit.canPaste())
 
-        self.homeEdit = TextEdit(self)
-        self.homeEdit.setMinimumHeight(300)
-        self.homeEdit.setAcceptRichText(False)
-        self.homeEdit.setFontFamily(markCfg.get(markCfg.fontFamily))
-        self.homeEdit.setPlaceholderText("Your custom homepage content will appear here...")
-        self.homeEdit.setPlainText(self.tempHome)
-        self.homeEdit.setLineWrapMode(TextEdit.LineWrapMode.NoWrap)
-        self.homeEdit.textChanged.connect(self.editListener)
-        self.homeEdit.selectionChanged.connect(self.editListener)
+            self.commandBar.addActions([
+                self.cssUndo, self.cssRedo, self.cssCut,
+                self.cssCopy, self.cssPaste
+            ])
+            self.commandBar.addSeparator()
+            self.commandBar.addAction(self.toggleWrap)
 
-        self.commandBar = CommandBar()
-        self.commandBar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+            self.viewLayout.setSpacing(20)
 
-        self.homeUndo = Action(segFont.fromName("Undo"), "Undo", triggered=lambda: self.homeEdit.undo())
-        self.homeRedo = Action(segFont.fromName("Redo"), "Redo", triggered=lambda: self.homeEdit.redo())
-        self.homeCut = Action(FICO.CUT, "Cut", triggered=lambda: self.homeEdit.cut())
-        self.homeCopy = Action(FICO.COPY, "Copy", triggered=lambda: self.homeEdit.copy())
-        self.homePaste = Action(FICO.PASTE, "Paste", triggered=lambda: self.homeEdit.paste())
-        self.toggleWrap = Action(segSVG.TEXT_WRAP, "Word wrap", triggered=self.toggleWordWrap)
+            self.viewLayout.addLayout(self.topLine)
+            self.topLine.addWidget(self.icon)
+            self.topLine.addWidget(TitleLabel("Customize the viewer style"))
+            self.viewLayout.addWidget(self.description)
+            self.viewLayout.addWidget(self.commandBar)
+            self.viewLayout.addWidget(self.cssEdit)
 
-        self.homeUndo.setEnabled(self.homeEdit.document().isUndoAvailable()) # type: ignore
-        self.homeRedo.setEnabled(self.homeEdit.document().isRedoAvailable()) # type: ignore
-        self.homeCut.setEnabled(self.homeEdit.textCursor().hasSelection())
-        self.homeCopy.setEnabled(self.homeEdit.textCursor().hasSelection())
-        self.homePaste.setEnabled(self.homeEdit.canPaste())
+            self.yesButton.setText("Save and apply changes")
+            self.yesButton.setEnabled(self.changes)
+            self.widget.setMinimumWidth(700)
+        
+        def editListener(self):
+            self.tempCSS = self.cssEdit.toPlainText()
+            self.changes = self.tempCSS != self.customCSS
+            self.cssUndo.setEnabled(self.cssEdit.document().isUndoAvailable()) # type: ignore
+            self.cssRedo.setEnabled(self.cssEdit.document().isRedoAvailable()) # type: ignore
+            self.cssCut.setEnabled(self.cssEdit.textCursor().hasSelection())
+            self.cssCopy.setEnabled(self.cssEdit.textCursor().hasSelection())
+            self.cssPaste.setEnabled(self.cssEdit.canPaste())
+            self.yesButton.setEnabled(self.changes)
+        
+        def toggleWordWrap(self):
+            accentColor = QColor(cfg.get(cfg.accentColor))
+            if self.cssEdit.lineWrapMode() != TextEdit.LineWrapMode.NoWrap:
+                self.cssEdit.setLineWrapMode(TextEdit.LineWrapMode.NoWrap)
+                self.toggleWrap.setIcon(segSVG.TEXT_WRAP)
+            else:
+                self.cssEdit.setLineWrapMode(TextEdit.LineWrapMode.WidgetWidth)
+                self.toggleWrap.setIcon(segSVG.TEXT_WRAP.colored(accentColor, accentColor))
 
-        self.commandBar.addActions([
-            self.homeUndo, self.homeRedo, self.homeCut,
-            self.homeCopy, self.homePaste
-        ])
-        self.commandBar.addSeparator()
-        self.commandBar.addAction(self.toggleWrap)
+    class HomepageCustomPropertiesDialog(MessageBoxBase):
+        """ Class for the `Customize the viewer homepage` dialog box """
 
-        self.viewLayout.setSpacing(20)
+        def __init__(self, content: str, parent):
+            super().__init__(parent)
+            self.dialogParent = parent
+            self.customHome = content if content else self.dialogParent.baseMD
+            self.tempHome = self.customHome
+            self.changes: bool = self.customHome != self.tempHome
 
-        self.viewLayout.addLayout(self.topLine)
-        self.topLine.addWidget(self.icon)
-        self.topLine.addWidget(TitleLabel("Customize the viewer homepage"))
-        self.viewLayout.addWidget(self.description)
-        self.viewLayout.addWidget(self.commandBar)
-        self.viewLayout.addWidget(self.homeEdit)
+            self.topLine = QHBoxLayout()
+            self.topLine.setContentsMargins(0, 0, 0, 0)
+            self.topLine.setSpacing(15)
+            self.icon = IconWidget(smIco.renderIcon(smIco.HTML))
+            self.icon.setFixedSize(32, 32)
+            self.description = BodyLabel(
+                "You can edit manually the HTML content that will be displayed as "
+                f"the {TITLE} viewer's homepage."
+            )
+            self.description.setWordWrap(True)
 
-        self.yesButton.setText("Save and apply changes")
-        self.yesButton.setEnabled(self.changes)
-        self.widget.setMinimumWidth(700)
-    
-    def editListener(self):
-        self.tempHome = self.homeEdit.toPlainText()
-        self.changes = self.tempHome != self.customHome
-        self.homeUndo.setEnabled(self.homeEdit.document().isUndoAvailable()) # type: ignore
-        self.homeRedo.setEnabled(self.homeEdit.document().isRedoAvailable()) # type: ignore
-        self.homeCut.setEnabled(self.homeEdit.textCursor().hasSelection())
-        self.homeCopy.setEnabled(self.homeEdit.textCursor().hasSelection())
-        self.homePaste.setEnabled(self.homeEdit.canPaste())
-        self.yesButton.setEnabled(self.changes)
-    
-    def toggleWordWrap(self):
-        accentColor = QColor(cfg.get(cfg.accentColor))
-        if self.homeEdit.lineWrapMode() != TextEdit.LineWrapMode.NoWrap:
+            self.homeEdit = TextEdit(self)
+            self.homeEdit.setMinimumHeight(300)
+            self.homeEdit.setAcceptRichText(False)
+            self.homeEdit.setFontFamily(cfg.get(cfg.mdFontFamily))
+            self.homeEdit.setPlaceholderText("Your custom homepage content will appear here...")
+            self.homeEdit.setPlainText(self.tempHome)
             self.homeEdit.setLineWrapMode(TextEdit.LineWrapMode.NoWrap)
-            self.toggleWrap.setIcon(segSVG.TEXT_WRAP)
-        else:
-            self.homeEdit.setLineWrapMode(TextEdit.LineWrapMode.WidgetWidth)
-            self.toggleWrap.setIcon(segSVG.TEXT_WRAP.colored(accentColor, accentColor))
+            self.homeEdit.textChanged.connect(self.editListener)
+            self.homeEdit.selectionChanged.connect(self.editListener)
+
+            self.commandBar = CommandBar()
+            self.commandBar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+
+            self.homeUndo = Action(segFont.fromName("Undo"), "Undo", triggered=lambda: self.homeEdit.undo())
+            self.homeRedo = Action(segFont.fromName("Redo"), "Redo", triggered=lambda: self.homeEdit.redo())
+            self.homeCut = Action(FICO.CUT, "Cut", triggered=lambda: self.homeEdit.cut())
+            self.homeCopy = Action(FICO.COPY, "Copy", triggered=lambda: self.homeEdit.copy())
+            self.homePaste = Action(FICO.PASTE, "Paste", triggered=lambda: self.homeEdit.paste())
+            self.toggleWrap = Action(segSVG.TEXT_WRAP, "Word wrap", triggered=self.toggleWordWrap)
+
+            self.homeUndo.setEnabled(self.homeEdit.document().isUndoAvailable()) # type: ignore
+            self.homeRedo.setEnabled(self.homeEdit.document().isRedoAvailable()) # type: ignore
+            self.homeCut.setEnabled(self.homeEdit.textCursor().hasSelection())
+            self.homeCopy.setEnabled(self.homeEdit.textCursor().hasSelection())
+            self.homePaste.setEnabled(self.homeEdit.canPaste())
+
+            self.commandBar.addActions([
+                self.homeUndo, self.homeRedo, self.homeCut,
+                self.homeCopy, self.homePaste
+            ])
+            self.commandBar.addSeparator()
+            self.commandBar.addAction(self.toggleWrap)
+
+            self.viewLayout.setSpacing(20)
+
+            self.viewLayout.addLayout(self.topLine)
+            self.topLine.addWidget(self.icon)
+            self.topLine.addWidget(TitleLabel("Customize the viewer homepage"))
+            self.viewLayout.addWidget(self.description)
+            self.viewLayout.addWidget(self.commandBar)
+            self.viewLayout.addWidget(self.homeEdit)
+
+            self.yesButton.setText("Save and apply changes")
+            self.yesButton.setEnabled(self.changes)
+            self.widget.setMinimumWidth(700)
+        
+        def editListener(self):
+            self.tempHome = self.homeEdit.toPlainText()
+            self.changes = self.tempHome != self.customHome
+            self.homeUndo.setEnabled(self.homeEdit.document().isUndoAvailable()) # type: ignore
+            self.homeRedo.setEnabled(self.homeEdit.document().isRedoAvailable()) # type: ignore
+            self.homeCut.setEnabled(self.homeEdit.textCursor().hasSelection())
+            self.homeCopy.setEnabled(self.homeEdit.textCursor().hasSelection())
+            self.homePaste.setEnabled(self.homeEdit.canPaste())
+            self.yesButton.setEnabled(self.changes)
+        
+        def toggleWordWrap(self):
+            accentColor = QColor(cfg.get(cfg.accentColor))
+            if self.homeEdit.lineWrapMode() != TextEdit.LineWrapMode.NoWrap:
+                self.homeEdit.setLineWrapMode(TextEdit.LineWrapMode.NoWrap)
+                self.toggleWrap.setIcon(segSVG.TEXT_WRAP)
+            else:
+                self.homeEdit.setLineWrapMode(TextEdit.LineWrapMode.WidgetWidth)
+                self.toggleWrap.setIcon(segSVG.TEXT_WRAP.colored(accentColor, accentColor))
+
+    class DragAndDropEventsConfigGroup(ExpandGroupSettingCard):
+        """ Class for the homepage's drag-and-drop management in the Viewer section """
+        configChanged = pyqtSignal()
+
+        def __init__(self, parent):
+            super().__init__(
+                segFont.fromName("TouchPointer"), # type: ignore
+                "Customize the homepage's drag-and-drop events",
+                "Define the JavaScript functions which are called during different drag-and-drop events, "
+                "according to their corresponding names from the current homepage content (case-sensitive).",
+                parent
+            )
+
+            self.editFont = QFont(
+                cfg.get(cfg.mdFontFamily),
+                cfg.get(cfg.mdFontSize),
+                cfg.get(cfg.mdFontWeight)
+            )
+
+            # Drag enter function
+            self.dragEnterEdit = LineEdit()
+            self.dragEnterEdit.setEnabled(cfg.get(cfg.mdHomepageSource) != "Default")
+            self.dragEnterEdit.setText(cfg.get(cfg.mdDragEnterJSFunction))
+            self.dragEnterEdit.setFixedWidth(300)
+            self.dragEnterEdit.setFont(self.editFont)
+            self.dragEnterEdit.textChanged.connect(lambda text: (
+                self.dragEnterValidate.setEnabled(cfg.get(cfg.mdHomepageSource) != "Default" and text != cfg.get(cfg.mdDragEnterJSFunction))
+            ))
+            self.dragEnterValidate = ToolButton(FICO.SAVE_AS)
+            self.dragEnterValidate.setEnabled(
+                cfg.get(cfg.mdHomepageSource) != "Default" and self.dragEnterEdit.text() != cfg.get(cfg.mdDragEnterJSFunction)
+            )
+            self.dragEnterValidate.clicked.connect(lambda checked: (
+                cfg.set(cfg.mdDragEnterJSFunction, self.dragEnterEdit.text()),
+                self.updateConfig()
+            ))
+
+            # Drag leave function
+            self.dragLeaveEdit = LineEdit()
+            self.dragLeaveEdit.setEnabled(cfg.get(cfg.mdHomepageSource) != "Default")
+            self.dragLeaveEdit.setText(cfg.get(cfg.mdDragLeaveJSFunction))
+            self.dragLeaveEdit.setFixedWidth(300)
+            self.dragLeaveEdit.setFont(self.editFont)
+            self.dragLeaveEdit.textChanged.connect(lambda text: (
+                self.dragLeaveValidate.setEnabled(cfg.get(cfg.mdHomepageSource) != "Default" and text != cfg.get(cfg.mdDragLeaveJSFunction))
+            ))
+            self.dragLeaveValidate = ToolButton(FICO.SAVE_AS)
+            self.dragLeaveValidate.setEnabled(
+                cfg.get(cfg.mdHomepageSource) != "Default" and self.dragLeaveEdit.text() != cfg.get(cfg.mdDragLeaveJSFunction)
+            )
+            self.dragLeaveValidate.clicked.connect(lambda checked: (
+                cfg.set(cfg.mdDragLeaveJSFunction, self.dragLeaveEdit.text()),
+                self.updateConfig()
+            ))
+
+            # Drop function
+            self.dropEdit = LineEdit()
+            self.dropEdit.setEnabled(cfg.get(cfg.mdHomepageSource) != "Default")
+            self.dropEdit.setText(cfg.get(cfg.mdDropJSFunction))
+            self.dropEdit.setFixedWidth(300)
+            self.dropEdit.setFont(self.editFont)
+            self.dropEdit.textChanged.connect(lambda text: (
+                self.dropValidate.setEnabled(cfg.get(cfg.mdHomepageSource) != "Default" and text != cfg.get(cfg.mdDropJSFunction))
+            ))
+            self.dropValidate = ToolButton(FICO.SAVE_AS)
+            self.dropValidate.setEnabled(
+                cfg.get(cfg.mdHomepageSource) != "Default" and self.dropEdit.text() != cfg.get(cfg.mdDropJSFunction)
+            )
+            self.dropValidate.clicked.connect(lambda checked: (
+                cfg.set(cfg.mdDropJSFunction, self.dropEdit.text()),
+                self.updateConfig()
+            ))
+
+            self.add(BodyLabel("When the drag is detected"), self.dragEnterEdit, self.dragEnterValidate)
+            self.add(BodyLabel("When the drag is released/disappears"), self.dragLeaveEdit, self.dragLeaveValidate)
+            self.add(BodyLabel("When the file is dropped"), self.dropEdit, self.dropValidate)
+        
+        def add(self, label, *widgets):
+            """ :DragAndDropEventsConfigGroup: Add labels and config widgets to the group. """
+            wid = QWidget()
+            wid.setFixedHeight(60)
+            widLayout = QHBoxLayout(wid)
+            widLayout.setContentsMargins(48, 12, 48, 12)
+
+            widLayout.addWidget(label)
+            if widgets:
+                widLayout.addStretch()
+                for widget in widgets:
+                    widLayout.addWidget(widget)
+            
+            self.addGroupWidget(wid)
+        
+        def updateConfig(self):
+            cfg.set(cfg.mdDragEnterJSFunction, self.dragEnterEdit.text())
+            cfg.set(cfg.mdDragLeaveJSFunction, self.dragLeaveEdit.text())
+            cfg.set(cfg.mdDropJSFunction, self.dropEdit.text())
+            self.configChanged.emit()
+
+# Pour le chargement d'anciens onglets ouverts au démarrage, prévoir "MarkdownOpenTabs": list[dict[str, str]] dans markdown_history.dat
+    # "index" : position dans la liste d'onglets
+    # "name" : nom de chaque onglet
+    # "path" : chemin de chaque onglet
+    # "content" : contenu de l'éditeur de chaque onglet
+    # "cursorPosition" : position du curseur dans l'éditeur de chaque onglet (si possible)
+    # "history" : historique du Displayer de chaque onglet
+    # "historyCurrent" : position dans l'historique avant sauvegarde & fermeture
+    # Pour les états "canSave" de chaque onglet restauré :
+        # Si chemin valide : comparer le contenu du fichier du chemin et celui de l'éditeur, "Vrai" si contenus non identiques
+        # Si chemin invalide ou inexistant : "Vrai" si l'éditeur a du contenu
+# (Possible - other) Rechercher s'il est possible de changer la page d'échec de chargement du Displayer en récupérant de la page de base le max d'éléments réutilisables possible
+# Ajouter au DisplayNavigationBar une barre de statut pour liens survolés, niveau de zoom, nom et icône des liens ouverts

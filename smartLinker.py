@@ -4,6 +4,7 @@ from utils.historyInterface import HistoryInterface as History
 from utils.settingsInterface import SettingsInterface as Settings
 from utils.aboutInterface import AboutInterface as About, BrowserSelectDialog
 from utils.smartSelector import SmartSelectorGUI
+from utils.smartDownMarker import SmartDownMarkerGUI
 
 # =============================================================================
 
@@ -134,6 +135,11 @@ class SmartLinkerGUI(FluentWindow):
         if self.settingInterface.widgetDef.optionMicaEffect:
             self.settingInterface.widgetDef.optionMicaEffect.setEnabled(smart.isSoftwareCompatible(22000))
             self.settingInterface.widgetDef.optionMicaEffect.setVisible(smart.isSoftwareCompatible(22000))
+        try:
+            self.handleBrowserCardsOnResize()
+        except Exception as e:
+            RichCLI.log(f"[red][b u]ERROR[/b u]: Failed on resize:\n\t[i]{e}[/i]\n\n[b]Complete traceback\n------------------[/b]\n{traceback.format_exc()}[/]")
+            smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured:\n{e}", self)
         self.settingInterface.widgetDef.optionMainBrowserCard.fromStorageButton.clicked.connect(lambda: self.settingInterface.cardManualSelect(self))
         self.settingInterface.widgetDef.optionMainBrowserCard.fromListButton.clicked.connect(lambda: self.settingInterface.cardSetFromList(self))
         self.settingInterface.widgetDef.optionMainBrowserCard.removeMainButton.clicked.connect(lambda: self.settingInterface.cardRemove(self))
@@ -310,7 +316,7 @@ class SmartLinkerGUI(FluentWindow):
         self.aboutInterface.aboutVersion.setEnabled(True)
         print(f"{Fore.RED}An error occurred while checking for updates: {message}{Style.RESET_ALL}")
         smart.managerLog(f"ERROR: Failed while checking for updates: {message}")
-        smart.errorNotify("Oops! Something went wrong...", f"An error occurred while checking for updates:\n{message}", self)
+        smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occurred while checking for updates:\n{message}", self)
 
     def confirmDeleteDialog(self, name: str, parent):
         """ Open a confirmation dialog to remove a browser from the SmartList """
@@ -399,7 +405,7 @@ class SmartLinkerGUI(FluentWindow):
                                 print(f"{Fore.GREEN}The {title} {linkType} has been successfully loaded into {browser["name"]}!{Style.RESET_ALL}")
                                 smart.managerLog(f"SUCCESS: The {title} {linkType} has been successfully loaded into {browser["name"]}.")
                             except Exception as e:
-                                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to open the {title} {linkType} into {browser["name"]}: {e}", parent)
+                                smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to open the {title} {linkType} into {browser["name"]}: {e}", parent)
                                 print(f"{Fore.RED}An error occured while attempting to open the {title} {linkType} into {browser["name"]}: {e}{Style.RESET_ALL}")
                                 smart.managerLog(f"ERROR: Failed while opening the {title} {linkType} into {browser["name"]}: {e}")
                             break
@@ -415,7 +421,7 @@ class SmartLinkerGUI(FluentWindow):
                                 print(f"{Fore.GREEN}The {title} {linkType} has been successfully loaded into {cfg.get(cfg.mainBrowserPath)}!{Style.RESET_ALL}")
                                 smart.managerLog(f"SUCCESS: The {title} {linkType} has been successfully loaded into {cfg.get(cfg.mainBrowserPath)}.")
                             except Exception as e:
-                                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to open the {title} {linkType} into {os.path.basename(cfg.get(cfg.mainBrowserPath))}: {e}", parent)
+                                smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to open the {title} {linkType} into {os.path.basename(cfg.get(cfg.mainBrowserPath))}: {e}", parent)
                                 print(f"{Fore.RED}An error occured while attempting to open the {title} {linkType} into {cfg.get(cfg.mainBrowserPath)}: {e}{Style.RESET_ALL}")
                                 smart.managerLog(f"ERROR: Failed while opening the {title} {linkType} into {cfg.get(cfg.mainBrowserPath)}: {e}")
                             break
@@ -433,7 +439,7 @@ class SmartLinkerGUI(FluentWindow):
                     print(f"{Fore.GREEN}The {title} {linkType} has been successfully loaded into another browser: '{self.browserDlg.otherBrowsEdit.text()}'{Style.RESET_ALL}")
                     smart.managerLog(f"SUCCESS: The {title} {linkType} has been successfully loaded into other browser '{self.browserDlg.otherBrowsEdit.text()}'")
                 except Exception as e:
-                    smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to open the {title} {linkType} into {os.path.basename(self.browserDlg.otherBrowsEdit.text())}: {e}", parent)
+                    smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to open the {title} {linkType} into {os.path.basename(self.browserDlg.otherBrowsEdit.text())}: {e}", parent)
                     print(f"{Fore.RED}An error occured while attempting to open the {title} {linkType} into '{os.path.basename(self.browserDlg.otherBrowsEdit.text())}': {e}{Style.RESET_ALL}")
                     smart.managerLog(f"ERROR: Failed to open the {title} {linkType} into browser at path '{self.browserDlg.otherBrowsEdit.text()}': {e}")
 
@@ -462,7 +468,7 @@ class SmartLinkerGUI(FluentWindow):
                         except Exception as e:
                             print(f"{Fore.RED}An error occured while attempting to launch the installer at path '{filename}': {e}{Style.RESET_ALL}")
                             smart.managerLog(f"ERROR: Failed to launch the installer at path '{filename}': {e}")
-                            smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to launch the installer: {e}", parent)
+                            smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to launch the installer: {e}", parent)
                     else:
                         print(f"{Fore.YELLOW}The update installer has not been correctly downloaded... Please try again...{Style.RESET_ALL}")
                         smart.managerLog("WARNING: The update installer has not been correctly downloaded...")
@@ -487,7 +493,7 @@ class SmartLinkerGUI(FluentWindow):
             except Exception as e:
                 print(f"{Fore.RED}Error cleaning temporary files: {e}{Style.RESET_ALL}")
                 smart.managerLog(f"ERROR: Failed to clean temporary files: {e}")
-                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to clean temporary files: {e}", parent)
+                smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to clean temporary files: {e}", parent)
         else:
             print(f"{Fore.BLUE}There are no temporary files to be removed...{Style.RESET_ALL}")
             smart.managerLog("INFO: No temporary files to be removed")
@@ -512,7 +518,21 @@ class SmartLinkerGUI(FluentWindow):
         except Exception as e:
             print(f"{Fore.RED}Something went wrong while attempting to run the update installer: {e}{Style.RESET_ALL}")
             smart.managerLog(f"ERROR: Failed while attempting to run the update installer: {e}")
-            smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to run the update installer: {e}", parent)
+            smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to run the update installer: {e}", parent)
+
+    def handleBrowserCardsOnResize(self):
+        from utils.mybrowsersInterface import MyBrowsersCard
+        if isinstance(self.mybrowsInterface.mybrowsLayout.takeAt(0), MyBrowsersCard):
+            cols = self.mybrowsInterface.mybrowsScroll.size().width() // 0 # 675
+            for card in self.mybrowsInterface.myBrowsCards:
+                try:
+                    self.mybrowsInterface.mybrowsScroll.widget().layout().removeWidget(card) # type: ignore
+                    card.setFixedWidth(
+                        (self.mybrowsInterface.mybrowsScroll.size().width() // cols) - ((10 * cols) + 10)
+                    )
+                    self.mybrowsInterface.mybrowsScroll.widget().layout().addWidget(card) # type: ignore
+                except Exception as e:
+                    smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while handling your SmartList cards during resize:\n{e}", self)
 
     def confirmRestart(self):
         """ Open a confirmation dialog to restart SmartLinker """
@@ -529,7 +549,7 @@ class SmartLinkerGUI(FluentWindow):
             except Exception as e:
                 print(f"{Fore.RED}An error occured while trying to restart the app: {e}{Style.RESET_ALL}")
                 smart.managerLog(f"ERROR: Failed to restart the app: {e}")
-                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to restart SmartLinker: {e}", self)
+                smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to restart SmartLinker: {e}", self)
     
     def confirmStop(self):
         """ Open a confirmation dialog to stop SmartLinker process """
@@ -543,7 +563,7 @@ class SmartLinkerGUI(FluentWindow):
         if stopDlg.exec():
             try: smart.stopApp()
             except Exception as e:
-                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to close SmartLinker: {e}", self)
+                smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to close SmartLinker: {e}", self)
                 print(f"{Fore.RED}An error occured while attempting to stop process: {e}{Style.RESET_ALL}")
                 smart.managerLog(f"ERROR: Failed to stop process: {e}")
 
@@ -556,8 +576,23 @@ class SmartLinkerGUI(FluentWindow):
             self.settingInterface.selectorWindow.close()
             self.settingInterface.selectorWindow = None
 
+        if isinstance(self.settingInterface.downMarkerWindow, SmartDownMarkerGUI):
+            for window in self.settingInterface.downMarkerWindows:
+                if isinstance(window, SmartDownMarkerGUI):
+                    window.close()
+                
+            self.settingInterface.downMarkerWindow = None
+            self.settingInterface.downMarkerWindows.clear()
+
     def resizeEvent(self, e):
         super().resizeEvent(e)
+
+        if hasattr(self, "mybrowsInterface"):
+            try:
+                self.handleBrowserCardsOnResize()
+            except Exception as e:
+                RichCLI.log(f"[red][b u]ERROR[/b u]: Failed on resize:\n\t[i]{e}[/i]\n\n[b]Complete traceback\n------------------[/b]\n{traceback.format_exc()}[/]")
+                smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured:\n{e}", self)
 
         if hasattr(self, "settingInterface"):
             if self.settingInterface.selectorPreviewStatus:
@@ -593,6 +628,12 @@ def smartMain():
         setTheme(Theme.AUTO)
         setThemeColor(getSystemAccentColor())
         parent = FramelessWindow()
+        parent.titleBar.minBtn.setEnabled(False)
+        parent.titleBar.maxBtn.setEnabled(False)
+        parent.titleBar.closeBtn.setEnabled(False)
+        parent.titleBar.minBtn.setVisible(False)
+        parent.titleBar.maxBtn.setVisible(False)
+        parent.titleBar.closeBtn.setVisible(False)
         parent.setWindowIcon(QIcon(smart.resourcePath("resources/icons/ico/icon.ico")))
         parent.resize(960, 540)
         smart.centerWindow(parent)

@@ -1,4 +1,5 @@
 from utils.SmartUtils import *
+from utils.smartDownMarker import TITLE as MD_TITLE
 
 # ===========================================================================================================
 
@@ -10,6 +11,9 @@ class SettingsInterface(QWidget):
     def __init__(self, parent = None):
         super().__init__(parent)
         self.setObjectName("Settings")
+        self.downMarkerWindow = None
+        self.downMarkerWindows: list = []
+        self.downMarkerLoadDlg = None
         self.selectorWindow = None
         self.selectorPreviewStatus = None
         self.widgetDef = SettingWidgetDefinition()
@@ -45,9 +49,11 @@ class SettingsInterface(QWidget):
         layout.addWidget(generalLabel)
         layout.addWidget(self.widgetDef.optionMainBrowserCard)
         layout.addWidget(self.widgetDef.optionMainRefresh)
+        layout.addWidget(self.widgetDef.optionOpenMarkEditor)
         self.widgetDef.optionMainRefresh.button.clicked.connect(lambda: self.cardRefresh(parent))
+        self.widgetDef.optionOpenMarkEditor.button.clicked.connect(lambda: self.launchDownMarker(parent))
 
-        # Personalization - Logo blue: #28ABFA, Logo purple: #793BCC
+        # Personalization
         personalizeLabel = SubtitleLabel("Look & Feel")
         personalizeLabel.setContentsMargins(0, 40, 0, 0)
         personalizeLabel.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -244,6 +250,31 @@ class SettingsInterface(QWidget):
         self.optionSoundConfig.selectorPickBtn.setEnabled(checked)
         self.optionSoundConfig.selectorRemoveBtn.setEnabled(checked and bool(cfg.get(cfg.selectorSFXPath)))
 
+    def launchDownMarker(self, parent):
+        """ :SettingsInterface: Open the embedded Markdown editor from the dedicated option. """
+        from utils.smartDownMarker import SmartDownMarkerGUI as DownMarker
+
+        def onDestroyed(window: DownMarker):
+            if window.isVisible(): window.close()
+            setattr(self, "downMarkerWindow", None)
+
+        if self.downMarkerLoadDlg:
+            self.downMarkerLoadDlg = None
+        self.downMarkerLoadDlg = LaunchDownMarkerDialog(parent)
+
+        if self.downMarkerLoadDlg.exec():
+            withFile = self.downMarkerLoadDlg.withFileSwitch.isChecked()
+            path = self.downMarkerLoadDlg.pathEdit.text() if withFile else ""
+            if self.downMarkerWindow is None:
+                self.downMarkerWindow = DownMarker(path)
+                self.downMarkerWindow.show()
+                self.downMarkerWindow.closeEvent = lambda e, window=self.downMarkerWindow: onDestroyed(window)
+                self.downMarkerWindows.append(self.downMarkerWindow)
+            else:
+                self.downMarkerWindow.loadMDFileInNewTab(path, self.downMarkerWindow) if path \
+                else self.downMarkerWindow.newMDTab()
+                self.downMarkerWindow.raise_()
+
     def previewSelector(self, parent):
         """ :SettingsInterface: Open the Smart Selector from the preview option. """
         from utils.smartSelector import SmartSelectorGUI as Selector
@@ -297,14 +328,6 @@ class SettingsInterface(QWidget):
 
         else:
             onDestroyed(self.selectorWindow)
-            """ smart.warningNotify(
-                "Warning, be careful!",
-                "The Smart Selector is already being previewed. " \
-                "Please close the Selector first.",
-                parent
-            )
-            RichCLI.log("[yellow][b u]WARNING!![/b u] The Smart Selector is already being previewed. " \
-                        "Please close the Selector first.[/]") """
 
 class SettingWidgetDefinition():
     """ Declaration class for some of SettingsInterface widgets """
@@ -336,6 +359,11 @@ class SettingWidgetDefinition():
             "Refresh main browser card"
             # "In case your main browser card above is not synchronized with some changes, " \
             # "you can make it unified again with this option."
+        )
+        self.optionOpenMarkEditor = PushSettingCard(
+            "Launch",
+            segSVG.MARKDOWN,
+            "Launch the embedded Markdown editor"
         )
 
         # Personalization
@@ -549,11 +577,130 @@ class MainBrowsersCard(SimpleCardWidget):
         self.hBoxLayout.addWidget(self.fromStorageButton, 0, Qt.AlignmentFlag.AlignRight)
         self.hBoxLayout.addWidget(self.fromListButton, 0, Qt.AlignmentFlag.AlignRight)
         self.hBoxLayout.addWidget(self.removeMainButton, 0, Qt.AlignmentFlag.AlignRight)
-    
+
+class LaunchDownMarkerDialog(MessageBoxBase):
+    """ Class for the Smart DownMarker launch dialog """
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.anonymousWidgets: list[QWidget] = []
+        self.icon = IconWidget(segSVG.MARKDOWN)
+        self.withFileSwitch = SwitchButton()
+        self.pathEdit = LineEdit()
+        self.browseBtn = ToolButton(FICO.FOLDER)
+        self.statusLabel = CaptionLabel()
+
+        topLine = QHBoxLayout()
+        topLine.setContentsMargins(0, 0, 0, 0)
+        topLine.setSpacing(15)
+        topLine.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+
+        switchBox = QVBoxLayout()
+        switchBox.setContentsMargins(0, 0, 0, 0)
+        switchBox.setSpacing(5)
+        switchBox.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+
+        pathBox = QVBoxLayout()
+        pathBox.setContentsMargins(0, 0, 0, 0)
+        pathBox.setSpacing(5)
+        pathBox.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+
+        pathLine = QHBoxLayout()
+        pathLine.setContentsMargins(0, 0, 0, 0)
+        pathLine.setSpacing(10)
+        pathLine.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+
+        self.icon.setFixedSize(64, 64)
+        self.withFileSwitch.setOnText(f"Launch {MD_TITLE} with a Markdown file")
+        self.withFileSwitch.setOffText(f"Launch {MD_TITLE} with a blank page")
+        self.pathEdit.setClearButtonEnabled(True)
+        self.pathEdit.setEnabled(self.withFileSwitch.isChecked())
+        self.browseBtn.setToolTip("Select a Markdown file")
+        self.browseBtn.installEventFilter(ToolTipFilter(self.browseBtn))
+        self.browseBtn.setEnabled(self.withFileSwitch.isChecked())
+        self.statusLabel.setVisible(False)
+
+        self.withFileSwitch.checkedChanged.connect(self.withFileSwitchChangeListener)
+        self.pathEdit.textChanged.connect(self.pathEditTextChangeListener)
+        self.browseBtn.clicked.connect(lambda: (
+            self.pathEdit.setText(
+                os.path.normpath(smart.browseFileDialog(
+                    parent, f"Select a Markdown file to launch {MD_TITLE} with",
+                    "", "Markdown files (*.md;*.markdown;*.mdown;*.mkdn;*.mkd)"
+                ))
+            )
+        ))
+
+        self.widget.setMinimumWidth(500)
+        self.viewLayout.setSpacing(15)
+        self.yesButton.setText("Launch")
+
+        # self.viewLayout.addLayout(topLine)
+        self.viewLayout.addWidget(self.icon, 0, Qt.AlignmentFlag.AlignCenter)
+        self.addAnonymousWidget(self.viewLayout, TitleLabel(f"Launch {MD_TITLE}"), 0, Qt.AlignmentFlag.AlignCenter)
+        self.viewLayout.addSpacing(15)
+        self.viewLayout.addLayout(switchBox)
+        self.addAnonymousWidget(switchBox, BodyLabel("How do you want to launch your Markdown text editor?"))
+        switchBox.addWidget(self.withFileSwitch)
+        self.viewLayout.addLayout(pathBox)
+        self.addAnonymousWidget(pathBox, BodyLabel("Select a Markdown file to launch with:"))
+        pathBox.addLayout(pathLine)
+        pathLine.addWidget(self.pathEdit)
+        pathLine.addWidget(self.browseBtn)
+        pathBox.addWidget(self.statusLabel, 0, Qt.AlignmentFlag.AlignCenter)
+
+        self.anonymousWidgets[2].setTextColor(smartCol.CAPTION_LIGHT.value, smartCol.CAPTION_DARK.value) # type: ignore
+
+    def addAnonymousWidget(self, layout: QBoxLayout, widget: QWidget, stretch: int = 0, alignment: Qt.AlignmentFlag = Qt.AlignmentFlag.AlignBaseline):
+        """ :LaunchDownMarkerDialog: Add a widget to the dialog without being part of the class attributes. """
+        self.anonymousWidgets.append(widget)
+        layout.addWidget(widget, stretch, alignment)
+
+    def withFileSwitchChangeListener(self, checked: bool):
+        if not checked:
+            self.anonymousWidgets[2].setTextColor(smartCol.CAPTION_LIGHT.value, smartCol.CAPTION_DARK.value) # type: ignore
+        else:
+            self.anonymousWidgets[2].setTextColor() # type: ignore
+        self.pathEdit.setEnabled(checked)
+        self.browseBtn.setEnabled(checked)
+        self.yesButton.setEnabled(bool(self.pathEdit.text()) if checked else True)
+
+    def pathEditTextChangeListener(self, text):
+        self.statusLabel.setVisible(False)
+        self.yesButton.setEnabled(bool(text) and self.withFileSwitch.isChecked())
+
+    def validate(self):
+        if self.withFileSwitch.isChecked():
+            if not self.pathEdit.text():
+                self.statusLabel.setText("No file has been selected... Please select a Markdown file to launch.")
+                self.statusLabel.setTextColor(QColor("red"), QColor("#F44336"))
+                self.statusLabel.setVisible(True)
+                return False
+
+            if not os.path.exists(self.pathEdit.text()):
+                self.statusLabel.setText("The selected file does not exist... Try again.")
+                self.statusLabel.setTextColor(QColor("red"), QColor("#F44336"))
+                self.statusLabel.setVisible(True)
+                return False
+            
+            if not os.path.isfile(self.pathEdit.text()) or not smart.isMarkdownExtension(self.pathEdit.text()):
+                self.statusLabel.setText("The selected file is not a Markdown file... Try again.")
+                self.statusLabel.setTextColor(QColor("red"), QColor("#F44336"))
+                self.statusLabel.setVisible(True)
+                return False
+
+            if not smart.getFileMimeType(self.pathEdit.text()).startswith("text"):
+                self.statusLabel.setText("The selected file is not a genuine Markdown file... Try again.")
+                self.statusLabel.setTextColor(QColor("red"), QColor("#F44336"))
+                self.statusLabel.setVisible(True)
+                return False
+            
+        return True
+
 class SelectFromListDialog(MessageBoxBase):
     """ Class for the main browser selection from SmartList dialog """
 
-    def __init__(self, browsers, parent = None):
+    def __init__(self, browsers, parent=None):
         super().__init__(parent)
         self.titleLabel = SubtitleLabel('Select from your SmartList', self)
         self.icon = IconWidget(FICO.GLOBE)
@@ -580,7 +727,7 @@ class SelectFromListDialog(MessageBoxBase):
             self.infoLabel.setTextColor(QColor("red"), QColor("#F44336"))
         else:
             self.infoLabel.setText(f"{self.browsCombo.currentText()} will be set as your main browser.")
-            self.infoLabel.setTextColor(QColor("blue"), QColor("#2196F3"))
+            self.infoLabel.setTextColor(QColor("blue"), smartCol.SMART_BLUE.value)
 
         self.browsCombo.currentTextChanged.connect(lambda text: self.comboTextChangeListener(text))
 

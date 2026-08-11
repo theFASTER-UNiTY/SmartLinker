@@ -81,7 +81,10 @@ class MyBrowsersInterface(QWidget):
         self.mybrowsScroll.setStyleSheet(self.lightSheetOnDark if theme() == Theme.DARK else self.darkSheetOnLight)
         mybrowsScrollContent = QWidget()
         self.mybrowsScroll.setWidget(mybrowsScrollContent)
-        self.mybrowsLayout = QVBoxLayout(mybrowsScrollContent)
+        if myBrowsList["MyBrowsers"]:
+            self.mybrowsLayout = FlowLayout(mybrowsScrollContent, True)
+        else:
+            self.mybrowsLayout = QVBoxLayout(mybrowsScrollContent)
         self.mybrowsLayout.setSpacing(10)
         self.mybrowsEmptyMsg = BodyLabel("No web browsers have been added yet... Click on the 'Add a browser' button below to begin!")
         self.mybrowsEmptyMsg.setContentsMargins(0, 30, 0, 30)
@@ -152,6 +155,7 @@ class MyBrowsersInterface(QWidget):
         if myBrowsList["MyBrowsers"]:
             self.loadBrowsers(parent)
         else:
+            assert isinstance(self.mybrowsLayout, QVBoxLayout)
             self.mybrowsLayout.addWidget(self.mybrowsEmptyMsg, alignment=Qt.AlignmentFlag.AlignCenter)
 
         layout.addStretch(1)
@@ -170,12 +174,12 @@ class MyBrowsersInterface(QWidget):
         """
         myBrowsList = smart.loadBrowsers()
         if myBrowsList["MyBrowsers"]:
-            print("Loading browsers from database...")
+            RichCLI.log("[blue][b u]OPERATION[/b u]: Loading browsers from database...[/]")
             smart.managerLog("Loading browsers from database...")
             for browser in myBrowsList["MyBrowsers"]:
                 bName = browser["name"]
                 bPath = browser["path"]
-                bCard = MyBrowsersCard(QIcon(smart.getFileIcon(bPath)), bName, bPath)
+                bCard = MyBrowsersCard(QIcon(smart.getFileIcon(bPath)), bName, bPath, self)
                 bCard.editButton.setToolTip(f"Edit {bName}")
                 bCard.editButton.installEventFilter(ToolTipFilter(bCard.editButton, showDelay=300, position=ToolTipPosition.TOP))
                 bCard.deleteButton.setToolTip(f"Delete {bName} from my SmartList")
@@ -185,16 +189,24 @@ class MyBrowsersInterface(QWidget):
                 bCard.openButton.clicked.connect(lambda checked, path=bPath, name=bName: self.launchBrowser(path, name, parent))
                 self.mybrowsLayout.addWidget(bCard)
                 self.myBrowsCards.append(bCard)
-            print(f"{Fore.GREEN}Your browsers database has been successfully loaded!{Style.RESET_ALL}")
+
+            RichCLI.log("[green][b u]SUCCESS[/b u]: Your browsers database has been successfully loaded![/]")
             smart.managerLog("SUCCESS: The browsers database has been succesfully loaded into the SmartList.")
-            if cfg.get(cfg.showCommandBar): self.clearCommand.setEnabled(True)
-            else: self.myBrowsClearCard.setHidden(False)
+            if cfg.get(cfg.showCommandBar):
+                self.clearCommand.setEnabled(True)
+            else:
+                self.myBrowsClearCard.setHidden(False)
+
         else:
-            print(f"{Fore.YELLOW}Your browsers database is currently empty...{Style.RESET_ALL}")
+            RichCLI.log("[yellow][b u]WARNING[/b u]: Your browsers database is currently empty...[/]")
             smart.managerLog("WARNING: The browsers database is currently empty...")
+            assert isinstance(self.mybrowsLayout, QVBoxLayout)
             self.mybrowsLayout.addWidget(self.mybrowsEmptyMsg, 0, Qt.AlignmentFlag.AlignCenter)
-            if cfg.get(cfg.showCommandBar): self.clearCommand.setEnabled(False)
-            else: self.myBrowsClearCard.setHidden(True)
+            if cfg.get(cfg.showCommandBar):
+                self.clearCommand.setEnabled(False)
+            else:
+                self.myBrowsClearCard.setHidden(True)
+
         self.mybrowsEmptyMsg.setVisible(not myBrowsList["MyBrowsers"])
         self.mybrowsSub.setVisible(bool(myBrowsList["MyBrowsers"]))
         self.searchBar.setEnabled(bool(myBrowsList["MyBrowsers"]))
@@ -208,11 +220,11 @@ class MyBrowsersInterface(QWidget):
         parent
             The parent widget
         """
-        print("Refreshing the SmartList...")
+        RichCLI.log("[blue][b u]OPERATION[/b u]: Refreshing the SmartList...[/]")
         smart.managerLog("Refreshing the SmartList...")
         smart.emptyLayout(self.mybrowsLayout)
         self.myBrowsCards.clear()
-        print(f"{Fore.GREEN}All the browsers have been successfully removed!{Style.RESET_ALL}")
+        RichCLI.log(f"{Fore.GREEN}All the browsers have been successfully removed!{Style.RESET_ALL}")
         smart.managerLog("SUCCESS: All the browsers have been successfully removed!")
         self.loadBrowsers(parent)
     
@@ -462,7 +474,7 @@ class MyBrowsersInterface(QWidget):
                                 RichCLI.log(f"[green]'[u i]{self.loadLinkDlg.linkEdit.text()}[/u i]' has been successfully loaded into [b]{browser["name"]}[/b]![/]")
                                 smart.managerLog(f"SUCCESS: '{self.loadLinkDlg.linkEdit.text()}' has been successfully loaded into {browser["name"]}.")
                             except Exception as e:
-                                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to load your link into {browser["name"]}:\n{e}", parent)
+                                smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to load your link into {browser["name"]}:\n{e}", parent)
                                 RichCLI.log(f"[red]An error occured while attempting to load [u i]{self.loadLinkDlg.linkEdit.text()}[/u i] into [b]{browser["name"]}[/b]: [i]{e}[/]", log_locals=True)
                                 smart.managerLog(f"ERROR: Failed while loading '{self.loadLinkDlg.linkEdit.text()}' into {browser["name"]}: {e}")
                             return
@@ -483,7 +495,7 @@ class MyBrowsersInterface(QWidget):
                                 RichCLI.log(f"[green]'[u i]{self.loadLinkDlg.linkEdit.text()}[/u i]' has been successfully loaded into [b u]{cfg.get(cfg.mainBrowserPath)}[/b u]![/]")
                                 smart.managerLog(f"SUCCESS: '{self.loadLinkDlg.linkEdit.text()}' has been successfully loaded into {cfg.get(cfg.mainBrowserPath)}.")
                             except Exception as e:
-                                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(cfg.get(cfg.mainBrowserPath))}: {e}", parent)
+                                smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(cfg.get(cfg.mainBrowserPath))}: {e}", parent)
                                 RichCLI.log(f"[red]An error occured while attempting to load [u i]{self.loadLinkDlg.linkEdit.text()}[/u i] into [b u]{cfg.get(cfg.mainBrowserPath)}[/b u]: [i]{e}[/]", log_locals=True)
                                 smart.managerLog(f"ERROR: Failed while loading '{self.loadLinkDlg.linkEdit.text()}' into {cfg.get(cfg.mainBrowserPath)}: {e}")
                             return
@@ -506,7 +518,7 @@ class MyBrowsersInterface(QWidget):
                     RichCLI.log(f"[green]'[u i]{self.loadLinkDlg.linkEdit.text()}[/u i]' has been successfully loaded into another browser: '[b u i]{self.loadLinkDlg.otherBrowsEdit.text()}[/b u i]'[/]")
                     smart.managerLog(f"SUCCESS: '{self.loadLinkDlg.linkEdit.text()}' has been successfully loaded into other browser '{self.loadLinkDlg.otherBrowsEdit.text()}'")
                 except Exception as e:
-                    smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(self.loadLinkDlg.otherBrowsEdit.text())}: {e}", parent)
+                    smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(self.loadLinkDlg.otherBrowsEdit.text())}: {e}", parent)
                     RichCLI.log(f"[red]An error occured while attempting to load [u i]{self.loadLinkDlg.linkEdit.text()}[/u i] into '[b u i]{os.path.basename(self.loadLinkDlg.otherBrowsEdit.text())}[/b u i]': [i]{e}[/]")
                     smart.managerLog(f"ERROR: Failed to load '{self.loadLinkDlg.linkEdit.text()}' into browser at path '{self.loadLinkDlg.otherBrowsEdit.text()}': {e}")
 
@@ -528,7 +540,7 @@ class MyBrowsersInterface(QWidget):
                 RichCLI.log(f"[green]Successfully launched [bold]{name}[/bold] at path: [i u]'{path}'[/]")
                 smart.managerLog(f'SUCCESS: Launched {name} from path: "{path}"')
             except Exception as e:
-                smart.errorNotify("Oops! Something went wrong...", f"An error occured while launching {name}:\n{e}", parent)
+                smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while launching {name}:\n{e}", parent)
                 RichCLI.log(f"[red]An error occured while launching [bold]{name}[/bold]: [italic]{e}[/]")
                 smart.managerLog(f"ERROR: Failed to launch {name}: {e}")
         else:
@@ -589,6 +601,7 @@ class MyBrowsersInterface(QWidget):
             smart.writeBrowsers(myBrowsList)
             smart.successNotify("Update complete!", f"{name} has been successfully updated to {self.browsEditDlg.nameEdit.text()}!", parent)
             self.refreshBrowsers(parent)
+
 
 class NewBrowserDialog(MessageBoxBase):
     """ Class for the 'Add a new browser' dialog box """
@@ -712,6 +725,7 @@ class NewBrowserDialog(MessageBoxBase):
             self.pathWarningLabel.setText("The current path is not an executable. Try again.")
             self.pathWarningLabel.setHidden(False)
             return False
+
 
 class EditBrowserDialog(MessageBoxBase):
     """ Class for the 'Add a new browser' dialog box """
@@ -854,11 +868,13 @@ class EditBrowserDialog(MessageBoxBase):
             self.pathWarningLabel.setHidden(False)
             return False
 
+
 class MyBrowsersCard(CardWidget):
     """ Class for the SmartList's saved browsers cards """
 
-    def __init__(self, icon, title, content, parent = None):
+    def __init__(self, icon, title, content, parent: MyBrowsersInterface):
         super().__init__(parent)
+        self.bParent = parent
         self.iconWidget = IconWidget(icon)
         self.titleLabel = BodyLabel(title, self)
         self.contentLabel = CaptionLabel(content, self)
@@ -869,7 +885,7 @@ class MyBrowsersCard(CardWidget):
         self.hBoxLayout = QHBoxLayout(self)
         self.vBoxLayout = QVBoxLayout()
 
-        self.setFixedHeight(73)
+        self.setMinimumHeight(75)
         self.iconWidget.setFixedSize(36, 36)
         self.contentLabel.setTextColor(QColor("#606060"), QColor("#d2d2d2"))
         self.openButton.setFixedWidth(120)
@@ -890,8 +906,18 @@ class MyBrowsersCard(CardWidget):
         self.hBoxLayout.addWidget(self.editButton, 0, Qt.AlignmentFlag.AlignRight)
         self.hBoxLayout.addWidget(self.deleteButton, 0, Qt.AlignmentFlag.AlignRight)
     
-    def mousePressEvent(self, e): pass
-    
+    def mousePressEvent(self, a0): pass
+
+    def resizeEvent(self, a0: QResizeEvent | None):
+        super().resizeEvent(a0)
+
+        cols = self.bParent.mybrowsScroll.size().width() // 675
+        if cols:
+            self.setFixedWidth(
+                (self.bParent.mybrowsScroll.size().width() // cols) - ((10 * cols) + 10)
+            )
+
+
 class LoadLinkDialog(MessageBoxBase):
     """ Class for the 'Open with link' dialog box """
 
@@ -948,7 +974,14 @@ class LoadLinkDialog(MessageBoxBase):
         self.yesButton.setText("Load link")
         self.browserCombo.currentTextChanged.connect(lambda text: self.comboChangeListener(text))
         self.otherBrowsEdit.textChanged.connect(lambda text: self.otherPathChangeListener(text))
-        self.otherBrowsBrowse.clicked.connect(lambda: self.otherBrowsEdit.setText(smart.browseFileDialog(parent, "Select another browser to load the link", "", "Executables (*.exe)")))
+        self.otherBrowsBrowse.clicked.connect(lambda: (
+            self.otherBrowsEdit.setText(
+                os.path.normpath(smart.browseFileDialog(
+                    parent, "Select another browser to load the link",
+                    "", "Executables (*.exe)"
+                ))
+            )
+        ))
         self.linkEdit.textChanged.connect(lambda: self.warningLabel.setHidden(True))
 
     def comboChangeListener(self, text):
@@ -995,6 +1028,7 @@ class LoadLinkDialog(MessageBoxBase):
             self.warningLabel.setText("You must enter a URL to a file or a website.")
             self.warningLabel.setHidden(False)
             return False
+
 
 class SearchResultDialog(MessageBoxBase):
     """ Class for the dialog box displaying the browser selected from search results """

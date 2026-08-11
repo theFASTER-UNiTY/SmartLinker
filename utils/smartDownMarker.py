@@ -387,13 +387,13 @@ class SmartDownMarkerGUI(FluentWidget):
         return self.tabWidget.currentIndex()
 
     def applyTheme(self, mode: str):
-        setTheme(Theme.DARK)
-        """ if mode == "Auto":
+        # setTheme(Theme.DARK)
+        if mode == "Auto":
             setTheme(Theme.DARK if smart.isDarkModeEnabled() else Theme.LIGHT)
         elif mode == "Dark":
             setTheme(Theme.DARK)
         else:
-            setTheme(Theme.LIGHT) """
+            setTheme(Theme.LIGHT)
         
         self.setMicaEffectEnabled(cfg.get(cfg.micaEffect))
 
@@ -543,6 +543,7 @@ class SmartDownMarkerGUI(FluentWidget):
                 except Exception as e:
                     RichCLI.log(f"[red][b u]ERROR[/b u]: Failed to save changes: [i]{e}[/]")
                     smart.errorNotify(
+                        traceback.format_exc(),
                         "Oops! Something went wrong...",
                        f"An error occured while attempting to save your changes:\n{e}",
                        self
@@ -807,6 +808,7 @@ class SmartDownMarkerGUI(FluentWidget):
                 except Exception as e:
                     RichCLI.log(f"[red][b u]ERROR[/b u]: Failed to save changes: [i]{e}[/]")
                     smart.errorNotify(
+                        traceback.format_exc(),
                         "Oops! Something went wrong...",
                        f"An error occured while attempting to save your changes:\n{e}",
                        self
@@ -889,7 +891,7 @@ class SmartDownMarkerGUI(FluentWidget):
                 print(f"{Fore.GREEN}The history changes have been saved successfully!{Style.RESET_ALL}")
             
             except Exception as e:
-                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to save history changes: {e}", parent)
+                smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to save history changes: {e}", parent)
                 print(f"{Fore.RED}An error occured while attempting to save history changes: {e}{Style.RESET_ALL}")
 
     def removeFromHistory(self, value: str, parent):
@@ -900,6 +902,7 @@ class SmartDownMarkerGUI(FluentWidget):
             RichCLI.log("[red][b u]ERROR[/b u]: Failed to remove the invalid path " \
                        f"'[i u]{value}[/i u]' from your Markdown history:\n[i]{e}[/]")
             smart.errorNotify(
+                traceback.format_exc(),
                 "Oops! Something went wrong...",
                 "An error occured while attempting to remove an invalid path " \
                f"from your Markdown history:\n{e}",
@@ -1067,7 +1070,7 @@ class SmartDownMarkerGUI(FluentWidget):
                 self.cssPropertiesConfig.storagePathSublabel.setText(f"Current source path: {cfg.get(cfg.mdCssSourcePath).replace('/', '\\')}")
                 self.cssPropertiesConfig.storagePathSublabel.setVisible(True)
                 self.configEditListener()
-        except Exception as e: smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to select your CSS file: {e}", self)
+        except Exception as e: smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to select your CSS file: {e}", self)
 
     def selectLocalHomepageSource(self):
         try:
@@ -1082,7 +1085,7 @@ class SmartDownMarkerGUI(FluentWidget):
                 self.homepageConfig.storagePathSublabel.setText(f"Current source path: {cfg.get(cfg.mdHomepageSourcePath).replace('/', '\\')}")
                 self.homepageConfig.storagePathSublabel.setVisible(True)
                 self.configEditListener()
-        except Exception as e: smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to select your HTML file: {e}", self)
+        except Exception as e: smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to select your HTML file: {e}", self)
 
     def openCustomCSSEditor(self, parent):
         if self.customCSSDlg is None:
@@ -1745,6 +1748,7 @@ class DisplayNavigationBar(QWidget):
         try: self.navParent.mdDisplayer.load(QUrl(urlText))
         except Exception as e:
             smart.errorNotify(
+                traceback.format_exc(),
                 "Oops! Something went wrong...",
                 f"An error occured while attempting to load the specified URL: {e}",
                 self.navParent
@@ -1778,7 +1782,7 @@ class MarkEditor(QsciScintilla):
     def __init__(self, parent: TabInterface):
         super().__init__(parent)
         self.editParent = parent
-        self.setStyleSheet(f"background: {"#282C34" if theme() == Theme.DARK else "#EFF1F5"};")
+        self.setPaper(QColor("#282C34") if theme() == Theme.DARK else QColor("#EFF1F5"))
         self.setSelectionBackgroundColor(
             cfg.get(cfg.accentColor) if cfg.get(cfg.mdSelectionColorMode) == "Accent"
             else cfg.get(cfg.mdSelectionCustomColor)
@@ -1810,7 +1814,7 @@ class MarkEditor(QsciScintilla):
         self.editorLexer.setColor(QColor("#C678DD") if theme() == Theme.DARK else QColor("#8839EF"), QsciLexerMarkdown.Link)
         self.editorLexer.setColor(QColor("#61AFEF") if theme() == Theme.DARK else QColor("#1E66F5"), QsciLexerMarkdown.CodeBackticks)
         self.editorLexer.setColor(QColor("#E5C07B") if theme() == Theme.DARK else QColor("#DF8E1D"), QsciLexerMarkdown.CodeDoubleBackticks)
-        self.editorLexer.setColor(QColor("#4082E4") if theme() == Theme.DARK else QColor("#2196F3"), QsciLexerMarkdown.CodeBlock)
+        self.editorLexer.setColor(QColor("#4082E4") if theme() == Theme.DARK else smartCol.SMART_BLUE.value, QsciLexerMarkdown.CodeBlock)
         if cfg.get(cfg.mdEnableSyntaxHighlighting): self.setLexer(self.editorLexer)
 
         # Indentation
@@ -2923,5 +2927,5 @@ class SettingsWidgets:
     # Pour les états "canSave" de chaque onglet restauré :
         # Si chemin valide : comparer le contenu du fichier du chemin et celui de l'éditeur, "Vrai" si contenus non identiques
         # Si chemin invalide ou inexistant : "Vrai" si l'éditeur a du contenu
-# (Possible - other) Rechercher s'il est possible de changer la page d'échec de chargement du Displayer en récupérant de la page de base le max d'éléments réutilisables possible
+# (Possible - dossier "other") Rechercher s'il est possible de changer la page d'échec de chargement du Displayer en récupérant de la page de base le max d'éléments réutilisables possible
 # Ajouter au DisplayNavigationBar une barre de statut pour liens survolés, niveau de zoom, nom et icône des liens ouverts

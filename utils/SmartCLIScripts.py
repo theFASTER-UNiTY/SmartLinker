@@ -140,7 +140,7 @@ class AsciiNames:
             "[smblue]L::::::::::::::::::::::Li::::::i n::::n    n::::nk::::::k  k:::::ke::::::::eeeeeeee   r:::::r            [/]\n" \
             "[smblue]L::::::::::::::::::::::Li::::::i n::::n    n::::nk::::::k   k:::::kee:::::::::::::e   r:::::r            [/]\n" \
             "[smblue]LLLLLLLLLLLLLLLLLLLLLLLLiiiiiiii nnnnnn    nnnnnnkkkkkkkk    kkkkkkk eeeeeeeeeeeeee   rrrrrrr            [/]\n\n" \
-            "[smblue]=======================================[/] Mastering URL Handling [smdarkblue]========================================[/]\n"
+            "[smblue]=======================================[/] Mastering URL Handling [smblue]========================================[/]\n"
 
     REBEL = f"[smpurple]==========================================[/] {__author__} presents [smblue]==========================================[/]\n\n" \
             "[smpurple]  █████████                                       █████   [/][smblue] █████        ███             █████                        [/]\n" \

@@ -445,7 +445,7 @@ class SmartSelectorGUI(FluentWidget):
     def onBrowserScanError(self, message: str):
         """ Handle the SmartList refresh process error """
         RichCLI.log(f"[red][b u]ERROR[/b u]: An error occurred while refreshing the SmartList: [i]{message}[/]", log_locals=True)
-        smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to refresh the SmartList:\n{message}", self)
+        smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to refresh the SmartList:\n{message}", self)
 
     def isLinkPreviewAvailable(self):
         """ Check if the link preview is available """
@@ -484,7 +484,7 @@ class SmartSelectorGUI(FluentWidget):
                         print(f"{Fore.BLUE}Selected external browser at path: '{otherPath}'{Style.RESET_ALL}")
                         smart.selectorLog(f"Selected external browser at path: '{otherPath}'")
                     except Exception as e:
-                        smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(otherPath)}: {e}", self)
+                        smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(otherPath)}: {e}", self)
                         print(f"{Fore.RED}An error occured while attempting to load link into '{otherPath}': {e}{Style.RESET_ALL}")
                         smart.selectorLog(f"ERROR: Failed to load link into '{otherPath}': {e}")
                 else:
@@ -535,7 +535,7 @@ class SmartSelectorGUI(FluentWidget):
                     print("Restarting the Smart Selector...")
                     smart.selectorLog("Restarting the Smart Selector...")
                 except Exception as e:
-                    smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to restart SmartLinker: {e}", self)
+                    smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to restart SmartLinker: {e}", self)
                     print(f"{Fore.RED}An error occured while attempting to restart the Smart Selector: {e}{Style.RESET_ALL}")
                     smart.selectorLog(f"ERROR: Failed to restart the Smart Selector: {e}")
         
@@ -554,7 +554,7 @@ class BrowserCard(ElevatedCardWidget):
         self.statusStyles = {
             "Manual": {
                 "color": "#793bcc;",
-                "background-color": f"rgba({smart.convertToRGB('#793BCC')}, 0.25);"
+                "background-color": f"rgba({smart.convertToRGB(smartCol.SMART_PURPLE.value)}, 0.25);"
             },
             "Running": {
                 "color": f"{themeColor().name(QColor.NameFormat.HexRgb)};",
@@ -620,7 +620,7 @@ class BrowserCard(ElevatedCardWidget):
                                 smart.selectorLog(f"SUCCESS: '{link}' has been successfully loaded into {name}.")
                                 if bool(cfg.get(cfg.closeOnBrowserSelect)): smart.stopApp()
                             except Exception as e:
-                                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to load your link into {name}:\n{e}", parent)
+                                smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to load your link into {name}:\n{e}", parent)
                                 print(f"{Fore.RED}Something went wrong when attempting to load your link into {name}:\n{e}{Style.RESET_ALL}")
                                 smart.selectorLog(f"ERROR: Failed loading {link} into {name}: {e}")
                             break
@@ -639,7 +639,7 @@ class BrowserCard(ElevatedCardWidget):
                                 smart.selectorLog(f"SUCCESS: '{link}' has been successfully loaded into {name}.")
                                 if bool(cfg.get(cfg.closeOnBrowserSelect)): smart.stopApp()
                             except Exception as e:
-                                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(cfg.get(cfg.mainBrowserPath))}:\n{e}", parent)
+                                smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(cfg.get(cfg.mainBrowserPath))}:\n{e}", parent)
                                 print(f"{Fore.RED}Something went wrong when attempting to load {link} into {os.path.basename(cfg.get(cfg.mainBrowserPath))}:\n{e}{Style.RESET_ALL}")
                                 smart.selectorLog(f"ERROR: Failed loading {link} into {os.path.basename(cfg.get(cfg.mainBrowserPath))}: {e}")
                             break
@@ -896,6 +896,7 @@ class LinkPreviewCard(SimpleCardWidget):
         self.titleLabel.setText("Failed fetching information...")
         self.contentLabel.setText("An error occured while attempting to fetch metadata from the given link...")
         smart.errorNotify(
+            traceback.format_exc(),
             "Oops! Something went wrong...",
             f"An error occured while attempting to fetch metadata from the given link:\n{message}",
             self.cardParent

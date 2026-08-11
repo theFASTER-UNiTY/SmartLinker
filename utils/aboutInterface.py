@@ -161,7 +161,7 @@ class AboutInterface(QWidget):
                                 print(f"{Fore.GREEN}The feedback section of GitHub repository has been successfully loaded into {browser["name"]}!{Style.RESET_ALL}")
                                 smart.managerLog(f"SUCCESS: The feedback section of GitHub repository has been successfully loaded into {browser["name"]}.")
                             except Exception as e:
-                                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to open the feedback section of GitHub repository into {browser["name"]}: {e}", parent)
+                                smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to open the feedback section of GitHub repository into {browser["name"]}: {e}", parent)
                                 print(f"{Fore.RED}An error occured while attempting to open the feedback section of GitHub repository into {browser["name"]}: {e}{Style.RESET_ALL}")
                                 smart.managerLog(f"ERROR: Failed while opening the feedback section of GitHub repository into {browser["name"]}: {e}")
                             break
@@ -177,7 +177,7 @@ class AboutInterface(QWidget):
                                 print(f"{Fore.GREEN}The feedback section of GitHub repository has been successfully loaded into {cfg.get(cfg.mainBrowserPath)}!{Style.RESET_ALL}")
                                 smart.managerLog(f"SUCCESS: The feedback section of GitHub repository has been successfully loaded into {cfg.get(cfg.mainBrowserPath)}.")
                             except Exception as e:
-                                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to open the feedback section of GitHub repository into {os.path.basename(cfg.get(cfg.mainBrowserPath))}: {e}", parent)
+                                smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to open the feedback section of GitHub repository into {os.path.basename(cfg.get(cfg.mainBrowserPath))}: {e}", parent)
                                 print(f"{Fore.RED}An error occured while attempting to open the feedback section of GitHub repository into {cfg.get(cfg.mainBrowserPath)}: {e}{Style.RESET_ALL}")
                                 smart.managerLog(f"ERROR: Failed while opening the feedback section of GitHub repository into {cfg.get(cfg.mainBrowserPath)}: {e}")
                             break
@@ -195,7 +195,7 @@ class AboutInterface(QWidget):
                     print(f"{Fore.GREEN}The feedback section of GitHub repository has been successfully loaded into another browser: '{self.feedbackBrowserDlg.otherBrowsEdit.text()}'{Style.RESET_ALL}")
                     smart.managerLog(f"SUCCESS: The feedback section of GitHub repository has been successfully loaded into other browser '{self.feedbackBrowserDlg.otherBrowsEdit.text()}'")
                 except Exception as e:
-                    smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to open the feedback section of GitHub repository into {os.path.basename(self.feedbackBrowserDlg.otherBrowsEdit.text())}: {e}", parent)
+                    smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to open the feedback section of GitHub repository into {os.path.basename(self.feedbackBrowserDlg.otherBrowsEdit.text())}: {e}", parent)
                     print(f"{Fore.RED}An error occured while attempting to open the feedback section of GitHub repository into '{os.path.basename(self.feedbackBrowserDlg.otherBrowsEdit.text())}': {e}{Style.RESET_ALL}")
                     smart.managerLog(f"ERROR: Failed to open the feedback section of GitHub repository into browser at path '{self.feedbackBrowserDlg.otherBrowsEdit.text()}': {e}")
 
@@ -223,7 +223,7 @@ class AboutInterface(QWidget):
                                 print(f"{Fore.GREEN}The {title} {linkType} has been successfully loaded into {browser["name"]}!{Style.RESET_ALL}")
                                 smart.managerLog(f"SUCCESS: The {title} {linkType} has been successfully loaded into {browser["name"]}.")
                             except Exception as e:
-                                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to open the {title} {linkType} into {browser["name"]}: {e}", parent)
+                                smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to open the {title} {linkType} into {browser["name"]}: {e}", parent)
                                 print(f"{Fore.RED}An error occured while attempting to open the {title} {linkType} into {browser["name"]}: {e}{Style.RESET_ALL}")
                                 smart.managerLog(f"ERROR: Failed while opening the {title} {linkType} into {browser["name"]}: {e}")
                             break
@@ -239,7 +239,7 @@ class AboutInterface(QWidget):
                                 print(f"{Fore.GREEN}The {title} {linkType} has been successfully loaded into {cfg.get(cfg.mainBrowserPath)}!{Style.RESET_ALL}")
                                 smart.managerLog(f"SUCCESS: The {title} {linkType} has been successfully loaded into {cfg.get(cfg.mainBrowserPath)}.")
                             except Exception as e:
-                                smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to open the {title} {linkType} into {os.path.basename(cfg.get(cfg.mainBrowserPath))}: {e}", parent)
+                                smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to open the {title} {linkType} into {os.path.basename(cfg.get(cfg.mainBrowserPath))}: {e}", parent)
                                 print(f"{Fore.RED}An error occured while attempting to open the {title} {linkType} into {cfg.get(cfg.mainBrowserPath)}: {e}{Style.RESET_ALL}")
                                 smart.managerLog(f"ERROR: Failed while opening the {title} {linkType} into {cfg.get(cfg.mainBrowserPath)}: {e}")
                             break
@@ -257,7 +257,7 @@ class AboutInterface(QWidget):
                     print(f"{Fore.GREEN}The {title} {linkType} has been successfully loaded into another browser: '{self.linkBrowserDlg.otherBrowsEdit.text()}'{Style.RESET_ALL}")
                     smart.managerLog(f"SUCCESS: The {title} {linkType} has been successfully loaded into other browser '{self.linkBrowserDlg.otherBrowsEdit.text()}'")
                 except Exception as e:
-                    smart.errorNotify("Oops! Something went wrong...", f"An error occured while attempting to open the {title} {linkType} into {os.path.basename(self.linkBrowserDlg.otherBrowsEdit.text())}: {e}", parent)
+                    smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to open the {title} {linkType} into {os.path.basename(self.linkBrowserDlg.otherBrowsEdit.text())}: {e}", parent)
                     print(f"{Fore.RED}An error occured while attempting to open the {title} {linkType} into '{os.path.basename(self.linkBrowserDlg.otherBrowsEdit.text())}': {e}{Style.RESET_ALL}")
                     smart.managerLog(f"ERROR: Failed to open the {title} {linkType} into browser at path '{self.linkBrowserDlg.otherBrowsEdit.text()}': {e}")
 

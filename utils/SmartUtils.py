@@ -5,16 +5,17 @@ A complete utility module made specifically for SmartLinker global needs.
 
 :Copyright: © 2025-2026 by #theF∆STER™ UN!TY.
 """
-__version__ = "v3.0.0 Alpha #2"
+__version__ = "v3.0.0" # Alpha #3
 __author__ = "#theF∆STER™ CODE&BU!LD"
 
 # NOTE: CODE&BU!LD is actually the software development section of the UN!TY group.
 # (In case you would be wondering...)
 # =========================================================
 
+import argparse, ctypes, darkdetect, datetime, hashlib, json, magic, markdown, os, pathlib, pickle, platform, psutil, pygame, random, re
+import requests, shutil, socket, stat, subprocess, sys, time, traceback, typing, threading, webbrowser, win32api, winreg
 from bs4 import BeautifulSoup
-import argparse, ctypes, darkdetect, datetime, json, magic, markdown, os, pathlib, pickle, platform, psutil, pygame, re, requests, shutil
-import socket, subprocess, sys, time, typing, threading, webbrowser, win32api, winreg
+from collections import Counter
 from colorama import init, Fore, Back, Style
 from enum import Enum
 from markdown_it import MarkdownIt
@@ -23,7 +24,8 @@ from packaging.version import Version
 from pathlib import Path
 from PyQt6.Qsci import QsciScintilla, QsciLexerMarkdown
 from PyQt6.QtCore import (
-    QCoreApplication, QEvent, QEventLoop, QFileInfo, QModelIndex, QObject, QRegularExpression, QSize, Qt, QThread, QTimer, QUrl, pyqtSignal
+    pyqtSignal, QCoreApplication, QEvent, QEventLoop, QFileInfo, QLocale, QModelIndex, QObject, QRegularExpression, QSize, Qt, QThread, QTimer,
+    QUrl
 )
 from PyQt6.QtGui import (
     QColor, QContextMenuEvent, QDragEnterEvent, QDragLeaveEvent, QDragMoveEvent, QDropEvent, QFont, QFontDatabase, QFontMetrics, QGuiApplication,
@@ -32,19 +34,20 @@ from PyQt6.QtGui import (
 from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWebEngineCore import QWebEngineHistoryItem, QWebEngineNavigationRequest, QWebEngineSettings
 from PyQt6.QtWidgets import (
-    QAbstractItemView, QApplication, QCompleter, QFileDialog, QFileIconProvider, QHBoxLayout, QLayout, QScrollBar, QSizePolicy, QStatusBar,
-    QTableWidgetItem, QTextEdit, QVBoxLayout, QWidget
+    QAbstractItemView, QApplication, QBoxLayout, QCompleter, QFileDialog, QFileIconProvider, QGraphicsOpacityEffect, QGridLayout, QHBoxLayout,
+    QHeaderView, QLayout, QScrollBar, QSizePolicy, QStatusBar, QTableWidgetItem, QTextEdit, QVBoxLayout, QWidget
 )
 from qfluentwidgets import (
     getIconColor, qconfig, setFont, setTheme, setThemeColor, theme, themeColor, Action, BodyLabel, BoolValidator, CaptionLabel, CardWidget,
-    ColorConfigItem, ColorDialog, ComboBox, CommandBar, ConfigItem,DropDownPushButton, ElevatedCardWidget, ExpandGroupSettingCard,
-    FluentFontIconBase, FluentIcon as FICO, FluentIconBase, FluentWindow, HyperlinkButton, HyperlinkCard, IconInfoBadge, IconWidget, ImageLabel,
-    IndeterminateProgressRing, IndicatorPosition, InfoBadgePosition, InfoBar, InfoBarPosition, LargeTitleLabel, LineEdit, ListWidget, MessageBox,
-    MessageBoxBase, NavigationItemPosition, OptionsConfigItem, OptionsSettingCard, OptionsValidator, PrimaryPushButton, PrimaryPushSettingCard,
-    ProgressBar, ProgressRing, PushButton, PushSettingCard, QConfig, RangeConfigItem, RangeValidator, RoundMenu, ScrollBar, SearchLineEdit,
-    SimpleCardWidget, SimpleExpandGroupSettingCard, SingleDirectionScrollArea, SpinBox, SplashScreen, StateToolTip, StrongBodyLabel, SubtitleLabel,
-    SwitchButton, SwitchSettingCard, TableWidget, TextEdit, Theme, TitleLabel, ToolButton, ToolTipFilter, ToolTipPosition, TransparentDropDownPushButton,
-    TransparentToggleToolButton, TransparentToolButton
+    ColorConfigItem, ColorDialog, ComboBox, CommandBar, ConfigItem, Dialog, ElevatedCardWidget, ExpandGroupSettingCard, FlowLayout,
+    FluentFontIconBase, FluentIcon as FICO, FluentIconBase, FluentWidget, FluentWidgetTitleBar, FluentWindow, HyperlinkButton, HyperlinkCard,
+    IconInfoBadge, IconWidget, ImageLabel, IndeterminateProgressRing, IndicatorPosition, InfoBadgePosition, InfoBar, InfoBarPosition,
+    LargeTitleLabel, LineEdit, ListWidget, MessageBox, MessageBoxBase, MSFluentWindow, NavigationItemPosition, OptionsConfigItem, OptionsSettingCard,
+    OptionsValidator, PrimaryDropDownPushButton, PrimaryPushButton, PrimaryPushSettingCard, ProgressBar, ProgressRing, PushButton, PushSettingCard,
+    QConfig, RangeConfigItem, RangeValidator, RoundMenu, ScrollBar, SearchLineEdit, SimpleCardWidget, SimpleExpandGroupSettingCard,
+    SingleDirectionScrollArea, SpinBox, SplashScreen, StateToolTip, StrongBodyLabel, SubtitleLabel, SwitchButton, SwitchSettingCard,
+    TabCloseButtonDisplayMode, TableWidget, TabWidget, TextEdit, Theme, TitleLabel, ToolButton, ToolTipFilter, ToolTipPosition,
+    TransparentDropDownPushButton, TransparentToggleToolButton, TransparentToolButton
 )
 from qframelesswindow import FramelessWindow, StandardTitleBar, TitleBar
 from qframelesswindow.utils import getSystemAccentColor
@@ -56,7 +59,10 @@ from rich.traceback import install
 from shiboken6 import isValid
 from urllib.parse import quote, unquote, urlparse
 
+
 # =========================================================
+
+ROOT_PATH = Path(__file__).resolve().parent.parent #.parent
 
 SmartLinkerID: str = "theFASTER.SmartLinker"
 SmartLinkerName: str = "SmartLinker"
@@ -65,7 +71,9 @@ SmartLinkerAuthor: str = __author__
 SmartLinkerOwner: str = "#theF∆STER™ UN!TY"
 SmartLinkerGitRepoURL: str = "https://github.com/theFASTER-UNiTY/SmartLinker"
 SmartLinkerGitRepoAPI: str = "https://api.github.com/repos/theFASTER-UNiTY/SmartLinker"
-SmartRichTheme = RTheme({"smartpurple": "#793bcc", "smartblue": "#2196f3"})
+SmartRichTheme = RTheme(
+    {"smpurple": "#793bcc", "smblue": "#2196f3"}
+)
 RichCLI = Console(theme=SmartRichTheme)
 install()
 PURPLE = "\x1b[35m" # soon deprecated
@@ -73,9 +81,11 @@ init() # soon deprecated
 pygame.init()
 pygame.mixer.init()
 soundStreamer = None
+smLocale = QLocale.system()
 
 class Config(QConfig):
-    """ SmartUtils
+    """
+    SmartUtils
     ==========
     Global SmartLinker configuration handling class
     """
@@ -110,61 +120,61 @@ class Config(QConfig):
     updateAvailable = ConfigItem("About", "UpdateAvailable", False)
     updateVersion = ConfigItem("About", "UpdateVersion", "")
     
-    qAccentColor = ColorConfigItem("QFluentWidgets", "ThemeColor", "#ff25d9e6") #ff25d9e6
-
-class MarkdownConfig(QConfig):
-    """ SmartUtils
-    ==========
-    Markdown viewer configuration handling class
-    """
-    startInEditMode = ConfigItem("General", "StartInEditMode", False, BoolValidator())
+    mdStartInEditMode = ConfigItem("Markdown-General", "StartInEditMode", False, BoolValidator())
     
-    fontFamily = ConfigItem("Editor", "FontFamily", "")
-    fontSize = ConfigItem("Editor", "FontSize", 12)
-    fontWeight = RangeConfigItem("Editor", "FontWeight", 400, RangeValidator(100, 800))
-    displayLineNumbers = ConfigItem("Editor", "DisplayLineNumbers", True, BoolValidator())
-    displaySymbolsBar = ConfigItem("Editor", "DisplaySymbolsBar", True, BoolValidator())
-    displayStatusBar = ConfigItem("Editor", "DisplayStatusBar", True, BoolValidator())
-    enableWordWrap = ConfigItem("Editor", "EnableWordWrap", False, BoolValidator())
-    indentWidth = RangeConfigItem("Editor", "IndentationWidth", 4, RangeValidator(2, 8))
-    displayIndentGuides = ConfigItem("Editor", "DisplayIndentationGuides", True, BoolValidator())
-    enableAutoIndent = ConfigItem("Editor", "EnableAutoIndent", True, BoolValidator())
-    highlightCurrentLine = ConfigItem("Editor", "HighlightCurrentLine", True, BoolValidator())
-    selectionColorMode = OptionsConfigItem("Editor", "SelectionColorMode", "Accent", OptionsValidator(["Accent", "Custom"]))
-    selectionCustomColor = ColorConfigItem("Editor", "SelectionCustomColor", "#7f793bcc") #ff793bcc
-    enableSyntaxHighlighting = ConfigItem("Editor", "EnableSyntaxHighlighting", True, BoolValidator())
+    mdFontFamily = ConfigItem("Markdown-Editor", "FontFamily", "")
+    mdFontSize = ConfigItem("Markdown-Editor", "FontSize", 12)
+    mdFontWeight = RangeConfigItem("Markdown-Editor", "FontWeight", 400, RangeValidator(100, 800))
+    mdDisplayLineNumbers = ConfigItem("Markdown-Editor", "DisplayLineNumbers", True, BoolValidator())
+    mdDisplaySymbolsBar = ConfigItem("Markdown-Editor", "DisplaySymbolsBar", True, BoolValidator())
+    mdDisplayStatusBar = ConfigItem("Markdown-Editor", "DisplayStatusBar", True, BoolValidator())
+    mdEnableWordWrap = ConfigItem("Markdown-Editor", "EnableWordWrap", False, BoolValidator())
+    mdIndentWidth = RangeConfigItem("Markdown-Editor", "IndentationWidth", 4, RangeValidator(2, 8))
+    mdDisplayIndentGuides = ConfigItem("Markdown-Editor", "DisplayIndentationGuides", True, BoolValidator())
+    mdEnableAutoIndent = ConfigItem("Markdown-Editor", "EnableAutoIndent", True, BoolValidator())
+    mdHighlightCurrentLine = ConfigItem("Markdown-Editor", "HighlightCurrentLine", True, BoolValidator())
+    mdSelectionColorMode = OptionsConfigItem("Markdown-Editor", "SelectionColorMode", "Accent", OptionsValidator(["Accent", "Custom"]))
+    mdSelectionCustomColor = ColorConfigItem("Markdown-Editor", "SelectionCustomColor", "#7f793bcc") #ff793bcc
+    mdEnableSyntaxHighlighting = ConfigItem("Markdown-Editor", "EnableSyntaxHighlighting", True, BoolValidator())
     # to-do: syntax colors
     
-    openExternalLinks = ConfigItem("Viewer", "OpenExternalLinks", False, BoolValidator())
-    cssSource = OptionsConfigItem("Viewer", "CSSSource", "Default", OptionsValidator(["Default", "Local", "Custom"]))
-    cssSourcePath = ConfigItem("Viewer", "CSSSourcePath", "Default")
-    cssProperties = ConfigItem("Viewer", "CSSProperties", "")
-    homepageSource = OptionsConfigItem("Viewer", "HomepageSource", "Default", OptionsValidator(["Default", "Local", "Custom"]))
-    homepageSourcePath = ConfigItem("Viewer", "HomepageSourcePath", "Default")
-    homepageProperties = ConfigItem("Viewer", "HomepageProperties", "")
-    
-    qThemeColor = ColorConfigItem("QFluentWidgets", "ThemeColor", "")
+    mdOpenExternalLinks = ConfigItem("Markdown-Viewer", "OpenExternalLinks", False, BoolValidator())
+    mdCssSource = OptionsConfigItem("Markdown-Viewer", "CSSSource", "Default", OptionsValidator(["Default", "Local", "Custom"]))
+    mdCssSourcePath = ConfigItem("Markdown-Viewer", "CSSSourcePath", "Default")
+    mdCssProperties = ConfigItem("Markdown-Viewer", "CSSProperties", "")
+    mdHomepageSource = OptionsConfigItem("Markdown-Viewer", "HomepageSource", "Default", OptionsValidator(["Default", "Local", "Custom"]))
+    mdHomepageSourcePath = ConfigItem("Markdown-Viewer", "HomepageSourcePath", "Default")
+    mdHomepageProperties = ConfigItem("Markdown-Viewer", "HomepageProperties", "")
+    mdDragEnterJSFunction = ConfigItem("Markdown-Viewer", "DragEnterJSFunction", "")
+    mdDragLeaveJSFunction = ConfigItem("Markdown-Viewer", "DragLeaveJSFunction", "")
+    mdDropJSFunction = ConfigItem("Markdown-Viewer", "DropJSFunction", "")
+
 
 class SegoeFontIcon(FluentFontIconBase):
-    """ SmartUtils
+    """
+    SmartUtils
     ==========
     Class for SmartLinker's custom font-based icons
     """
 
     def path(self, theme=Theme.AUTO):
-        return smart.resourcePath("resources/fonts/SegoeIcons.ttf")
+        return smart.resourcePath("resources/fonts/Icons.ttf")
 
     def iconNameMapPath(self):
         """ Override this method if you want to use `fromName` to create icons """
         return smart.resourcePath("resources/fonts/SegoeIconsMap.json")
 
+
 class SegoeSVGIcon(FluentIconBase, Enum):
-    """ SmartUtils
+    """
+    SmartUtils
     ==========
     Class for custom SVG-based Segoe Fluent icons
     """
 
+    CHECK_CIRCLE = "CheckCircle"
     COLOR_LINE = "ColorLine"
+    ERROR_CIRCLE = "ErrorCircle"
     LINK = "Link"
     MARKDOWN = "Markdown"
     NUMBER_SYMBOL = "NumberSymbol"
@@ -177,16 +187,21 @@ class SegoeSVGIcon(FluentIconBase, Enum):
     def path(self, theme=Theme.AUTO) -> str:
         return smart.resourcePath(f"resources/icons/svg/{getIconColor(theme)}/{self.value}.svg")
 
-class SmartLogic:
-    """ SmartUtils
+
+class SmartLogic(QObject):
+    """
+    SmartUtils
     ==========
     General class for SmartLinker functions
     """
+    historyChanged = pyqtSignal(dict)
+
     def __init__(self):
         super().__init__()
 
     def resourcePath(self, relativePath: str) -> str:
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
         Dynamic provider of internal resources and files
         
@@ -204,53 +219,34 @@ class SmartLogic:
         else:
             basePath = os.path.abspath(".")
         return os.path.join(basePath, relativePath)
-
-    def loadBrowsersJSON(self):
-        """ SmartUtils
-        ==========
-        Loader of all the saved browsers
-        """
-        try:
-            with open(browsersCfgFilePath, "r") as browserReader:
-                return json.load(browserReader)
-        except: return {
-                "MyBrowsers": []
-            }
         
-    def loadBrowsers(self):
-        """ SmartUtils
+    def loadBrowsers(self) -> dict[str, list]:
+        """
+        SmartUtils
         ==========
-        Loader of all the saved browsers
+        Load all the saved browsers
+
+        Returns
+        -------
+        _dict[str, list]_: THe complete, decrypted browsers registry
         """
         try:
             with open(browsersCfgFilePath, "rb") as browserReader:
                 return pickle.load(browserReader)
-        except:
+        except Exception:
             return {
                 "MyBrowsers": []
             }
 
-    def writeBrowsersJSON(self, browsers: dict[str, list[str]]):
-        """ SmartUtils
-        ==========
-        Saver of all the changes made to browsers list
-        
-        Parameters
-        ----------
-        browsers: dictionary[string | list of strings]
-            The browsers list you want to save to the browsers config file
+    def writeBrowsers(self, browsers: dict[str, list]):
         """
-        with open(browsersCfgFilePath, "w") as browserWriter:
-            json.dump(browsers, browserWriter, indent=4)
-
-    def writeBrowsers(self, browsers: dict[str, list[str]]):
-        """ SmartUtils
+        SmartUtils
         ==========
-        Saver of all the changes made to browsers list
+        Save all the changes made to the browsers list
         
         Parameters
         ----------
-        browsers: dictionary[string | list of strings]
+        browsers: dictionary[string, list]
             The browsers list you want to save to the browsers config file
         """
         try:
@@ -260,45 +256,149 @@ class SmartLogic:
             print(f"{Fore.RED}An error occured while attempting to save browser-related changes: {e}{Style.RESET_ALL}")
             self.managerLog(f"ERROR: Failed to save browser-related changes: {e}")
 
-    def restartApp(self):
-        """ SmartUtils
-        ==========
-        Global function to restart the app (script purpose)
+    def loadHistory(self) -> dict[str, dict[str, list]]:
         """
-        os.execl(sys.executable, sys.executable, *sys.argv)
+        SmartUtils
+        ==========
+        Load the opened links history
+
+        Returns
+        -------
+        *dict[str, list]*: The complete, unencrypted history
+        """
+        try:
+            with open(historyFilePath, "rb") as historyReader:
+                return pickle.load(historyReader)
+        except Exception:
+            return {
+                "MyHistory": {}
+            }
+
+    def saveHistory(self, history: dict[str, dict[str, list]]):
+        """
+        SmartUtils
+        ==========
+        Save all the changes made to the opened links history
+        
+        Parameters
+        ----------
+        history: dict[str, list]
+            The history you want to save to the encrypted history file
+        """
+        try:
+            with open(historyFilePath, "wb") as historyWriter:
+                pickle.dump(history, historyWriter)
+        except Exception as e:
+            print(f"{Fore.RED}An error occured while attempting to save history-related changes: {e}{Style.RESET_ALL}")
+            self.managerLog(f"ERROR: Failed to save history-related changes: {e}")
+
+    def registerEntryToHistory(self, history: dict[str, dict[str, list]], browser: str, address: str):
+        """
+        SmartUtils
+        ==========
+        Register a new entry to the history
+
+        Parameters
+        ----------
+        browser: str
+            The name of the selected browser *(based on the SmartList)*
+        address: str
+            The URL loaded into the browser
+        """
+        now = datetime.datetime.now(datetime.timezone.utc)
+
+        dateKey = now.strftime("%Y-%m-%d")
+
+        # Calculate time integer (seconds since midnight)
+        lastVisited = (now.hour * 3600) + (now.minute * 60) + now.second
+
+        newEntry = {
+            "lastVisited": lastVisited,
+            "browser": browser,
+            "address": address
+        }
+
+        historyReg = history["MyHistory"]
+        if dateKey not in historyReg:
+            historyReg[dateKey] = []
+        historyReg[dateKey].insert(0, newEntry)
+
+        self.saveHistory(history)
+        self.historyChanged.emit(history)
+
+    def renderTimeFromSecInt(self, secInt: int, showSec: bool = True, use24h: bool = True) -> str:
+        """
+        SmartUtils
+        ==========
+        Convert a total of seconds into time format
+
+        Parameters
+        ----------
+        secInt: int
+            The total of seconds to convert into time format
+            *(it only converts seconds within a **24-hour span**)*
+        use24h: bool
+            Whether to render time into 24-hour format
+            *(if `False`, render into AM/PM format)*
+        """
+        hours = secInt // 3600
+        minutes = (secInt % 3600) // 60
+        seconds = secInt % 60
+
+        if not use24h:
+            # Convert to 12-hour AM/PM format
+            suffix = "PM" if hours >= 12 else "AM"
+            hours12 = hours % 12
+            if hours12 == 0:
+                hours12 = 12
+            return f"{hours12:02d}:{minutes:02d}{f":{seconds:02d}" if showSec else ""} {suffix}"
+        else:
+            # Standard 2h-hour format
+            return f"{hours:02d}:{minutes:02d}{f":{seconds:02d}" if showSec else ""}"
+
+    def restartApp(self, isScript: bool = False):
+        """
+        SmartUtils
+        ==========
+        Global method to restart the app
+
+        Parameters
+        ----------
+        isScript: bool
+            Whether the restart is called from a script
+        """
+        if isScript:
+            os.execl(sys.executable, sys.executable, *sys.argv)
+        else:
+            execPath = sys.executable
+            execArgs = sys.argv
+            
+            try:
+                subprocess.Popen([execPath] + execArgs[1:])
+                sys.exit()
+            except Exception as e:
+                print(f"{Fore.RED}Something went wrong while attempting to restart {SmartLinkerName} with 'subprocess': {e}{Style.RESET_ALL}\nRetrying with 'os.execv'...")
+                self.managerLog(f"ERROR: Failed to restart {SmartLinkerName} with 'subprocess': {e}")
+                self.managerLog("Retrying with 'os.execv'...")
+                try:
+                    os.execv(execPath, tuple([execPath] + execArgs[1:]))
+                except Exception as ee:
+                    print(f"{Fore.RED}Something went wrong while attempting to restart {SmartLinkerName} with 'os.execv': {ee}\nFailed to restart {SmartLinkerName}, please try again...{Style.RESET_ALL}")
+                    self.managerLog(f"ERROR: Failed to restart {SmartLinkerName} with 'os.execv': {ee}")
 
     def stopApp(self):
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
-        Global function to stop the app process
+        Global method to stop the app process
         """
         sys.exit()
 
-    def restartAppPlus(self):
-        """ SmartUtils
-        ==========
-        Global function to restart the app (executable purpose)
+    def centerWindow(self, window: QWidget):
         """
-        execPath = sys.executable
-        execArgs = sys.argv
-        
-        try:
-            subprocess.Popen([execPath] + execArgs[1:])
-            sys.exit()
-        except Exception as e:
-            print(f"{Fore.RED}Something went wrong while attempting to restart {SmartLinkerName} with 'subprocess': {e}{Style.RESET_ALL}\nRetrying with 'os.execv'...")
-            self.managerLog(f"ERROR: Failed to restart {SmartLinkerName} with 'subprocess': {e}")
-            self.managerLog("Retrying with 'os.execv'...")
-            try:
-                os.execv(execPath, tuple([execPath] + execArgs[1:]))
-            except Exception as ee:
-                print(f"{Fore.RED}Something went wrong while attempting to restart {SmartLinkerName} with 'os.execv': {ee}\nFailed to restart {SmartLinkerName}, please try again...{Style.RESET_ALL}")
-                self.managerLog(f"ERROR: Failed to restart {SmartLinkerName} with 'os.execv': {ee}")
-
-    def centerWindow(self, window):
-        """ SmartUtils
+        SmartUtils
         ==========
-        Center the window
+        Center the target window
 
         Parameters
         ----------
@@ -317,7 +417,8 @@ class SmartLogic:
             window.move(windowGeometry.topLeft())
 
     def isDarkModeEnabled(self) -> bool:
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
         Windows registry-based checker for system dark mode
 
@@ -338,7 +439,8 @@ class SmartLogic:
         finally: return isDarkMode
 
     def playSound(self, sound, path: str, label: str):
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
         Sound effects player
 
@@ -363,8 +465,9 @@ class SmartLogic:
             print(f"{Fore.RED}Something went wrong while attempting to play the {label} sound: {e}{Style.RESET_ALL}")
             self.managerLog(f"ERROR: Failed to play the {label} sound: {e}")
 
-    def checkConnectivity(self, hostname = "8.8.8.8", port = 53, timeout = 5.0):
-        """ SmartUtils
+    def checkConnectivity(self, hostname: str = "8.8.8.8", port: int = 53, timeout: float = 5.0) -> bool:
+        """
+        SmartUtils
         ==========
         Internet connectivity checker
 
@@ -401,7 +504,8 @@ class SmartLogic:
         finally: return isConnected
 
     def isWebLink(self, url: str) -> bool:
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
         Check if the provided URL is a web link
 
@@ -425,7 +529,8 @@ class SmartLogic:
         finally: return isWebLink
 
     def isDarkMode(self) -> bool:
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
         DarkDetect library-based checker for system dark mode
 
@@ -436,7 +541,8 @@ class SmartLogic:
         return bool(darkdetect.isDark())
 
     def successNotify(self, title: str, content: str = "", parent = None):
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
         Success notification bar
         
@@ -460,7 +566,8 @@ class SmartLogic:
             self.playSound(soundStreamer, cfg.get(cfg.successSFXPath), "success notification")
 
     def warningNotify(self, title: str, content: str = "", parent = None):
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
         Warning notification bar
         
@@ -483,13 +590,16 @@ class SmartLogic:
         if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.warningSFXPath)):
             self.playSound(soundStreamer, cfg.get(cfg.warningSFXPath), "warning notification")
 
-    def errorNotify(self, title: str, content: str = "", parent = None, canCopy: bool = True):
-        """ SmartUtils
+    def errorNotify(self, traceback: typing.Any, title: str, content: str = "", parent = None):
+        """
+        SmartUtils
         ==========
         Error notification bar
         
         Parameters
         ----------
+        traceback: Any
+            The complete traceback of the error
         title: string
             The title of the error notification bar
         content: string
@@ -499,25 +609,29 @@ class SmartLogic:
         canCopy: boolean
             Whether the error can be copied to the clipboard
         """
-        copyBtn = PushButton(FICO.COPY, "Copy error")
-        copyBtn.clicked.connect(lambda: self.copyToClipboard(content))
+        def showErrorDialog(infoBar: InfoBar):
+            infoBar.closedSignal.emit()
+            errorDlg = None
+            errorDlg = ErrorDialog(traceback, parent)
+            errorDlg.exec()
 
         bar = InfoBar.error(
             title = title,
-            content = content,
+            content = f"{content}\n\nClick on this notification to see more details.",
             orient = Qt.Orientation.Vertical,
             isClosable = True,
             position = InfoBarPosition.BOTTOM_RIGHT,
             duration = -1,
             parent = parent
         )
-        if canCopy: bar.addWidget(copyBtn)
-        bar.show()
+        bar.mousePressEvent = lambda a0, infoBar=bar: showErrorDialog(infoBar)
+
         if bool(cfg.get(cfg.enableSoundEffects) and cfg.get(cfg.errorSFXPath)):
             self.playSound(soundStreamer, cfg.get(cfg.errorSFXPath), "error notification")
 
     def infoNotify(self, title: str, content: str = "", parent = None): 
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
         Informative notification bar
         
@@ -541,7 +655,8 @@ class SmartLogic:
             self.playSound(soundStreamer, cfg.get(cfg.infoSFXPath), "information notification")
 
     def getFileIcon(self, filePath: str) -> QIcon:
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
         Specified executable icon provider
 
@@ -558,9 +673,10 @@ class SmartLogic:
         return QIcon()
 
     def browseFileDialog(self, parent: typing.Optional[QWidget], dialogTitle: str = "", mainDir: str = "", typeFilter: str = "") -> str:
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
-        Specified type file provider through file picker dialog
+        Load a specified type file through file picker dialog
 
         Parameters
         ----------
@@ -588,9 +704,10 @@ class SmartLogic:
         return ""
 
     def saveFileDialog(self, parent: typing.Optional[QWidget], dialogTitle: str = "", mainDir: str = "", typeFilter: str = "") -> str:
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
-        Specified type file saver through file picker dialog
+        Save a specified type file through file picker dialog
 
         Parameters
         ----------
@@ -618,14 +735,15 @@ class SmartLogic:
         return ""
 
     def copyToClipboard(self, text: str):
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
-        Copy the forwarded link to the system's clipboard
+        Copy the forwarded content to the system's clipboard
 
         Parameters
         ----------
         text: string
-            The link you want to copy
+            The content you want to copy
         """
         app = QApplication.instance()
         if app is None:
@@ -641,9 +759,10 @@ class SmartLogic:
             self.copyToClipboard(text)
 
     def isSystemDefault(self, appID: str) -> bool:
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
-        SmartLinker-as-default-browser checker
+        Check if SmartLinker is set as the system's default browser
         
         Parameters
         ----------
@@ -678,9 +797,10 @@ class SmartLogic:
         finally: return isSystemDefault
 
     def isBrowserOpen(self, exePath: str) -> bool:
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
-        Specified SmartList browser process checker
+        Check if the specified SmartList browser process is running
         
         Parameters
         ----------
@@ -704,9 +824,10 @@ class SmartLogic:
         return isProcessOpen
     
     def isSoftwareRunning(self, exePath: str) -> bool:
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
-        Specified software running process checker
+        Check if the specified software process is running
         
         Parameters
         ----------
@@ -725,8 +846,17 @@ class SmartLogic:
                 if isProcessOpen: break
         return isProcessOpen
 
+    def clearCLI(self):
+        """
+        SmartUtils
+        ==========
+        Command-line interface cleaner
+        """
+        os.system("cls")
+
     def consoleScript(self) -> str:
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
         SmartLinker name in-console renderer
 
@@ -734,17 +864,18 @@ class SmartLogic:
         -------
         :string: The rendered SmartLinker name
         """
-        return f"[smartpurple]============================[/] {SmartLinkerAuthor} presents [smartblue]============================\n\n" \
-            "[smartpurple]███████╗███╗   ███╗ █████╗ ██████╗ ████████╗[smartblue]██╗     ██╗███╗   ██╗██╗  ██╗███████╗██████╗ \n" \
-            "[smartpurple]██╔════╝████╗ ████║██╔══██╗██╔══██╗╚══██╔══╝[smartblue]██║     ██║████╗  ██║██║ ██╔╝██╔════╝██╔══██╗\n" \
-            "[smartpurple]███████╗██╔████╔██║███████║██████╔╝   ██║   [smartblue]██║     ██║██╔██╗ ██║█████╔╝ █████╗  ██████╔╝\n" \
-            "[smartpurple]╚════██║██║╚██╔╝██║██╔══██║██╔══██╗   ██║   [smartblue]██║     ██║██║╚██╗██║██╔═██╗ ██╔══╝  ██╔══██╗\n" \
-            "[smartpurple]███████║██║ ╚═╝ ██║██║  ██║██║  ██║   ██║   [smartblue]███████╗██║██║ ╚████║██║  ██╗███████╗██║  ██║\n" \
-            "[smartpurple]╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   [smartblue]╚══════╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝\n\n" \
-           f"[smartpurple]=================================[/] {"Mastering URL Handling"} [smartblue]================================[/]\n"
+        from utils.SmartCLIScripts import AsciiNames
 
-    def managerLog(self, message):
-        """ SmartUtils
+        scripts = [
+            AsciiNames._1911, AsciiNames.ANSI_SHADOW, AsciiNames.BALISTIC, AsciiNames.BANSHEE, AsciiNames.BIG_LIMPY,
+            AsciiNames.BROADWAY, AsciiNames.COLOSSAL, AsciiNames.DOH, AsciiNames.REBEL, AsciiNames.SHADED_BLOCKY
+        ]
+
+        return random.choice(scripts)
+
+    def managerLog(self, message: typing.Any):
+        """
+        SmartUtils
         ==========
         SmartLinker activity log writer
 
@@ -761,8 +892,9 @@ class SmartLogic:
             print(f"{Fore.RED}An error occured while attempting to log the last event in the log file: {e}{Style.RESET_ALL}")
             return
 
-    def selectorLog(self, message):
-        """ SmartUtils
+    def selectorLog(self, message: typing.Any):
+        """
+        SmartUtils
         ==========
         Smart Selector activity log writer
 
@@ -773,16 +905,17 @@ class SmartLogic:
         """
         try:
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            with open(f"{Path(__file__).parent.parent}\\SmartSelectorReport.log", 'a', encoding="utf-8") as logger:
+            with open(ROOT_PATH / "SmartSelectorReport.log", 'a', encoding="utf-8") as logger:
                 logger.write(f"[{timestamp}] {message}\n")
         except Exception as e:
             print(f"{Fore.RED}An error occured while attempting to log the last event in the Selector log file: {e}{Style.RESET_ALL}")
             return
 
     def emptyManagerLog(self):
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
-        SmartLinker activity log initializing tool
+        Initialize SmartLinker activity log
         """
         try:
             with open("SmartLinkerReport.log", 'w') as clear:
@@ -793,22 +926,24 @@ class SmartLogic:
             return
 
     def emptySelectorLog(self):
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
-        Smart Selector activity log initializing tool
+        Initialize Smart Selector activity log
         """
         try:
-            with open(f"{Path(__file__).parent.parent}\\SmartSelectorReport.log", 'w') as clear:
+            with open(ROOT_PATH / "SmartSelectorReport.log", 'w') as clear:
                 clear.write("SmartLinker - Smart Selector Activity Report\n" \
                             "--------------------------------------------\n\n")
         except Exception as e:
             print(f"{Fore.RED}An error occured while attempting to initialize the Selector log file: {e}{Style.RESET_ALL}")
             return
 
-    def hideLayoutWidgets(self, layout):
-        """ SmartUtils
+    def hideLayoutWidgets(self, layout: QLayout):
+        """
+        SmartUtils
         ==========
-        Layout child widgets hiding tool
+        Hide the child widgets of a layout
 
         Parameters
         ----------
@@ -817,15 +952,19 @@ class SmartLogic:
         """
         for i in range(layout.count()):
             item = layout.itemAt(i)
-            if item.widget():
-                item.widget().hide()
-            elif item.layout():
-                self.hideLayoutWidgets(item.layout())
+            if item:
+                widget = item.widget()
+                cLayout = item.layout()
+                if widget:
+                    widget.hide()
+                elif cLayout:
+                    self.hideLayoutWidgets(cLayout)
 
-    def showLayoutWidgets(self, layout):
-        """ SmartUtils
+    def showLayoutWidgets(self, layout: QLayout):
+        """
+        SmartUtils
         ==========
-        Layout child widgets showing tool
+        Show the child widgets of a layout
 
         Parameters
         ----------
@@ -834,16 +973,19 @@ class SmartLogic:
         """
         for i in range(layout.count()):
             item = layout.itemAt(i)
-            if item.widget():
-                item.widget().show()
-            elif item.layout():
-                self.showLayoutWidgets(item.layout())
+            if item:
+                widget = item.widget()
+                cLayout = item.layout()
+                if widget:
+                    widget.show()
+                elif cLayout:
+                    self.showLayoutWidgets(cLayout)
 
     def emptyLayout(self, layout: QLayout, childLayout: bool = False):
         """
         SmartUtils
         ==========
-        Layout clearing (child widget removing) tool
+        Clear a layout (remove all the layout's child widgets)
 
         Parameters
         ----------
@@ -864,7 +1006,8 @@ class SmartLogic:
                     self.emptyLayout(subLayout)
 
     def getLatestVersionTagLocal(self) -> str:
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
         SmartLinker's latest version tag checker (local Git repository)
 
@@ -892,7 +1035,8 @@ class SmartLogic:
         finally: return versionTag
 
     def getLatestVersionTag(self) -> str:
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
         SmartLinker's latest version tag checker
 
@@ -926,7 +1070,8 @@ class SmartLogic:
         finally: return versionTag
 
     def getLatestReleaseTag(self) -> str:
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
         SmartLinker's latest release tag checker
 
@@ -954,10 +1099,11 @@ class SmartLogic:
             self.managerLog(f"ERROR: Failed to get latest release tag from GitHub repository: {e}")
         finally: return releaseTag
 
-    def covertToNoAlphaHEX(self, color: str | QColor) -> str:
-        """ SmartUtils
+    def covertToNoAlphaHEX(self, color: typing.Union[str, QColor]) -> str:
+        """
+        SmartUtils
         ==========
-        HEX w/ alpha (#AARRGGBB) to HEX w/o alpha (#RRGGBB) color format converter
+        Convert a color from HEX w/ alpha (#AARRGGBB) to HEX w/o alpha (#RRGGBB) format 
 
         Parameters
         ----------
@@ -984,10 +1130,11 @@ class SmartLogic:
             newColor = ""
         finally: return newColor
 
-    def convertToRGBA(self, color: str | QColor) -> str:
-        """ SmartUtils
+    def convertToRGBA(self, color: typing.Union[str, QColor]) -> str:
+        """
+        SmartUtils
         ==========
-        RGBA color format converter
+        Convert a color to RGBA format 
 
         Parameters
         ----------
@@ -1015,10 +1162,11 @@ class SmartLogic:
             newColor = ""
         finally: return newColor
 
-    def convertToRGB(self, color: str | QColor) -> str:
-        """ SmartUtils
+    def convertToRGB(self, color: typing.Union[str, QColor]) -> str:
+        """
+        SmartUtils
         ==========
-        RGB color format converter
+        Convert color to RGB format
 
         Parameters
         ----------
@@ -1044,16 +1192,17 @@ class SmartLogic:
             self.managerLog(f"ERROR: Failed to convert color format: {e}")
         finally: return newColor
 
-    def customAlphaToRGB(self, color: str | QColor, alpha) -> QColor:
-        """ SmartUtils
+    def applyAlphaToRGB(self, color: typing.Union[str, QColor], alpha: int) -> QColor:
+        """
+        SmartUtils
         ==========
-        Custom alpha value to color applying tool
+        Apply custom alpha value to color
 
         Parameters
         ----------
-        color: Unknown
+        color: string | QColor
             The color you want to modify.
-        alpha: number
+        alpha: integer
             The alpha value you want to apply.
 
         Returns
@@ -1074,14 +1223,15 @@ class SmartLogic:
             self.managerLog(f"ERROR: Failed to convert color format: {e}")
         finally: return newColor
 
-    def getRed(self, color):
-        """ SmartUtils
+    def getRed(self, color: typing.Union[str, QColor]) -> typing.Union[int, None]:
+        """
+        SmartUtils
         ==========
-        A color's red value picker
+        Fetch a color's red value
 
         Parameters
         ----------
-        color: Unknown
+        color: string | QColor
             The color you want to get the red value from.
 
         Returns
@@ -1089,6 +1239,7 @@ class SmartLogic:
         red: int | None
             The red value
         """
+        red = 0
         try:
             rColor = QColor(color)
             if rColor.isValid():
@@ -1098,16 +1249,18 @@ class SmartLogic:
             print(f"{Fore.RED}Something went wrong during red value pick: {e}{Style.RESET_ALL}")
             self.managerLog(f"ERROR: Failed to pick red value from color: {e}")
             red = 0
-        finally: return red
+        finally:
+            return red
 
-    def getGreen(self, color):
-        """ SmartUtils
+    def getGreen(self, color: typing.Union[str, QColor]) -> typing.Union[int, None]:
+        """
+        SmartUtils
         ==========
-        A color's green value picker
+        Fetch a color's green value
 
         Parameters
         ----------
-        color: Unknown
+        color: string | QColor
             The color you want to get the green value from.
 
         Returns
@@ -1115,6 +1268,7 @@ class SmartLogic:
         green: int | None
             The green value
         """
+        green = 0
         try:
             gColor = QColor(color)
             if gColor.isValid():
@@ -1126,14 +1280,15 @@ class SmartLogic:
             green = 0
         finally: return green
 
-    def getBlue(self, color):
-        """ SmartUtils
+    def getBlue(self, color: typing.Union[str, QColor]) -> typing.Union[int, None]:
+        """
+        SmartUtils
         ==========
-        A color's blue value picker
+        Fetch a color's blue value
 
         Parameters
         ----------
-        color: Unknown
+        color: string | QColor
             The color you want to get the blue value from.
 
         Returns
@@ -1141,6 +1296,7 @@ class SmartLogic:
         blue: int | None
             The blue value
         """
+        blue = 0
         try:
             bColor = QColor(color)
             if bColor.isValid():
@@ -1152,14 +1308,15 @@ class SmartLogic:
             blue = 0
         finally: return blue
 
-    def getAlpha(self, color):
-        """ SmartUtils
+    def getAlpha(self, color: typing.Union[str, QColor]) -> typing.Union[int, None]:
+        """
+        SmartUtils
         ==========
-        A color's alpha value picker
+        Fetch a color's alpha value as an integer
 
         Parameters
         ----------
-        color: Unknown
+        color: string | QColor
             The color you want to get the alpha value from.
 
         Returns
@@ -1167,6 +1324,7 @@ class SmartLogic:
         alpha: int | None
             The alpha value
         """
+        alpha = 0
         try:
             aColor = QColor(color)
             if aColor.isValid():
@@ -1178,14 +1336,15 @@ class SmartLogic:
             alpha = 0
         finally: return alpha
 
-    def getAlphaFloat(self, color):
-        """ SmartUtils
+    def getAlphaFloat(self, color: typing.Union[str, QColor]) -> typing.Union[float, None]:
+        """
+        SmartUtils
         ==========
-        A color's alpha value picker
+        Fetch a color's alpha value as a float
 
         Parameters
         ----------
-        color: Unknown
+        color: string | QColor
             The color you want to get the alpha value from.
 
         Returns
@@ -1193,6 +1352,7 @@ class SmartLogic:
         alpha: float | None
             The alpha float value
         """
+        alpha = 0.0
         try:
             aColor = QColor(color)
             if aColor.isValid():
@@ -1205,25 +1365,28 @@ class SmartLogic:
         finally: return alpha
 
     def getSystemVersionBuild(self) -> int:
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
-        Installed Windows version build indicator
+        Fetch the installed Windows version build
 
         Returns
         -------
         :int: Installed Windows version build number
         """
-        if platform.system() == "Windows": return sys.getwindowsversion().build
+        if platform.system() == "Windows":
+            return sys.getwindowsversion().build
         return 0
     
-    def getSystemInformation(self):
-        """ SmartUtils
+    def getSystemInformation(self) -> dict[str, typing.Any]:
+        """
+        SmartUtils
         ==========
-        System hardware and software information provider
+        Fetch system hardware and software information provider
 
         Returns
         -------
-        systemInfo: dictionary[string, Unknown]
+        systemInfo: dictionary[string, Any]
             The system information dictionary
         """
         systemInfo = {}
@@ -1244,7 +1407,8 @@ class SmartLogic:
         finally: return systemInfo
     
     def isSoftwareCompatible(self, minBuild: int) -> bool:
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
         Compatibility checker for specified minimum build number 
 
@@ -1260,17 +1424,20 @@ class SmartLogic:
         """
         isCompatible = False
         try:
-            if not platform.system() == "Windows": isCompatible = False
-            else: isCompatible = sys.getwindowsversion().build >= minBuild 
+            if not platform.system() == "Windows":
+                isCompatible = False
+            else:
+                isCompatible = sys.getwindowsversion().build >= minBuild 
         except Exception as e:
             print(f"{Fore.RED}An error occured while attempting to check system compatibility: {e}{Style.RESET_ALL}")
             self.managerLog(f"ERROR: Failed to check system compatibility: {e}")
         finally: return isCompatible
 
     def getFileMimeType(self, path: str) -> str:
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
-        File MIME type provider
+        Fetch a file's MIME type
         
         Parameters
         ----------
@@ -1287,9 +1454,10 @@ class SmartLogic:
         return ""
 
     def isMarkdownExtension(self, path: str) -> bool:
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
-        Markdown file extension checker
+        Check if a file's extension is Markdown-related
         
         Parameters
         ----------
@@ -1309,8 +1477,11 @@ class SmartLogic:
         )
         return isMarkdown
 
+
 class SmartIcons:
-    """ SmartUtils
+
+    """
+    SmartUtils
     ==========
     Class for SVG-based icons
     """
@@ -1344,7 +1515,8 @@ class SmartIcons:
         """
 
     def renderIcon(self, svgData: str, size: int = 32) -> QIcon:
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
         SVG data to QIcon converter
 
@@ -1370,6 +1542,24 @@ class SmartIcons:
             return QIcon(pixmap)
         except: return QIcon()
 
+
+class SmartColors(Enum):
+    """
+    SmartUtils
+    ==========
+    Class for SmartLinker's color palette
+    """
+
+    SMART_BLUE = QColor("#2196F3")
+    SMART_PURPLE = QColor("#793BCC")
+    SMART_RED = QColor("#F44336")
+    SMART_YELLOW = QColor("#FCAF00")
+    SMART_GREEN = QColor("#4CAF50")
+    SMART_GRAY = QColor("#777777")
+    CAPTION_LIGHT = QColor("#646464")
+    CAPTION_DARK = QColor("#727272")
+
+
 class ThemeController(QObject):
     themeChanged = pyqtSignal(str)
 
@@ -1384,8 +1574,10 @@ class ThemeController(QObject):
     def _onSystemThemeChanged(self):
         self.themeChanged.emit("Auto")
 
+
 class BrowserScanWorker(QObject):
-    """ SmartUtils
+    """
+    SmartUtils
     ==========
     SmartLinker's browser scanning processor
     """
@@ -1415,15 +1607,16 @@ class BrowserScanWorker(QObject):
         except Exception as e:
             self.error.emit(str(e))
 
+
 class DownloadWorker(QObject):
-    """ SmartUtils
+    """
+    SmartUtils
     ==========
     SmartLinker's file downloading processor
     """
-    # Definition of signals that the worker can send to the interface
     progress = pyqtSignal(int, int, str) # (bytes downloaded, total bytes, speed)
-    finished = pyqtSignal(str)           # (success message)
-    error = pyqtSignal(str)              # (error message)
+    finished = pyqtSignal(str)
+    error = pyqtSignal(str)
 
     def __init__(self, url, filename):
         super().__init__()
@@ -1438,7 +1631,8 @@ class DownloadWorker(QObject):
         self.isPaused = False
 
     def run(self):
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
         Method to run the download
         """
@@ -1483,7 +1677,8 @@ class DownloadWorker(QObject):
             self.error.emit(f"An unexpected error has occured: {e}")
 
     def cancel(self):
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
         Method to request the cancellation of the download
         """
@@ -1493,7 +1688,8 @@ class DownloadWorker(QObject):
         except Exception: pass
 
     def pause(self):
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
         Method to request the pause of the download.
 
@@ -1505,7 +1701,8 @@ class DownloadWorker(QObject):
         except Exception: pass
 
     def resume(self):
-        """ SmartUtils
+        """
+        SmartUtils
         ==========
         Method to resume a previously paused download
         """
@@ -1513,8 +1710,10 @@ class DownloadWorker(QObject):
         try: self.pauseEvent.set()
         except Exception: pass
 
+
 class DownloadDialog(MessageBoxBase):
-    """ SmartUtils
+    """
+    SmartUtils
     ==========
     Dialog box for download purposes
     """
@@ -1566,7 +1765,8 @@ class DownloadDialog(MessageBoxBase):
         self.startDownload(url, filename)
 
     def startDownload(self, url: str, filename: str):
-        """ SmartUtils
+        """
+    SmartUtils
         ==========
         Method to start the download through the worker
         """
@@ -1592,7 +1792,8 @@ class DownloadDialog(MessageBoxBase):
         except Exception: pass
     
     def updateProgress(self, downloaded, total, speed):
-        """ SmartUtils
+        """
+    SmartUtils
         ==========
         Method to update the download progress bar
         """
@@ -1613,7 +1814,8 @@ class DownloadDialog(MessageBoxBase):
         self.downloadSpeed.setText(speed)
     
     def onFinished(self, message):
-        """ SmartUtils
+        """
+    SmartUtils
         ==========
         Operations to apply once the download is complete
         """
@@ -1635,7 +1837,8 @@ class DownloadDialog(MessageBoxBase):
         print(f'{Fore.GREEN}The file "{self.filename}" has been downloaded successfully!{Style.RESET_ALL}')
 
     def onError(self, message):
-        """ SmartUtils
+        """
+    SmartUtils
         ==========
         Operations to apply when an error occurs during download
         """
@@ -1655,7 +1858,8 @@ class DownloadDialog(MessageBoxBase):
         print(f"{Fore.RED}{message}{Style.RESET_ALL}")
 
     def cancelDownload(self):
-        """ SmartUtils
+        """
+    SmartUtils
         ==========
         Method to cancel the download
         """
@@ -1669,7 +1873,8 @@ class DownloadDialog(MessageBoxBase):
         if self.worker: self.worker.cancel()
 
     def togglePause(self):
-        """ SmartUtils
+        """
+    SmartUtils
         ==========
         Toggle between pause and resume (only works if the download has been started)
         """
@@ -1695,7 +1900,8 @@ class DownloadDialog(MessageBoxBase):
             except Exception as e: print(f"Failed to pause download: {e}")
     
     def closeEvent(self, event):
-        """ SmartUtils
+        """
+    SmartUtils
         ==========
         Closing event listener
         """
@@ -1703,7 +1909,8 @@ class DownloadDialog(MessageBoxBase):
         event.accept()
 
     def closeAndCleanup(self):
-        """ SmartUtils
+        """
+    SmartUtils
         ==========
         Operations to apply when the download dialog is closed
         """
@@ -1712,8 +1919,10 @@ class DownloadDialog(MessageBoxBase):
             self.downloadThread.wait()
         self.accept()
 
+
 class UpdateSnack(QWidget):
-    """ SmartUtils
+    """
+    SmartUtils
     ==========
     Class for the update snack
     """
@@ -1742,7 +1951,13 @@ class UpdateSnack(QWidget):
         self.snackInstall.installEventFilter(ToolTipFilter(self.snackInstall))
         self.snackLayout.addWidget(self.snackInstall)
 
+
 class LinkScraperThread(QThread):
+    """
+    SmartUtils
+    ==========
+    Link scraping thread
+    """
     dataFetched = pyqtSignal(dict)
     errorOccurred = pyqtSignal(str)
 
@@ -1791,97 +2006,267 @@ class LinkScraperThread(QThread):
         except Exception as e:
             self.errorOccurred.emit(f"Failed loading: {str(e)}")
 
-# Elidable labels ======================================
 
-class ElidableTitleLabel(TitleLabel):
-    def __init__(self, text: str, parent = None):
-        super().__init__(text, parent)
-        self.initText = text
-        super().setToolTip(text)
-    
-    def resizeEvent(self, event):
-        metrics = QFontMetrics(self.font())
-        self.setText(
-            metrics.elidedText(
-                self.text(),
-                Qt.TextElideMode.ElideRight,
-                self.width()
-            )
+class MigrationDialog(MessageBoxBase):
+    """
+    SmartUtils
+    ==========
+    Migration dialog
+    """
+
+    def __init__(self, parent = None):
+        super().__init__(parent)
+        baseLayout = QHBoxLayout()
+        iconLayout = QVBoxLayout()
+        textLayout = QVBoxLayout()
+        self.iconLabel = IconWidget(self)
+        self.progress = IndeterminateProgressRing(self)
+        self.titleLabel = TitleLabel(self)
+        self.descriptionLabel = BodyLabel(self)
+        self.proceedButton = PrimaryPushButton("Proceed", self)
+        self.isSuccess: bool = False
+
+        baseLayout.setContentsMargins(30, 30, 30, 30)
+        baseLayout.setSpacing(30)
+        baseLayout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        iconLayout.setContentsMargins(0, 0, 0, 0)
+        iconLayout.setSpacing(0)
+        iconLayout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        textLayout.setContentsMargins(0, 0, 0, 0)
+        textLayout.setSpacing(10)
+        textLayout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        self.iconLabel.setFixedSize(96, 96)
+        self.iconLabel.setIcon(segFont.fromName("Warning").colored(QColor("#FCAF00"), QColor("yellow")))
+        self.progress.setFixedSize(96, 96)
+        self.progress.setVisible(False)
+        self.titleLabel.setText("Migration Notice")
+        self.descriptionLabel.setText(
+            'Since the 3.0.0 "Great Leap" update, some major changes have been made to the structure '
+           f'and configuration of {SmartLinkerName}. This is a one-time migration process to ensure that '
+            'your current configuration is compatible with the new version.\n'
+            'Do not worry, your previous settings will be preserved and there is no risk of data loss.\n\n'
+            'Click the "Proceed" button below to start the migration process.'
         )
-        super().resizeEvent(event)
+        self.descriptionLabel.setWordWrap(True)
+
+        self.viewLayout.setContentsMargins(0, 0, 0, 0)
+        self.viewLayout.addLayout(baseLayout)
+        baseLayout.addLayout(iconLayout)
+        iconLayout.addWidget(self.iconLabel)
+        iconLayout.addWidget(self.progress)
+        baseLayout.addLayout(textLayout)
+        textLayout.addWidget(self.titleLabel)
+        textLayout.addWidget(self.descriptionLabel)
+        self.buttonLayout.addStretch(1)
+        self.buttonLayout.addWidget(self.proceedButton, 1)
+
+        self.yesButton.setText("Migrating...")
+        self.yesButton.setEnabled(False)
+        self.yesButton.setVisible(False)
+        self.cancelButton.setEnabled(False)
+        self.cancelButton.setVisible(False)
+
+        self.proceedButton.clicked.connect(self.migrate)
+        self.proceedButton.contextMenuEvent = lambda a0: smart.stopApp()
     
-    def setToolTip(self, text: str | None) -> None:
-        if text is None: text = self.initText
-        super().setToolTip(text)
+    def migrate(self):
+        """
+        SmartUtils
+        ==========
+        Migrate the old configuration to the new one
+        """
+        data = {}
+        newDict: dict[str, dict[str, typing.Any]] = {}
 
-    def installEventFilter(self, obj: QObject | None) -> None:
-        super().installEventFilter(ToolTipFilter(self))
+        self.proceedButton.setEnabled(False)
+        self.proceedButton.setVisible(False)
+        self.yesButton.setVisible(True)
+        self.buttonLayout.removeWidget(self.yesButton)
+        # self.buttonLayout.addStretch(1)
+        self.buttonLayout.addWidget(self.yesButton, 1)
 
-class ElidableSubtitleLabel(SubtitleLabel):
-    def __init__(self, text: str, parent = None):
-        super().__init__(text)
-        self.initText = text
-        super().setToolTip(text)
+        if not os.path.exists(ROOT_PATH / "_internal" / "bin"):
+            return
+        
+        try:
+            RichCLI.log("[blue][b u]OPERATION[/b u]: Migrating the old configuration to the new one...")
+            self.titleLabel.setText("Please wait...")
+            self.descriptionLabel.setText(
+               f"Your current {SmartLinkerName} configuration is being converted to the latest model..."
+            )
+            self.iconLabel.setVisible(False)
+            self.progress.setVisible(True)
+            
+            if not os.path.exists(ROOT_PATH / "bin"):
+                shutil.move(ROOT_PATH / "_internal" / "bin", ROOT_PATH)
+            else:
+                binItems = Path(ROOT_PATH / "_internal" / "bin").iterdir()
+                for item in binItems:
+                    shutil.move(item, ROOT_PATH / "bin" / item.name)
+            shutil.rmtree(ROOT_PATH / "_internal")
+
+            with open(ROOT_PATH / "bin" / "config.json", 'r') as readConfig:
+                data = json.load(readConfig)
+            
+            if (
+                not "Markdown-General" in data
+                or ("Markdown-General" in data and not isinstance(data.get("Markdown-General"), dict))
+            ):
+                newDict = { "Markdown-General": { "StartInEditMode": False } }
+                data.update(newDict)
+            
+            if (
+                not "Markdown-Editor" in data
+                or ("Markdown-Editor" in data and not isinstance(data.get("Markdown-Editor"), dict))
+            ):
+                newDict = {
+                    "Markdown-Editor": {
+                        "FontFamily": "",
+                        "FontSize": 12,
+                        "FontWeight": 400,
+                        "DisplayLineNumbers": True,
+                        "DisplaySymbolsBar": True,
+                        "DisplayStatusBar": True,
+                        "EnableWordWrap": False,
+                        "IndentationWidth": 4,
+                        "DisplayIndentationGuides": True,
+                        "EnableAutoIndent": True,
+                        "HighlightCurrentLine": True,
+                        "SelectionColorModeMode": "Accent",
+                        "SelectionCustomColor": "#7f793bcc",
+                        "EnableSyntaxHighlighting": True
+                    }
+                }
+                data.update(newDict)
+            
+            if (
+                not "Markdown-Viewer" in data
+                or ("Markdown-Viewer" in data and not isinstance(data.get("Markdown-Viewer"), dict))
+            ):
+                newDict = {
+                    "Markdown-Viewer": {
+                        "OpenExternalLinks": False,
+                        "CSSSource": "Default",
+                        "CSSSourcePath": "Default",
+                        "CSSProperties": "",
+                        "HomepageSource": "Default",
+                        "HomepageSourcePath": "Default",
+                        "HomepageProperties": "",
+                        "DragEnterJSFunction": "",
+                        "DragLeaveJSFunction": "",
+                        "DropJSFunction": ""
+                    }
+                }
+                data.update(newDict)
+            
+            with open(ROOT_PATH / "bin" / "config.json", 'w') as writeConfig:
+                json.dump(data, writeConfig, indent=4, ensure_ascii=False, sort_keys=True)
+
+            RichCLI.log("[green][b u]SUCCESS[/b u]: The migration has been completed successfully!")
+            self.isSuccess = True
+
+        except Exception as e:
+            RichCLI.log(f"[red][b u]ERROR[/b u]: Failed to migrate configuration: [i]{e}[/]")
+            self.isSuccess = False
+
+        finally:
+            self.iconLabel.setIcon(
+                segSVG.CHECK_CIRCLE.colored(QColor("green"), QColor("#4CAF50")) if self.isSuccess
+                else segSVG.ERROR_CIRCLE.colored(QColor("red"), QColor("#F44336"))
+            )
+            self.iconLabel.setVisible(True)
+            self.progress.setVisible(False)
+            title = "Migration complete!" if self.isSuccess else "Migration failed..."
+            description = (
+                f"{SmartLinkerName} is now fully migrated to the latest, compatible version. "
+                f"You can now close this window and continue using {SmartLinkerName}."
+            ) if self.isSuccess else "An error occured while attempting to migrate your current configuration to the new one..."
+            self.titleLabel.setText(title)
+            self.descriptionLabel.setText(description)
+            self.yesButton.setText(f"Continue with {SmartLinkerName}" if self.isSuccess else "Close")
+            self.yesButton.setEnabled(True)
     
-    def setToolTip(self, text: str | None) -> None:
-        if text is None: text = self.initText
-        super().setToolTip(text)
+    def validate(self) -> bool:
+        return (
+            os.path.exists(ROOT_PATH / "bin") and not os.path.exists(ROOT_PATH / "_internal")
+        ) if self.isSuccess else True
 
-    def installEventFilter(self, obj: QObject | None) -> None:
-        super().installEventFilter(ToolTipFilter(self))
 
-    def setText(self, text: str) -> None:
-        super().setText(text)
-        self.initText = text
-        self.setToolTip(text)
-        self.installEventFilter(ToolTipFilter(self))
-        print(self.initText)
-    
-    def resizeEvent(self, event):
-        metrics = QFontMetrics(self.font())
-        self.setText(
-            metrics.elidedText(
-                self.text(),
-                Qt.TextElideMode.ElideMiddle,
-                self.width()
-            )
+class ErrorDialog(MessageBoxBase):
+    """
+    SmartUtils
+    ==========
+    Error dialog
+    """
+
+    def __init__(self, traceback: typing.Any, parent=None):
+        super().__init__(parent)
+        self.icon = IconWidget(segSVG.ERROR_CIRCLE.colored(QColor("#F44336"), QColor("red")), self)
+        self.title = TitleLabel("Oops! Something went wrong...", self)
+        self.description = BodyLabel(
+            f"It seems like an unexpected error occured while using {SmartLinkerName}, and " 
+            "we sincerely apologize for the inconvenience. Just in case, we provide you with "
+            "the complete error message, so you can send us its content via GitHub Issues or email, "
+            "and we will work thoroughly in order to definitely solve the issue.",
+            self
         )
-        super().resizeEvent(event)
+        self.errorTextBox = TextEdit(self)
+        self.sendDropdown = PrimaryDropDownPushButton("Send error", self)
+        self.copyButton = PushButton("Copy error", self)
+        self.sendMenu = RoundMenu("Send error", self)
+        self.confirmOption: int = 0 # 0 - GitHub Issues; 1 - Email
 
-class ElidableBodyLabel(BodyLabel):
-    def resizeEvent(self, event):
-        metrics = QFontMetrics(self.font())
-        self.setText(
-            metrics.elidedText(
-                self.text(),
-                Qt.TextElideMode.ElideRight,
-                self.width()
-            )
-        )
-        super().resizeEvent(event)
+        self.icon.setFixedSize(96, 96)
+        self.title.setTextColor(QColor("#F44336"), QColor("red"))
+        self.description.setWordWrap(True)
 
-class ElidableCaptionLabel(CaptionLabel):
-    def resizeEvent(self, event):
-        metrics = QFontMetrics(self.font())
-        self.setText(
-            metrics.elidedText(
-                self.text(),
-                Qt.TextElideMode.ElideRight,
-                self.width()
-            )
-        )
-        super().resizeEvent(event)
+        self.errorTextBox.setReadOnly(True)
+        self.errorTextBox.setFontFamily("Cascadia Code" or "Consolas")
+        self.errorTextBox.setAcceptRichText(False)
+        self.errorTextBox.setLineWrapMode(TextEdit.LineWrapMode.NoWrap)
+        self.errorTextBox.setText(traceback)
+
+        self.sendMenu.addActions([
+            Action(FICO.GITHUB, "Submit to GitHub Issues"),
+            Action(FICO.MAIL, "Send as an email")
+        ])
+        self.sendDropdown.setMenu(self.sendMenu)
+
+        self.widget.setMinimumWidth(550)
+
+        self.viewLayout.addWidget(self.icon, 0, Qt.AlignmentFlag.AlignCenter)
+        self.viewLayout.addWidget(self.title, 0, Qt.AlignmentFlag.AlignCenter)
+        self.viewLayout.addWidget(self.description)
+        self.viewLayout.addWidget(self.errorTextBox)
+
+        self.yesButton.setParent(None)
+        self.buttonLayout.removeWidget(self.yesButton)
+        self.buttonLayout.removeWidget(self.cancelButton)
+        self.buttonLayout.addWidget(self.sendDropdown, 1, Qt.AlignmentFlag.AlignVCenter)
+        self.buttonLayout.addWidget(self.copyButton, 1, Qt.AlignmentFlag.AlignVCenter)
+        self.buttonLayout.addWidget(self.cancelButton, 1, Qt.AlignmentFlag.AlignVCenter)
+
+        self.copyButton.clicked.connect(lambda checked: (
+            smart.copyToClipboard(self.errorTextBox.toPlainText()),
+            smart.infoNotify("", "The stack trace has been copied to your clipboard.", InfoBar.desktopView())
+        ))
 
 # ======================================================
 
 cfg = Config()
-markCfg = MarkdownConfig()
 smart = SmartLogic()
 smIco = SmartIcons()
 segFont = SegoeFontIcon
 segSVG = SegoeSVGIcon
-cfgFilePath = smart.resourcePath("bin\\config.json")
-markCfgFilePath = smart.resourcePath("bin\\markdown_config.json")
-browsersCfgFilePath = smart.resourcePath("bin\\browsers_config.dat")
+smartCol = SmartColors
+cfgFilePath = Path(ROOT_PATH / "bin" / "config.json")
+browsersCfgFilePath = Path(ROOT_PATH / "bin" / "browsers_config.dat")
+historyFilePath = Path(ROOT_PATH / "bin" / "history.dat")
 qconfig.load(cfgFilePath, cfg)
-qconfig.load(markCfgFilePath, markCfg)
+
+""" if __name__ == "__main__":
+    smart.clearCLI()
+    RichCLI.print(smart.consoleScript())
+    # 3 "parent" for .exe, 2 "parent" for .py 
+     
+    # À quoi sert __init__.py ? """

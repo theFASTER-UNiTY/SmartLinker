@@ -5,8 +5,7 @@ from utils.SmartUtils import *
 myHistory = smart.loadHistory()
 
 class HistoryInterface(QWidget):
-    """ Main class for the "History" interface """
-    itemSelected = pyqtSignal()
+    """ Main class for the "My History" interface """
 
     def __init__(self, parent = None):
         super().__init__(parent)
@@ -121,6 +120,7 @@ class HistoryInterface(QWidget):
 
         self.searchBar.textChanged.connect(self.onSearchBarTextChanged)
         self.copyBtn.clicked.connect(lambda: self.copySelectedLinks(parent))
+        self.bookmarkBtn.clicked.connect(lambda: self.bookmarkSelectedLinks())
         self.moreResultsBtn.clicked.connect(lambda: self.moreResultsSelectedLink(parent))
         self.selectAllBtn.clicked.connect(self.selectAllItems)
         self.deselectAllBtn.clicked.connect(self.deselectAllItems)
@@ -242,8 +242,20 @@ class HistoryInterface(QWidget):
             self.mainLayout.addStretch()
             self.mainLayout.addWidget(self.emptyState)
             self.emptyState.setVisible(True)
+            self.emptyStateIcon.setIcon(FICO.SEARCH)
+            self.emptyStateTitle.setText("No match results")
+            self.emptyStateContent.setText(
+                "There is no search entry corresponding to your query... "
+               f"Enter another browser or address to search.\n\nProvided search query:\n\"{text}\""
+            )
         else:
             self.emptyState.setVisible(False)
+            self.emptyStateIcon.setIcon(FICO.HISTORY)
+            self.emptyStateTitle.setText("No history entries yet")
+            self.emptyStateContent.setText(
+                "Every link you will load into a browser from your SmartList or " \
+                "through the Smart Selector will be saved here."
+            )
             self.loadHistoryCards(self.historyCards, filteredHistory)
         self.mainLayout.addStretch()
         
@@ -276,17 +288,17 @@ class HistoryInterface(QWidget):
                 failedAttempts = 0
                 if not self.loadInBrowserDlg.browserCombo.currentText() == "Other browser":
                     RichCLI.log(f"[blue][b u]OPERATION[/b u]: Opening the link [i]'{link}'[/i] into {self.loadInBrowserDlg.browserCombo.currentText()}...[/]")
-                    smart.managerLog(f"Opening the link '{link}' into {self.loadInBrowserDlg.browserCombo.currentText()}...")
+                    smart.managerLog(f"Opening the link \"{link}\" into {self.loadInBrowserDlg.browserCombo.currentText()}...")
                     for browser in self.myBrowsList["MyBrowsers"]:
                         if browser["name"] == self.loadInBrowserDlg.browserCombo.currentText():
                             if browser["path"]:
                                 try:
                                     subprocess.Popen([browser["path"], link])
-                                    RichCLI.log(f"[green][b u]SUCCESS[/b u]: The link [i]'{link}'[/i] has been successfully loaded into {browser["name"]}![/]")
-                                    smart.managerLog(f"SUCCESS: The link '{link}' has been successfully loaded into {browser["name"]}.")
+                                    RichCLI.log(f"[green][b u]SUCCESS[/b u]: The link [i]\"{link}\"[/i] has been successfully loaded into {browser["name"]}![/]")
+                                    smart.managerLog(f"SUCCESS: The link \"{link}\" has been successfully loaded into {browser["name"]}.")
                                 except Exception as e:
-                                    smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to open the link [i]'{link}'[/i] into {browser["name"]}:\n{e}", parent)
-                                    RichCLI.log(f"[red][b u]ERROR[/b u]: Failed while opening the link [i]'{link}'[/i] into {browser["name"]}:\n\t[i]{e}[/]")
+                                    smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to open the link [i]\"{link}\"[/i] into {browser["name"]}:\n{e}", parent)
+                                    RichCLI.log(f"[red][b u]ERROR[/b u]: Failed while opening the link [i]\"{link}\"[/i] into {browser["name"]}:\n\t[i]{e}[/]")
                                 break
                             else:
                                 smart.warningNotify("Warning, be careful!", f"The path to {browser["name"]} as registered in your SmartList is empty...", parent)
@@ -298,54 +310,66 @@ class HistoryInterface(QWidget):
                             if os.path.basename(cfg.get(cfg.mainBrowserPath)) == self.loadInBrowserDlg.browserCombo.currentText():
                                 try:
                                     subprocess.Popen([cfg.get(cfg.mainBrowserPath), link])
-                                    RichCLI.log(f"[green][b u]SUCCESS[/b u]: The link [i]'{link}'[/i] has been successfully loaded into {cfg.get(cfg.mainBrowserPath)}![/]")
-                                    smart.managerLog(f"SUCCESS: The link '{link}' has been successfully loaded into {cfg.get(cfg.mainBrowserPath)}.")
+                                    RichCLI.log(f"[green][b u]SUCCESS[/b u]: The link [i]\"{link}\"[/i] has been successfully loaded into {cfg.get(cfg.mainBrowserPath)}![/]")
+                                    smart.managerLog(f"SUCCESS: The link \"{link}\" has been successfully loaded into {cfg.get(cfg.mainBrowserPath)}.")
                                 except Exception as e:
-                                    smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to open the link [i]'{link}'[/i] into {os.path.basename(cfg.get(cfg.mainBrowserPath))}:\n{e}", parent)
-                                    RichCLI.log(f"[red][b u]ERROR[/b u]: Failed while opening the link [i]'{link}'[/i] into {cfg.get(cfg.mainBrowserPath)}:\n\t[i]{e}[/]")
-                                    smart.managerLog(f"ERROR: Failed while opening the link '{link}' into {cfg.get(cfg.mainBrowserPath)}: {e}")
+                                    smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to open the link [i]\"{link}\"[/i] into {os.path.basename(cfg.get(cfg.mainBrowserPath))}:\n{e}", parent)
+                                    RichCLI.log(f"[red][b u]ERROR[/b u]: Failed while opening the link [i]\"{link}\"[/i] into {cfg.get(cfg.mainBrowserPath)}:\n\t[i]{e}[/]")
+                                    smart.managerLog(f"ERROR: Failed while opening the link \"{link}\" into {cfg.get(cfg.mainBrowserPath)}: {e}")
                                 break
 
                         else:
                             failedAttempts += 1
                             if failedAttempts == self.loadInBrowserDlg.browserCombo.count():
-                                smart.warningNotify("Warning, be careful!", f"The name '{self.loadInBrowserDlg.browserCombo.currentText()}' is not registered into your SmartList, or {self.loadInBrowserDlg.browserCombo.currentText()} cannot be found in your SmartList...", parent)
-                                RichCLI.log(f"[yellow][b u]WARNING[/b u]: The name '{self.loadInBrowserDlg.browserCombo.currentText()}' is not registered into your SmartList, or {self.loadInBrowserDlg.browserCombo.currentText()} cannot be found in your SmartList...[/]")
-                                smart.managerLog(f"WARNING: The name '{self.loadInBrowserDlg.browserCombo.currentText()}' is not registered into the SmartList, or {self.loadInBrowserDlg.browserCombo.currentText()} cannot be found in the SmartList...")
+                                smart.warningNotify("Warning, be careful!", f"The name \"{self.loadInBrowserDlg.browserCombo.currentText()}\" is not registered into your SmartList, or {self.loadInBrowserDlg.browserCombo.currentText()} cannot be found in your SmartList...", parent)
+                                RichCLI.log(f"[yellow][b u]WARNING[/b u]: The name \"{self.loadInBrowserDlg.browserCombo.currentText()}\" is not registered into your SmartList, or {self.loadInBrowserDlg.browserCombo.currentText()} cannot be found in your SmartList...[/]")
+                                smart.managerLog(f"WARNING: The name \"{self.loadInBrowserDlg.browserCombo.currentText()}\" is not registered into the SmartList, or {self.loadInBrowserDlg.browserCombo.currentText()} cannot be found in the SmartList...")
 
                 else:
-                    RichCLI.log(f"[blue][b u]OPERATION[/b u]: Opening the link [i]'{link}'[/i] into {os.path.basename(self.loadInBrowserDlg.otherBrowsEdit.text())}...[/]")
-                    smart.managerLog(f"Opening the link '{link}' into {os.path.basename(self.loadInBrowserDlg.otherBrowsEdit.text())}...")
+                    RichCLI.log(f"[blue][b u]OPERATION[/b u]: Opening the link [i]\"{link}\"[/i] into {os.path.basename(self.loadInBrowserDlg.otherBrowsEdit.text())}...[/]")
+                    smart.managerLog(f"Opening the link \"{link}\" into {os.path.basename(self.loadInBrowserDlg.otherBrowsEdit.text())}...")
                     try:
                         subprocess.Popen([self.loadInBrowserDlg.otherBrowsEdit.text(), link])
-                        RichCLI.log(f"[green][b u]SUCCESS[/b u]: The link [i]'{link}'[/i] has been successfully loaded into another browser: '{self.loadInBrowserDlg.otherBrowsEdit.text()}'[/]")
-                        smart.managerLog(f"SUCCESS: The link '{link}' has been successfully loaded into other browser '{self.loadInBrowserDlg.otherBrowsEdit.text()}'")
+                        RichCLI.log(f"[green][b u]SUCCESS[/b u]: The link [i]\"{link}\"[/i] has been successfully loaded into another browser: \"{self.loadInBrowserDlg.otherBrowsEdit.text()}\"[/]")
+                        smart.managerLog(f"SUCCESS: The link \"{link}\" has been successfully loaded into other browser \"{self.loadInBrowserDlg.otherBrowsEdit.text()}\"")
                     except Exception as e:
-                        smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to open the link [i]'{link}'[/i] into {os.path.basename(self.loadInBrowserDlg.otherBrowsEdit.text())}:\n{e}", parent)
-                        RichCLI.log(f"[red][b u]ERROR[/b u]: An error occured while attempting to open the link [i]'{link}'[/i] into '{os.path.basename(self.loadInBrowserDlg.otherBrowsEdit.text())}':\n\t[i]{e}[/]")
-                        smart.managerLog(f"ERROR: Failed to open the link '{link}' into browser at path '{self.loadInBrowserDlg.otherBrowsEdit.text()}': {e}")
+                        smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to open the link [i]\"{link}\"[/i] into {os.path.basename(self.loadInBrowserDlg.otherBrowsEdit.text())}:\n{e}", parent)
+                        RichCLI.log(f"[red][b u]ERROR[/b u]: An error occured while attempting to open the link [i]\"{link}\"[/i] into \"{os.path.basename(self.loadInBrowserDlg.otherBrowsEdit.text())}\":\n\t[i]{e}[/]")
+                        smart.managerLog(f"ERROR: Failed to open the link \"{link}\" into browser at path \"{self.loadInBrowserDlg.otherBrowsEdit.text()}\": {e}")
 
         else:
             regBrowser = item[1][1].text()
 
-            RichCLI.log(f"[blue][b u]OPERATION[/b u]: Opening the link [i]'{link}'[/i] into [b]{regBrowser}[/b]...[/]")
-            smart.managerLog(f"Opening the link '{link}' into [b]{regBrowser}[/b]...")
+            RichCLI.log(f"[blue][b u]OPERATION[/b u]: Opening the link [i]\"{link}\"[/i] into [b]{regBrowser}[/b]...[/]")
+            smart.managerLog(f"Opening the link \"{link}\" into the browser at path: \"[b i]{regBrowser}[/b i]\"...")
             try:
                 for browser in self.myBrowsList["MyBrowsers"]:
                     if browser["name"] == regBrowser:
                         if browser["path"]:
                             subprocess.Popen([browser["path"], link])
-                            RichCLI.log(f"[green][b u]SUCCESS[/b u]: The link [i]'{link}'[/i] has been successfully loaded into [b]{regBrowser}[/b]![/]")
-                            smart.managerLog(f"SUCCESS: The link '{link}' has been successfully loaded into {regBrowser}.")
+                            RichCLI.log(f"[green][b u]SUCCESS[/b u]: The link [i]\"{link}\"[/i] has been successfully loaded into [b]{regBrowser}[/b]![/]")
+                            smart.managerLog(f"SUCCESS: The link \"{link}\" has been successfully loaded into {regBrowser}.")
                         else:
                             smart.warningNotify("Warning, be careful!", f"The path to {regBrowser} as registered in your SmartList is empty...", parent)
                             RichCLI.log(f"[yellow][b u]WARNING[/b u]: The path to [b]{regBrowser}[/b] as registered in your SmartList is empty...[/]")
                             smart.managerLog(f"WARNING: The path to {regBrowser} as registered in the SmartList is empty...")
                         break
+
+                    else:
+                        if os.path.exists(regBrowser) and regBrowser.endswith(".exe"):
+                            subprocess.Popen([regBrowser, link])
+                            RichCLI.log(f"[green][b u]SUCCESS[/b u]: The link [i]\"{link}\"[/i] has been successfully loaded into the browser at path: \"[b i]{regBrowser}[/b i]\"![/]")
+                            smart.managerLog(f"SUCCESS: The link \"{link}\" has been successfully loaded into the browser at path: \"{regBrowser}\".")
+                        else:
+                            smart.warningNotify("Warning, be careful!", f"The path to {regBrowser} as registered in your SmartList is empty...", parent)
+                            RichCLI.log(f"[yellow][b u]WARNING[/b u]: The path to [b]{regBrowser}[/b] as registered in your SmartList is empty...[/]")
+                            smart.managerLog(f"WARNING: The path to {regBrowser} as registered in the SmartList is empty...")
+                        break
+
             except Exception as e:
-                smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to open the link [i]'{link}'[/i] into {regBrowser}:\n{e}", parent)
-                RichCLI.log(f"[red][b u]ERROR[/b u]: An error occured while attempting to open the link [i]'{link}'[/i] into '[b]{regBrowser}[/b]':\n\t[i]{e}[/]")
-                smart.managerLog(f"ERROR: Failed to open the link '{link}' into registered browser at path '{regBrowser}': {e}")
+                smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to open the link [i]\"{link}\"[/i] into {regBrowser}:\n{e}", parent)
+                RichCLI.log(f"[red][b u]ERROR[/b u]: An error occured while attempting to open the link [i]\"{link}\"[/i] into \"[b]{regBrowser}[/b]\":\n\t[i]{e}[/]")
+                smart.managerLog(f"ERROR: Failed to open the link \"{link}\" into registered browser at path \"{regBrowser}\": {e}")
 
     def copySelectedLinks(self, parent):
         if not self.selectedItems:
@@ -366,7 +390,9 @@ class HistoryInterface(QWidget):
             )
             smart.infoNotify("", f"The selected link{'s' if len(linksToCopy) > 1 else ''} {'have' if len(linksToCopy) > 1 else 'has'} been copied to the clipboard.", parent)
 
-    # def bookmarkSelectedLinks(self): ... To build beforehand: the SmartCuts feature
+    # to build beforehand: the SmartCuts feature
+    def bookmarkSelectedLinks(self): 
+        smart.infoNotify("Coming soon...", "The SmartCuts feature will be available in future updates.")
 
     def moreResultsSelectedLink(self, parent):
         if len(self.selectedItems) != 1:
@@ -388,7 +414,8 @@ class HistoryInterface(QWidget):
             card.historyTable.clearSelection()
         self.selectedItems.clear()
 
-    def deleteSelectedItems(self, parent): # to check
+    # to check
+    def deleteSelectedItems(self, parent):
         selectLen = len(self.selectedItems)
         deleteDlg = None
         deleteDlg = MessageBox(
@@ -452,6 +479,7 @@ class HistoryInterface(QWidget):
                 smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to clear your history:\n{e}", parent)
                 RichCLI.log(f"[red][b u]ERROR[/b u]: Failed while clearing the requests history:\n\t[i]{e}[/]")
 
+
 class TimestampHistoryCard(SimpleCardWidget):
     """ Class for history listing in cards per timestamp """
 
@@ -502,3 +530,5 @@ class TimestampHistoryCard(SimpleCardWidget):
         self.vBoxLayout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         self.vBoxLayout.addWidget(self.dateLabel)
         self.vBoxLayout.addWidget(self.historyTable)
+
+# Ajouter un filtre d'intervalle de date

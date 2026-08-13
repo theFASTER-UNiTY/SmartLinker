@@ -5,8 +5,6 @@ A complete utility module made specifically for SmartLinker global needs.
 
 :Copyright: © 2025-2026 by #theF∆STER™ UN!TY.
 """
-__version__ = "v3.0.0" # Alpha #3
-__author__ = "#theF∆STER™ CODE&BU!LD"
 
 # NOTE: CODE&BU!LD is actually the software development section of the UN!TY group.
 # (In case you would be wondering...)
@@ -14,6 +12,7 @@ __author__ = "#theF∆STER™ CODE&BU!LD"
 
 import argparse, ctypes, darkdetect, datetime, hashlib, json, magic, markdown, os, pathlib, pickle, platform, psutil, pygame, random, re
 import requests, shutil, socket, stat, subprocess, sys, time, traceback, typing, threading, webbrowser, win32api, winreg
+from . import __author__, __version__
 from bs4 import BeautifulSoup
 from collections import Counter
 from colorama import init, Fore, Back, Style
@@ -59,9 +58,9 @@ from rich.traceback import install
 from shiboken6 import isValid
 from urllib.parse import quote, unquote, urlparse
 
-
 # =========================================================
 
+# 3 "parent" for .exe, 2 "parent" for .py
 ROOT_PATH = Path(__file__).resolve().parent.parent #.parent
 
 SmartLinkerID: str = "theFASTER.SmartLinker"
@@ -75,13 +74,14 @@ SmartRichTheme = RTheme(
     {"smpurple": "#793bcc", "smblue": "#2196f3"}
 )
 RichCLI = Console(theme=SmartRichTheme)
-install()
+install(show_locals=True)
 PURPLE = "\x1b[35m" # soon deprecated
 init() # soon deprecated
 pygame.init()
 pygame.mixer.init()
 soundStreamer = None
 smLocale = QLocale.system()
+
 
 class Config(QConfig):
     """
@@ -745,6 +745,8 @@ class SmartLogic(QObject):
         text: string
             The content you want to copy
         """
+        clipboard = None
+        
         app = QApplication.instance()
         if app is None:
             app = QApplication(sys.argv)
@@ -754,7 +756,7 @@ class SmartLogic(QObject):
 
         if clipboard:
             clipboard.setText(text)
-            print(f"Copied to clipboard: {Fore.BLUE}'{clipboard.text()}'{Style.RESET_ALL}")
+            RichCLI.print(f"[blue][b u]INFO[/b u]: The following content has been copied to clipboard:\n[i]'{clipboard.text()}'[/]")
         else:
             self.copyToClipboard(text)
 
@@ -994,6 +996,7 @@ class SmartLogic(QObject):
         childLayout: boolean
             Whether to clean the child layout(s) of the current one
         """
+
         while layout.count():
             item = layout.takeAt(0)
             if item is not None:
@@ -1002,6 +1005,7 @@ class SmartLogic(QObject):
                 if widget is not None:
                     widget.setParent(None)
                     layout.removeWidget(widget)
+                    widget.destroy()
                 if childLayout and subLayout is not None:
                     self.emptyLayout(subLayout)
 
@@ -2267,6 +2271,5 @@ qconfig.load(cfgFilePath, cfg)
 """ if __name__ == "__main__":
     smart.clearCLI()
     RichCLI.print(smart.consoleScript())
-    # 3 "parent" for .exe, 2 "parent" for .py 
      
     # À quoi sert __init__.py ? """

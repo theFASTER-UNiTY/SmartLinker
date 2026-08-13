@@ -180,7 +180,7 @@ class SettingsInterface(QWidget):
             self.widgetDef.optionMainBrowserCard.contentLabel.setText("You can either set a browser from your storage or SmartList as your main browser if no one is running.")
             self.widgetDef.optionMainBrowserCard.removeMainButton.setEnabled(False)
         self.widgetDef.optionMainBrowserCard.fromListButton.setEnabled(bool(myBrowsList["MyBrowsers"]))
-        smart.infoNotify("Main browser card refreshed!", "Your main browser card has been successfully refreshed!", parent)
+        smart.infoNotify("", "Your main browser card has been successfully refreshed!", parent)
 
     def cardRemove(self, parent):
         """ :SettingsInterface: Open a confirmation dialog to remove the main browser """

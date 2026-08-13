@@ -5,7 +5,8 @@ from utils.mybrowsersInterface import NewBrowserDialog
 # ===========================================================================================================
 
 myBrowsList = smart.loadBrowsers()
-setThemeColor(QColor(cfg.get(cfg.accentColor)) if cfg.get(cfg.accentMode) == "Custom" else getSystemAccentColor())
+myHistory = smart.loadHistory()
+
 
 class CustomTitleBar(FluentWidgetTitleBar):
     """ Custom title bar """
@@ -36,6 +37,7 @@ class CustomTitleBar(FluentWidgetTitleBar):
             }
         ) """
 
+
 class SmartSelectorGUI(FluentWidget):
     """ Class for the Smart Selector window """
 
@@ -44,6 +46,7 @@ class SmartSelectorGUI(FluentWidget):
         smart.clearCLI()
         RichCLI.print(smart.consoleScript())
         smart.emptySelectorLog()
+        setThemeColor(QColor(cfg.get(cfg.accentColor)) if cfg.get(cfg.accentMode) == "Custom" else getSystemAccentColor())
         if cfg.get(cfg.appTheme) == "Dark": setTheme(Theme.DARK)
         elif cfg.get(cfg.appTheme) == "Light": setTheme(Theme.LIGHT)
         else: setTheme(Theme.AUTO)
@@ -232,9 +235,9 @@ class SmartSelectorGUI(FluentWidget):
         self.managerBtn.setEnabled(not self.isPreviewMode())
         self.themeCtrl.themeChanged.connect(lambda text: self.applyTheme(cfg.get(cfg.appTheme)))
         RichCLI.print(
-            f"Loading {f"'[u i]{self.requestURL}[/]'" if not self.isPreviewMode() else "the Smart Selector in [smpurple][b i]Preview Mode[/]"}...\n"
+            f"Loading {f"\"[u i]{self.requestURL}[/]\"" if not self.isPreviewMode() else "the Smart Selector in [smpurple][b i]Preview Mode[/]"}...\n"
         )
-        smart.selectorLog(f"Loading {f"'{self.requestURL}'" if not self.isPreviewMode() else "the Smart Selector in Preview Mode"}...")
+        smart.selectorLog(f"Loading {f"\"{self.requestURL}\"" if not self.isPreviewMode() else "the Smart Selector in Preview Mode"}...")
         if not self.isConnected: print("No internet connection...")
         if self.runningBrowsers:
             self.show()
@@ -456,13 +459,14 @@ class SmartSelectorGUI(FluentWidget):
         if self.browsAddDlg:
             self.browsAddDlg = None
         self.browsAddDlg = NewBrowserDialog(parent)
+
         if self.browsAddDlg.exec():
             print(f"New browser name: {self.browsAddDlg.nameEdit.text()}")
             print(f"New browser path: {self.browsAddDlg.pathEdit.text()}")
             self.addNewBrowserToList(self.browsAddDlg.nameEdit.text(), self.browsAddDlg.pathEdit.text(), parent)
 
     def otherBrowsPathChanged(self, text):
-        """ Enable/disable the 'Load link' button depending on the text entry content """
+        """ Enable/disable the *Load link* button depending on the text entry content """
         self.otherBrowsLoad.setEnabled(bool(text))
         self.otherBrowsLoad.installEventFilter(ToolTipFilter(self.otherBrowsLoad))
         if text and text.endswith(".exe") and os.path.exists(text):
@@ -480,21 +484,24 @@ class SmartSelectorGUI(FluentWidget):
                 if os.path.exists(otherPath):
                     try:
                         subprocess.Popen([otherPath, self.requestURL])
-                        if cfg.get(cfg.closeOnBrowserSelect): self.close()
-                        print(f"{Fore.BLUE}Selected external browser at path: '{otherPath}'{Style.RESET_ALL}")
-                        smart.selectorLog(f"Selected external browser at path: '{otherPath}'")
+                        smart.registerEntryToHistory(myHistory, os.path.normpath(otherPath), self.requestURL)
+                        RichCLI.log(f"[blue][b u]INFO[/b u]: Selected external browser at path: \"[i]{otherPath}[/i]\"[/]")
+                        smart.selectorLog(f"Selected external browser at path: \"{otherPath}\"")
+                        if cfg.get(cfg.closeOnBrowserSelect):
+                            smart.stopApp()
                     except Exception as e:
                         smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(otherPath)}: {e}", self)
-                        print(f"{Fore.RED}An error occured while attempting to load link into '{otherPath}': {e}{Style.RESET_ALL}")
-                        smart.selectorLog(f"ERROR: Failed to load link into '{otherPath}': {e}")
+                        RichCLI.log(f"[red][b u]ERROR[/b u]: An error occured while attempting to load link into \"[i]{otherPath}[/i]\":\n\t[i]{e}[/]")
+                        smart.selectorLog(f"ERROR: Failed to load link into \"{otherPath}\": {e}")
+
                 else:
                     smart.warningNotify("Warning, be careful!", "The given path to the external browser does not exist...", self)
-                    print(f"{Fore.YELLOW}The given path to the external browser does not exist...{Style.RESET_ALL}")
+                    RichCLI.log("[yellow][b u]WARNING[/b u]: The given path to the external browser does not exist...[/]")
                     smart.selectorLog("WARNING: The given path to the external browser does not exist...")
             
             else:
                 smart.warningNotify("Warning, be careful!", "The external path entry is empty...", self)
-                print(f"{Fore.YELLOW}The external path entry is empty...{Style.RESET_ALL}")
+                RichCLI.log("[yellow][b u]WARNING[/b u]: The external path entry is empty...[/]")
                 smart.selectorLog("WARNING: The external path entry is empty...")
 
         else: self.previewNote()
@@ -602,8 +609,8 @@ class BrowserCard(ElevatedCardWidget):
             if name == "Smart DownMarker":
                 mdWindow = DownMarker(link)
                 mdWindow.show()
-                print(f"{Fore.GREEN}Successfully loaded '{link}' into the Smart DownMarker{Style.RESET_ALL}")
-                smart.selectorLog(f"SUCCESS: '{link}' has been successfully loaded into the Smart DownMarker.")
+                RichCLI.log(f"[green][b u]SUCCESS[/b u]: Successfully loaded \"[i]{link}[/i]\" into the [b]Smart DownMarker[/b]![/]")
+                smart.selectorLog(f"SUCCESS: \"{link}\" has been successfully loaded into the Smart DownMarker.")
                 if bool(cfg.get(cfg.closeOnBrowserSelect)): parent.close() # type: ignore
             
             elif name == "Add a browser":
@@ -616,18 +623,20 @@ class BrowserCard(ElevatedCardWidget):
                         if browser["path"]:
                             try:
                                 subprocess.Popen([browser["path"], link])
-                                print(f"{Fore.GREEN}Successfully loaded '{link}' into: {name}{Style.RESET_ALL}")
-                                smart.selectorLog(f"SUCCESS: '{link}' has been successfully loaded into {name}.")
-                                if bool(cfg.get(cfg.closeOnBrowserSelect)): smart.stopApp()
+                                smart.registerEntryToHistory(myHistory, browser["path"], link)
+                                RichCLI.log(f"[green][b u]SUCCESS[/b u]: Successfully loaded \"{link}\" into: [b]{name}[/]")
+                                smart.selectorLog(f"SUCCESS: \"{link}\" has been successfully loaded into {name}.")
+                                if bool(cfg.get(cfg.closeOnBrowserSelect)):
+                                    smart.stopApp()
                             except Exception as e:
                                 smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to load your link into {name}:\n{e}", parent)
-                                print(f"{Fore.RED}Something went wrong when attempting to load your link into {name}:\n{e}{Style.RESET_ALL}")
-                                smart.selectorLog(f"ERROR: Failed loading {link} into {name}: {e}")
+                                RichCLI.log(f"[red][b u]ERROR[/b u]: Something went wrong when attempting to load your link into [b]{name}[/b]:\n\t[i]{e}[/]")
+                                smart.selectorLog(f"ERROR: Failed loading \"{link}\" into {name}: {e}")
                             break
                         
                         else:
                             smart.warningNotify("Warning, be careful!", f"The path to {name} as registered in your SmartList is empty...", parent)
-                            print(f"{Fore.YELLOW}WARNING!!! The path to {name} as registered in your SmartList is empty...{Style.RESET_ALL}")
+                            RichCLI.log(f"[yellow][b u]WARNING[/b u]: The path to [b]{name}[/b] as registered in your SmartList is empty...[/]")
                             smart.selectorLog(f"WARNING: The path to {name} as registered in the SmartList is empty...")
                             break
                     
@@ -635,21 +644,22 @@ class BrowserCard(ElevatedCardWidget):
                         if os.path.basename(cfg.get(cfg.mainBrowserPath)) == name:
                             try:
                                 subprocess.Popen([cfg.get(cfg.mainBrowserPath), link])
-                                print(f"{Fore.GREEN}Successfully loaded '{link}' into: {os.path.basename(cfg.get(cfg.mainBrowserPath))}{Style.RESET_ALL}")
-                                smart.selectorLog(f"SUCCESS: '{link}' has been successfully loaded into {name}.")
+                                smart.registerEntryToHistory(myHistory, os.path.normpath(cfg.get(cfg.mainBrowserPath)), link)
+                                RichCLI.log(f"[green][b u]SUCCESS[/b u]: Successfully loaded \"{link}\" into: {os.path.basename(cfg.get(cfg.mainBrowserPath))}[/]")
+                                smart.selectorLog(f"SUCCESS: \"{link}\" has been successfully loaded into {name}.")
                                 if bool(cfg.get(cfg.closeOnBrowserSelect)): smart.stopApp()
                             except Exception as e:
                                 smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(cfg.get(cfg.mainBrowserPath))}:\n{e}", parent)
-                                print(f"{Fore.RED}Something went wrong when attempting to load {link} into {os.path.basename(cfg.get(cfg.mainBrowserPath))}:\n{e}{Style.RESET_ALL}")
+                                RichCLI.log(f"[red][b u]ERROR[/b u]: Something went wrong when attempting to load \"[i]{link}[/i]\" into [b i]{os.path.basename(cfg.get(cfg.mainBrowserPath))}[b i]:\n\t[i]{e}[/]")
                                 smart.selectorLog(f"ERROR: Failed loading {link} into {os.path.basename(cfg.get(cfg.mainBrowserPath))}: {e}")
                             break
                     
                     else:
                         failedAttempts += 1
                         if failedAttempts == len(myBrowsList["MyBrowsers"]) + manualCount:
-                            smart.warningNotify("Warning, be careful!", f"The name '{name}' is not registered into your SmartList, or {name} cannot be found in your SmartList...", parent)
-                            print(f"{Fore.YELLOW}WARNING!!! The name '{name}' is not registered into your SmartList, or {name} cannot be found in your SmartList...{Style.RESET_ALL}")
-                            smart.selectorLog(f"WARNING: The name '{name}' is not registered into the SmartList, or cannot be found in the SmartList...")
+                            smart.warningNotify("Warning, be careful!", f"The name \"{name}\" is not registered into your SmartList, or {name} cannot be found in your SmartList...", parent)
+                            RichCLI.log(f"[yellow][b u]WARNING[/b u]: The name \"[b]{name}[/b]\" is not registered into your SmartList, or \"[b]{name}[/b]\" cannot be found in your SmartList...{Style.RESET_ALL}")
+                            smart.selectorLog(f"WARNING: The name \"{name}\" is not registered into the SmartList, or cannot be found in the SmartList...")
         
         else: self.cardParent.previewNote()
 

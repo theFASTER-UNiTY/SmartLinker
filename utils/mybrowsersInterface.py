@@ -57,7 +57,7 @@ class MyBrowsersInterface(QWidget):
         layout = QVBoxLayout(mainBrowScrollContent)
         layout.setSpacing(10)
 
-        self.mybrowsSub = BodyLabel("The list below, named 'SmartList', contains all the web browsers installed on your system that you've been adding up to now.")
+        self.mybrowsSub = BodyLabel("The list below, named \"SmartList\", contains all the web browsers installed on your system that you've been adding up to now.")
         self.mybrowsSub.setMaximumHeight(30)
         self.mybrowsSub.setWordWrap(True)
         layout.addWidget(self.mybrowsSub)
@@ -213,7 +213,7 @@ class MyBrowsersInterface(QWidget):
         self.searchBar.setVisible(bool(myBrowsList["MyBrowsers"]))
 
     def refreshBrowsers(self, parent):
-        """ :MyBrowsersInterface: Refresh the SmartList without need to restart
+        """ :MyBrowsersInterface: Refresh the SmartList
         
         Parameters
         ----------
@@ -222,11 +222,21 @@ class MyBrowsersInterface(QWidget):
         """
         RichCLI.log("[blue][b u]OPERATION[/b u]: Refreshing the SmartList...[/]")
         smart.managerLog("Refreshing the SmartList...")
-        smart.emptyLayout(self.mybrowsLayout)
-        self.myBrowsCards.clear()
-        RichCLI.log(f"{Fore.GREEN}All the browsers have been successfully removed!{Style.RESET_ALL}")
-        smart.managerLog("SUCCESS: All the browsers have been successfully removed!")
-        self.loadBrowsers(parent)
+
+        try:
+            smart.emptyLayout(self.mybrowsLayout)
+            self.myBrowsCards.clear()
+            RichCLI.log(f"[green][b u]SUCCESS[/b u]: All the browsers have been successfully removed![/]")
+            smart.managerLog("SUCCESS: All the browsers have been successfully removed!")
+            self.loadBrowsers(parent)
+        except Exception as e:
+            tb = traceback.format_exc()
+            RichCLI.log(f"[red][b u]ERROR[/b u]: Failed to refresh the SmartList:\n\t[i]{e}[/i]\n\n{tb}[/]", log_locals=True)
+            smart.errorNotify(
+                tb, "Oops! Something went wrong...",
+                f"An error occured while attempting to refresh your SmartList:\n{e}",
+                parent
+            )
     
     def refreshWrapper(self, parent):
         """ :MyBrowsersInterface: Handle the SmartList refresh process and notify the user of its completion
@@ -238,7 +248,7 @@ class MyBrowsersInterface(QWidget):
         """
         self.refreshBrowsers(parent)
         self.loadLinkDlg = None
-        smart.infoNotify("SmartList refreshed!", "Your SmartList has been successfully refreshed!", parent)
+        smart.infoNotify("", "Your SmartList has been successfully refreshed!", parent)
 
     def initSearchCompleter(self, model: QStandardItemModel, completer: QCompleter, searchEdit: SearchLineEdit, parent):
         """ :MyBrowsersInterface: Initialize the search completer
@@ -459,8 +469,8 @@ class MyBrowsersInterface(QWidget):
             failedAttempts = 0
             
             if not self.loadLinkDlg.browserCombo.currentIndex() == self.loadLinkDlg.browserCombo.count() - 1:
-                RichCLI.log(f"Loading [smblue]'[u i]{self.loadLinkDlg.linkEdit.text()}[/u i]'[/] into [bold smpurple]{self.loadLinkDlg.browserCombo.currentText()}[/]...")
-                smart.managerLog(f"Loading '{self.loadLinkDlg.linkEdit.text()}' into {self.loadLinkDlg.browserCombo.currentText()}...")
+                RichCLI.log(f"Loading [smblue]\"[u i]{self.loadLinkDlg.linkEdit.text()}[/u i]\"[/] into [bold smpurple]{self.loadLinkDlg.browserCombo.currentText()}[/]...")
+                smart.managerLog(f"Loading \"{self.loadLinkDlg.linkEdit.text()}\" into {self.loadLinkDlg.browserCombo.currentText()}...")
 
                 for browser in myBrowsList["MyBrowsers"]:
                     if browser["name"] == self.loadLinkDlg.browserCombo.currentText():
@@ -470,13 +480,13 @@ class MyBrowsersInterface(QWidget):
                                 self.loadedFromList = True
                                 self.loadedBrowser = browser["name"]
                                 self.loadedLink = self.loadLinkDlg.linkEdit.text()
-                                smart.registerEntryToHistory(myHistory, browser["name"], self.loadLinkDlg.linkEdit.text())
-                                RichCLI.log(f"[green]'[u i]{self.loadLinkDlg.linkEdit.text()}[/u i]' has been successfully loaded into [b]{browser["name"]}[/b]![/]")
-                                smart.managerLog(f"SUCCESS: '{self.loadLinkDlg.linkEdit.text()}' has been successfully loaded into {browser["name"]}.")
+                                smart.registerEntryToHistory(myHistory, self.loadedBrowser, self.loadedLink)
+                                RichCLI.log(f"[green]\"[u i]{self.loadLinkDlg.linkEdit.text()}[/u i]\" has been successfully loaded into [b]{browser["name"]}[/b]![/]")
+                                smart.managerLog(f"SUCCESS: \"{self.loadLinkDlg.linkEdit.text()}\" has been successfully loaded into {browser["name"]}.")
                             except Exception as e:
                                 smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to load your link into {browser["name"]}:\n{e}", parent)
                                 RichCLI.log(f"[red]An error occured while attempting to load [u i]{self.loadLinkDlg.linkEdit.text()}[/u i] into [b]{browser["name"]}[/b]: [i]{e}[/]", log_locals=True)
-                                smart.managerLog(f"ERROR: Failed while loading '{self.loadLinkDlg.linkEdit.text()}' into {browser["name"]}: {e}")
+                                smart.managerLog(f"ERROR: Failed while loading \"{self.loadLinkDlg.linkEdit.text()}\" into {browser["name"]}: {e}")
                             return
 
                         else:
@@ -490,37 +500,39 @@ class MyBrowsersInterface(QWidget):
                             try:
                                 subprocess.Popen([cfg.get(cfg.mainBrowserPath), self.loadLinkDlg.linkEdit.text()])
                                 self.loadedFromList = True
-                                self.loadedBrowser = ""
+                                self.loadedBrowser = cfg.get(cfg.mainBrowserPath)
                                 self.loadedLink = self.loadLinkDlg.linkEdit.text()
-                                RichCLI.log(f"[green]'[u i]{self.loadLinkDlg.linkEdit.text()}[/u i]' has been successfully loaded into [b u]{cfg.get(cfg.mainBrowserPath)}[/b u]![/]")
-                                smart.managerLog(f"SUCCESS: '{self.loadLinkDlg.linkEdit.text()}' has been successfully loaded into {cfg.get(cfg.mainBrowserPath)}.")
+                                smart.registerEntryToHistory(myHistory, os.path.normpath(self.loadedBrowser), self.loadedLink)
+                                RichCLI.log(f"[green]\"[u i]{self.loadLinkDlg.linkEdit.text()}[/u i]\" has been successfully loaded into [b u]{cfg.get(cfg.mainBrowserPath)}[/b u]![/]")
+                                smart.managerLog(f"SUCCESS: \"{self.loadLinkDlg.linkEdit.text()}\" has been successfully loaded into {cfg.get(cfg.mainBrowserPath)}.")
                             except Exception as e:
                                 smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(cfg.get(cfg.mainBrowserPath))}: {e}", parent)
                                 RichCLI.log(f"[red]An error occured while attempting to load [u i]{self.loadLinkDlg.linkEdit.text()}[/u i] into [b u]{cfg.get(cfg.mainBrowserPath)}[/b u]: [i]{e}[/]", log_locals=True)
-                                smart.managerLog(f"ERROR: Failed while loading '{self.loadLinkDlg.linkEdit.text()}' into {cfg.get(cfg.mainBrowserPath)}: {e}")
+                                smart.managerLog(f"ERROR: Failed while loading \"{self.loadLinkDlg.linkEdit.text()}\" into {cfg.get(cfg.mainBrowserPath)}: {e}")
                             return
                     
                     else:
                         failedAttempts += 1
                         if failedAttempts == self.loadLinkDlg.browserCombo.count():
-                            smart.warningNotify("Warning, be careful!", f"The name '{self.loadLinkDlg.browserCombo.currentText()}' is not registered into your SmartList, or {self.loadLinkDlg.browserCombo.currentText()} cannot be found in your SmartList...", parent)
-                            RichCLI.log(f"[b u yellow]WARNING!![/b u] The name [b]'{self.loadLinkDlg.browserCombo.currentText()}'[/b] is not registered into your SmartList, or [b]{self.loadLinkDlg.browserCombo.currentText()}[/b] cannot be found in your SmartList...[/]")
-                            smart.managerLog(f"WARNING: The name '{self.loadLinkDlg.browserCombo.currentText()}' is not registered into the SmartList, or {self.loadLinkDlg.browserCombo.currentText()} cannot be found in the SmartList...")
+                            smart.warningNotify("Warning, be careful!", f"The name \"{self.loadLinkDlg.browserCombo.currentText()}\" is not registered into your SmartList, or {self.loadLinkDlg.browserCombo.currentText()} cannot be found in your SmartList...", parent)
+                            RichCLI.log(f"[b u yellow]WARNING!![/b u] The name [b]\"{self.loadLinkDlg.browserCombo.currentText()}\"[/b] is not registered into your SmartList, or [b]{self.loadLinkDlg.browserCombo.currentText()}[/b] cannot be found in your SmartList...[/]")
+                            smart.managerLog(f"WARNING: The name \"{self.loadLinkDlg.browserCombo.currentText()}\" is not registered into the SmartList, or {self.loadLinkDlg.browserCombo.currentText()} cannot be found in the SmartList...")
             
             else:
-                RichCLI.log(f"Loading [smblue]'[u i]{self.loadLinkDlg.linkEdit.text()}[/u i]'[/] into [i smpurple]{os.path.basename(self.loadLinkDlg.otherBrowsEdit.text())}[/]...")
-                smart.managerLog(f"Loading '{self.loadLinkDlg.linkEdit.text()}' into {os.path.basename(self.loadLinkDlg.otherBrowsEdit.text())}...")
+                RichCLI.log(f"Loading [smblue]\"[u i]{self.loadLinkDlg.linkEdit.text()}[/u i]\"[/] into [i smpurple]{os.path.basename(self.loadLinkDlg.otherBrowsEdit.text())}[/]...")
+                smart.managerLog(f"Loading \"{self.loadLinkDlg.linkEdit.text()}\" into {os.path.basename(self.loadLinkDlg.otherBrowsEdit.text())}...")
                 try:
                     subprocess.Popen([self.loadLinkDlg.otherBrowsEdit.text(), self.loadLinkDlg.linkEdit.text()])
                     self.loadedFromList = False
                     self.loadedBrowser = self.loadLinkDlg.otherBrowsEdit.text()
                     self.loadedLink = self.loadLinkDlg.linkEdit.text()
-                    RichCLI.log(f"[green]'[u i]{self.loadLinkDlg.linkEdit.text()}[/u i]' has been successfully loaded into another browser: '[b u i]{self.loadLinkDlg.otherBrowsEdit.text()}[/b u i]'[/]")
-                    smart.managerLog(f"SUCCESS: '{self.loadLinkDlg.linkEdit.text()}' has been successfully loaded into other browser '{self.loadLinkDlg.otherBrowsEdit.text()}'")
+                    smart.registerEntryToHistory(myHistory, os.path.normpath(self.loadedBrowser), self.loadedLink)
+                    RichCLI.log(f"[green]\"[u i]{self.loadLinkDlg.linkEdit.text()}[/u i]\" has been successfully loaded into another browser: \"[b u i]{self.loadLinkDlg.otherBrowsEdit.text()}[/b u i]\"[/]")
+                    smart.managerLog(f"SUCCESS: \"{self.loadLinkDlg.linkEdit.text()}\" has been successfully loaded into other browser \"{self.loadLinkDlg.otherBrowsEdit.text()}\"")
                 except Exception as e:
                     smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while attempting to load your link into {os.path.basename(self.loadLinkDlg.otherBrowsEdit.text())}: {e}", parent)
-                    RichCLI.log(f"[red]An error occured while attempting to load [u i]{self.loadLinkDlg.linkEdit.text()}[/u i] into '[b u i]{os.path.basename(self.loadLinkDlg.otherBrowsEdit.text())}[/b u i]': [i]{e}[/]")
-                    smart.managerLog(f"ERROR: Failed to load '{self.loadLinkDlg.linkEdit.text()}' into browser at path '{self.loadLinkDlg.otherBrowsEdit.text()}': {e}")
+                    RichCLI.log(f"[red]An error occured while attempting to load [u i]{self.loadLinkDlg.linkEdit.text()}[/u i] into \"[b u i]{os.path.basename(self.loadLinkDlg.otherBrowsEdit.text())}[/b u i]\": [i]{e}[/]", log_locals=True)
+                    smart.managerLog(f"ERROR: Failed to load \"{self.loadLinkDlg.linkEdit.text()}\" into browser at path \"{self.loadLinkDlg.otherBrowsEdit.text()}\": {e}")
 
     def launchBrowser(self, path: str, name: str, parent):
         """ :MyBrowsersInterface: Handle the specified browser execution
@@ -1008,8 +1020,10 @@ class LoadLinkDialog(MessageBoxBase):
     def otherPathChangeListener(self, text):
         """ :LoadLink: Make actions whenever the path entry content is changed """
         if self.browserCombo.currentIndex() == self.browserCombo.count() - 1:
-            if text and os.path.exists(text): self.browsIcon.setIcon(smart.getFileIcon(text))
-            else: self.browsIcon.setIcon(FICO.APPLICATION)
+            if text and os.path.exists(text) and text.endswith(".exe"):
+                self.browsIcon.setIcon(smart.getFileIcon(text))
+            else:
+                self.browsIcon.setIcon(FICO.APPLICATION)
 
     def validate(self):
         if self.linkEdit.text():
@@ -1091,5 +1105,3 @@ class SearchResultDialog(MessageBoxBase):
                     "please check your installation...",
                     parent
                 )
-
-# Ajouter un layout en grille pour la SmartList

@@ -10,7 +10,7 @@ from utils.smartDownMarker import SmartDownMarkerGUI
 
 class UpdateCheckWorker(QObject):
     finished = pyqtSignal(str, str, str)
-    error = pyqtSignal(str)
+    errorOccured = pyqtSignal(str)
 
     def run(self):
         try:
@@ -22,7 +22,8 @@ class UpdateCheckWorker(QObject):
             latestVersion = smart.getLatestVersionTag()
             self.finished.emit("done", latestVersion or "", checkTime)
         except Exception as exc:
-            self.error.emit(str(exc))
+            self.errorOccured.emit(str(exc))
+
 
 class SmartLinkerGUI(FluentWindow):
     """ Class for the SmartLinker Manager (main) window """
@@ -135,11 +136,6 @@ class SmartLinkerGUI(FluentWindow):
         if self.settingInterface.widgetDef.optionMicaEffect:
             self.settingInterface.widgetDef.optionMicaEffect.setEnabled(smart.isSoftwareCompatible(22000))
             self.settingInterface.widgetDef.optionMicaEffect.setVisible(smart.isSoftwareCompatible(22000))
-        try:
-            self.handleBrowserCardsOnResize()
-        except Exception as e:
-            RichCLI.log(f"[red][b u]ERROR[/b u]: Failed on resize:\n\t[i]{e}[/i]\n\n[b]Complete traceback\n------------------[/b]\n{traceback.format_exc()}[/]")
-            smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured:\n{e}", self)
         self.settingInterface.widgetDef.optionMainBrowserCard.fromStorageButton.clicked.connect(lambda: self.settingInterface.cardManualSelect(self))
         self.settingInterface.widgetDef.optionMainBrowserCard.fromListButton.clicked.connect(lambda: self.settingInterface.cardSetFromList(self))
         self.settingInterface.widgetDef.optionMainBrowserCard.removeMainButton.clicked.connect(lambda: self.settingInterface.cardRemove(self))
@@ -158,7 +154,7 @@ class SmartLinkerGUI(FluentWindow):
         self.settingInterface.advancedTempClean.button.clicked.connect(lambda: self.cleanTempFiles(self))
         self.settingInterface.advancedRestart.button.clicked.connect(self.confirmRestart)
         self.settingInterface.advancedStop.button.clicked.connect(self.confirmStop)
-        self.aboutInterface.aboutVersion.button.clicked.connect(lambda: self.checkForUpdates(self))
+        self.aboutInterface.aboutVersion.button.clicked.connect(self.checkForUpdates)
         for button in self.snackButtons["Download"]:
             button.clicked.connect(lambda: self.browserSelect(f"{SmartLinkerGitRepoURL}/releases", "GitHub releases", "page", FICO.DOWNLOAD, True, self))
         for button in self.snackButtons["Install"]:
@@ -201,6 +197,7 @@ class SmartLinkerGUI(FluentWindow):
         else:
             setTheme(Theme.LIGHT)
         
+        self.handleBrowserCardsOnResize()
         self.mybrowsInterface.mybrowsScroll.setStyleSheet(
             self.mybrowsInterface.darkSheetOnLight if theme() == Theme.LIGHT
             else self.mybrowsInterface.lightSheetOnDark
@@ -218,7 +215,7 @@ class SmartLinkerGUI(FluentWindow):
         else:
             self.applyTheme(Theme.LIGHT)
 
-    def checkForUpdates(self, parent):
+    def checkForUpdates(self):
         """Connect to the GitHub repository to check for the latest available update."""
         if self.updateCheckThread and self.updateCheckThread.isRunning():
             return
@@ -236,7 +233,7 @@ class SmartLinkerGUI(FluentWindow):
 
         self.updateCheckThread.started.connect(self.updateCheckWorker.run)
         self.updateCheckWorker.finished.connect(self.onUpdateCheckFinished)
-        self.updateCheckWorker.error.connect(self.onUpdateCheckError)
+        self.updateCheckWorker.errorOccured.connect(self.onUpdateCheckError)
 
         self.updateCheckWorker.finished.connect(lambda *_: self.updateCheckThread.quit()) # type: ignore
         self.updateCheckWorker.finished.connect(lambda *_: self.updateCheckWorker.deleteLater()) # type: ignore
@@ -252,7 +249,7 @@ class SmartLinkerGUI(FluentWindow):
 
         if status == "offline":
             self.lastChecked = f"Last checked: {checkTime} (Failed to check for updates)"
-            print(f"{Fore.YELLOW}Please check your internet connection, then try again...{Style.RESET_ALL}")
+            RichCLI.log("[yellow][b u]WARNING[/b u]: Please check your internet connection, then try again...[/]")
             smart.managerLog("WARNING: Unable to connect to the Internet...")
             smart.warningNotify("Warning, be careful!", "Please check your internet connection, then try again...", self)
             self.aboutInterface.aboutVersion.setContent(self.lastChecked)
@@ -261,7 +258,7 @@ class SmartLinkerGUI(FluentWindow):
         self.latestVersion = latestVersion
         if not latestVersion:
             self.lastChecked = f"Last checked: {checkTime} (Failed to check for updates)"
-            print(f"{Fore.YELLOW}No version tags have been found...{Style.RESET_ALL}")
+            print("[yellow][b u]WARNING[/b u]: No version tags have been found...[/]")
             smart.managerLog("WARNING: No version tags have been found...")
             smart.warningNotify("Warning, be careful!", "The latest version could not be found...", self)
 
@@ -279,24 +276,32 @@ class SmartLinkerGUI(FluentWindow):
             )
             self.mybrowsInterface.updateSnack.setVisible(True)
             self.mybrowsInterface.updateSnack.setEnabled(True)
+            self.histInterface.updateSnack.setVisible(True)
+            self.histInterface.updateSnack.setEnabled(True)
             self.settingInterface.updateSnack.setVisible(True)
             self.settingInterface.updateSnack.setEnabled(True)
             self.aboutInterface.updateSnack.setVisible(True)
             self.aboutInterface.updateSnack.setEnabled(True)
-            print(f"{Fore.BLUE}The latest version of {SmartLinkerName} is now available: {latestVersion}{Style.RESET_ALL}")
+            RichCLI.log(f"[blue][b u]INFO[/b]: The latest version of [b]{SmartLinkerName}[/b u] is now available: [b u i smpurple]{latestVersion}[/]")
             smart.managerLog(f"INFO: The latest version of {SmartLinkerName} is now available: {latestVersion}")
 
         else:
             self.lastChecked = f"Last checked: {checkTime}"
             cfg.set(cfg.updateAvailable, False)
             cfg.set(cfg.updateVersion, "")
+            if self.aboutIconBadge is not None:
+                self.aboutIconBadge.setParent(None)
+                self.aboutIconBadge.deleteLater()
+                self.aboutIconBadge = None
             self.mybrowsInterface.updateSnack.setVisible(False)
             self.mybrowsInterface.updateSnack.setEnabled(False)
+            self.histInterface.updateSnack.setVisible(False)
+            self.histInterface.updateSnack.setEnabled(False)
             self.settingInterface.updateSnack.setVisible(False)
             self.settingInterface.updateSnack.setEnabled(False)
             self.aboutInterface.updateSnack.setVisible(False)
             self.aboutInterface.updateSnack.setEnabled(False)
-            print(f"{Fore.BLUE}{SmartLinkerName} is currently up-to-date.{Style.RESET_ALL}")
+            print(f"[blue][b u]INFO[/b u]: [b]{SmartLinkerName}[/b] is currently up-to-date.[/]")
             smart.managerLog(f"INFO: {SmartLinkerName} is currently up-to-date.")
             smart.infoNotify(f"{SmartLinkerName} is up-to-date", "This is currently the latest update available.", self)
 
@@ -523,16 +528,21 @@ class SmartLinkerGUI(FluentWindow):
     def handleBrowserCardsOnResize(self):
         from utils.mybrowsersInterface import MyBrowsersCard
         if isinstance(self.mybrowsInterface.mybrowsLayout.takeAt(0), MyBrowsersCard):
-            cols = self.mybrowsInterface.mybrowsScroll.size().width() // 0 # 675
-            for card in self.mybrowsInterface.myBrowsCards:
-                try:
+            try:
+                cols = self.mybrowsInterface.mybrowsScroll.size().width() // 675
+                for card in self.mybrowsInterface.myBrowsCards:
                     self.mybrowsInterface.mybrowsScroll.widget().layout().removeWidget(card) # type: ignore
                     card.setFixedWidth(
                         (self.mybrowsInterface.mybrowsScroll.size().width() // cols) - ((10 * cols) + 10)
                     )
                     self.mybrowsInterface.mybrowsScroll.widget().layout().addWidget(card) # type: ignore
-                except Exception as e:
-                    smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured while handling your SmartList cards during resize:\n{e}", self)
+            except Exception as e:
+                smart.errorNotify(
+                    traceback.format_exc(),
+                    "Oops! Something went wrong...",
+                    f"An error occured while handling your SmartList cards during resize:\n{e}",
+                    self
+                )
 
     def confirmRestart(self):
         """ Open a confirmation dialog to restart SmartLinker """
@@ -588,11 +598,7 @@ class SmartLinkerGUI(FluentWindow):
         super().resizeEvent(e)
 
         if hasattr(self, "mybrowsInterface"):
-            try:
-                self.handleBrowserCardsOnResize()
-            except Exception as e:
-                RichCLI.log(f"[red][b u]ERROR[/b u]: Failed on resize:\n\t[i]{e}[/i]\n\n[b]Complete traceback\n------------------[/b]\n{traceback.format_exc()}[/]")
-                smart.errorNotify(traceback.format_exc(), "Oops! Something went wrong...", f"An error occured:\n{e}", self)
+            self.handleBrowserCardsOnResize()
 
         if hasattr(self, "settingInterface"):
             if self.settingInterface.selectorPreviewStatus:
@@ -627,6 +633,7 @@ def smartMain():
         qapp.setApplicationName(f"{SmartLinkerName} - Mastering URL Handling")
         setTheme(Theme.AUTO)
         setThemeColor(getSystemAccentColor())
+
         parent = FramelessWindow()
         parent.titleBar.minBtn.setEnabled(False)
         parent.titleBar.maxBtn.setEnabled(False)
@@ -638,6 +645,7 @@ def smartMain():
         parent.resize(960, 540)
         smart.centerWindow(parent)
         parent.show()
+
         migrationDlg = MigrationDialog(parent)
         if migrationDlg.exec():
             if migrationDlg.isSuccess:
